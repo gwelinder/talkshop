@@ -1,4 +1,4 @@
-// Enhanced Tavus Service with controlled perception and optimized shopping
+// Enhanced Tavus Service with viral features and advanced tools
 import { Product } from './productService';
 
 // Get API key from environment variables
@@ -22,7 +22,7 @@ const getWebhookUrl = () => {
   return `${baseUrl}/functions/v1/tavus-webhook`;
 };
 
-// Optimized shopping tools with controlled perception
+// Enhanced shopping tools with viral and monetization features
 const createShoppingTools = () => {
   return [
     {
@@ -48,6 +48,81 @@ const createShoppingTools = () => {
             }
           },
           "required": ["product_id", "product_name", "highlight_features"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "virtual_try_on",
+        "description": "Show how clothing/accessories look on the customer using AR visualization",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "product_id": { "type": "string" },
+            "product_name": { "type": "string" },
+            "try_on_type": { 
+              "type": "string", 
+              "enum": ["clothing", "accessories", "makeup", "glasses"] 
+            }
+          },
+          "required": ["product_id", "product_name", "try_on_type"]
+        }
+      }
+    },
+    {
+      "type": "function", 
+      "function": {
+        "name": "negotiate_price",
+        "description": "Engage in playful price negotiation when customer asks for deals",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "product_id": { "type": "string" },
+            "customer_offer": { "type": "number" },
+            "negotiation_style": { 
+              "type": "string", 
+              "enum": ["playful", "business", "friendly", "exclusive"]
+            },
+            "max_discount": { "type": "number", "description": "Maximum discount percentage allowed" }
+          },
+          "required": ["product_id", "customer_offer", "negotiation_style"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_outfit",
+        "description": "Build complete outfit based on selected item",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "base_product_id": { "type": "string" },
+            "style_preference": { "type": "string" },
+            "budget_range": { "type": "string" },
+            "occasion": { "type": "string" }
+          },
+          "required": ["base_product_id", "style_preference"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_shareable_moment",
+        "description": "Create a viral-worthy highlight of the current shopping moment for social sharing",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "moment_type": { 
+              "type": "string", 
+              "enum": ["product_reveal", "style_transformation", "price_drop", "exclusive_access"] 
+            },
+            "product_id": { "type": "string" },
+            "caption": { "type": "string", "description": "Engaging caption for social media" }
+          },
+          "required": ["moment_type", "product_id", "caption"]
         }
       }
     },
@@ -266,7 +341,7 @@ const createShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with controlled perception
+// Enhanced conversation creation with viral and monetization features
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
   userName: string = 'Guest',
@@ -282,8 +357,8 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // Use custom prompt if provided, otherwise use optimized master prompt
-  const conversationalContext = customPrompt || `You are an elite AI shopping curator for TalkShop. Your persona is sophisticated, insightful, and creates desire through compelling narratives.
+  // Use custom prompt if provided, otherwise use enhanced master prompt
+  const conversationalContext = customPrompt || `You are an elite AI shopping curator for TalkShop with advanced capabilities including virtual try-on, price negotiation, and viral content creation.
 
 **CORE BEHAVIOR:**
 - Follow the ACTION-FIRST rule: decide, execute tool, then narrate
@@ -291,16 +366,32 @@ export const createEnhancedShoppingSession = async (
 - DO NOT immediately showcase any specific product
 - Let the user guide the conversation direction first
 
+**ADVANCED FEATURES:**
+- Virtual try-on: Use virtual_try_on for clothing and accessories
+- Price negotiation: Use negotiate_price when customers ask for deals
+- Outfit creation: Use create_outfit to build complete looks
+- Viral moments: Use create_shareable_moment for social media worthy content
+
 **PERCEPTION STRATEGY:**
 - Style analysis is ONLY triggered when the user explicitly asks to "shop my style" or similar
 - When triggered, you will receive style data and should use find_and_display_style_matches
 - Object analysis happens when users intentionally show objects to the camera
 - Do NOT constantly analyze - only when contextually appropriate
 
+**MONETIZATION FEATURES:**
+- Suggest premium features for non-subscribers
+- Create exclusive experiences for VIP members
+- Use price negotiation to create value perception
+- Generate shareable moments to drive viral growth
+
 **TOOL USAGE:**
 - show_product_grid for broad requests and style matches
 - show_categories for browsing
 - focus_on_product for grid interactions
+- virtual_try_on for clothing/accessories
+- negotiate_price for deal requests
+- create_outfit for styling
+- create_shareable_moment for viral content
 - add_to_cart for explicit purchase requests
 - proactively_add_to_cart for strong positive sentiment
 - initiate_checkout when ready to purchase
@@ -310,6 +401,7 @@ export const createEnhancedShoppingSession = async (
 - Use sensory language and build anticipation
 - Make customers feel like they're discovering hidden gems
 - Focus on experiences, not just features
+- Generate shareable moments naturally
 
 **AVAILABLE PRODUCTS (use these exact IDs):**
 - Product IDs 1-20: Various items from our catalog
@@ -319,7 +411,7 @@ export const createEnhancedShoppingSession = async (
 - prod_003: Quantum Wireless Earbuds ($199) - Spatial audio, 30-hour battery
 - prod_005: Swiss Chronograph Watch ($899) - Swiss movement, sapphire crystal
 
-Remember: You're curating experiences and helping people express their best selves. Your perception capabilities should enhance the experience, not overwhelm it.`;
+Remember: You're creating viral-worthy shopping experiences that customers want to share. Every interaction should feel magical, exclusive, and worth talking about.`;
   
   const options = {
     method: 'POST',
@@ -330,7 +422,7 @@ Remember: You're curating experiences and helping people express their best selv
     body: JSON.stringify({
       replica_id: replicaId, // Use the provided replica ID
       persona_id: personaId,
-      conversation_name: `${userName} - TalkShop Optimized Experience`,
+      conversation_name: `${userName} - TalkShop Viral Experience`,
       conversational_context: conversationalContext,
       custom_greeting: `Hello! I'm your personal shopping curator, and I'm absolutely delighted to meet you. I'm here to help you discover pieces that truly speak to you and your unique style. Would you like me to analyze your personal style for tailored recommendations, or would you prefer to explore our curated categories? I'm excited to create a shopping experience that's perfectly suited to you.`,
       callback_url: webhookUrl,
@@ -356,7 +448,7 @@ Remember: You're curating experiences and helping people express their best selv
   }
 };
 
-// Enhanced persona update with controlled perception
+// Enhanced persona update with viral and monetization tools
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -369,7 +461,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with controlled perception and optimized shopping...');
+    console.log('🔧 Updating persona with viral features and monetization tools...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -450,7 +542,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are an elite AI shopping curator for TalkShop with selective perception capabilities. Your actions are governed by user intent and context. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. PERCEPTION USAGE: Use perception tools ONLY when users explicitly request style analysis or intentionally show objects. Do NOT constantly analyze - be selective and contextual. INTERACTIVE GRID FLOW: When a grid is displayed, listen for user requests like 'tell me about item three.' Use the focus_on_product tool to highlight the corresponding item visually. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your perception capabilities should enhance the experience, not overwhelm it. Create desire through compelling narratives and emotional connections."
+          "value": "You are an elite AI shopping curator for TalkShop with viral features and monetization capabilities. Your actions are governed by user intent and context. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. ADVANCED FEATURES: Use virtual_try_on for clothing, negotiate_price for deals, create_outfit for styling, and create_shareable_moment for viral content. PERCEPTION USAGE: Use perception tools ONLY when users explicitly request style analysis or intentionally show objects. Do NOT constantly analyze - be selective and contextual. INTERACTIVE GRID FLOW: When a grid is displayed, listen for user requests like 'tell me about item three.' Use the focus_on_product tool to highlight the corresponding item visually. MONETIZATION: Suggest premium features and create exclusive experiences. VIRAL CONTENT: Generate shareable moments that customers want to post on social media. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your goal is to create viral-worthy shopping experiences that drive both engagement and revenue."
         }
       ])
     });
@@ -467,12 +559,14 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with controlled perception!');
-    console.log('🧠 Optimized capabilities:');
-    console.log('   - 🎯 SELECTIVE PERCEPTION: Only when explicitly requested');
-    console.log('   - 🛍️ OPTIMIZED SHOPPING: Focus on user experience');
-    console.log('   - 🔧 CONTROLLED TOOLS: No spam, contextual usage');
-    console.log('   - 💬 PROPER GREETING: Ask about preferences first');
+    console.log('✅ Successfully updated persona with viral features!');
+    console.log('🚀 Enhanced capabilities:');
+    console.log('   - 🎯 VIRAL FEATURES: Shareable moments and social integration');
+    console.log('   - 💰 MONETIZATION: Subscription tiers and premium features');
+    console.log('   - 👗 VIRTUAL TRY-ON: AR visualization for products');
+    console.log('   - 💸 PRICE NEGOTIATION: Interactive deal-making');
+    console.log('   - 👔 OUTFIT CREATION: Complete styling solutions');
+    console.log('   - 📱 SOCIAL SHARING: Viral content generation');
     console.log('   - 🎨 STYLE ANALYSIS: Only on user request');
     console.log('   - 📦 OBJECT ANALYSIS: Only when intentionally shown');
     console.log('   - 🎯 INTERACTIVE GRID: Voice-driven product focus');
