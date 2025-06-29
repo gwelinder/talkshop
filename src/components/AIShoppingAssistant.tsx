@@ -9,7 +9,6 @@ import { searchProducts, getProductById } from '../services/productService';
 import AriaStatus from './AriaStatus';
 import CategoryGridDisplay from './CategoryGridDisplay';
 import ProductGrid from './ProductGrid';
-import UserInput from './UserInput';
 import MagicCartAnimation from './MagicCartAnimation';
 import HostSelector from './HostSelector';
 import { useMagicCart } from '../hooks/useMagicCart';
@@ -876,8 +875,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
                           {selectedHost 
-                            ? `${selectedHost.description}. Ready to start your conversation.`
-                            : 'Select your personal shopping curator to transform your shopping experience.'
+                            ? `${selectedHost.description}. Ready for your FaceTime AI call.`
+                            : 'Select your personal shopping curator for a live video conversation.'
                           }
                         </p>
                       </>
@@ -885,10 +884,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       <>
                         <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                         <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {callState === 'joining' ? 'Joining...' : 
-                           callState === 'joined' ? `Waiting for ${selectedHost?.name}...` : 
+                          {callState === 'joining' ? 'Joining call...' : 
+                           callState === 'joined' ? `Connecting to ${selectedHost?.name}...` : 
                            callState === 'error' ? 'Connection failed' :
-                           'Connecting...'}
+                           'Starting video call...'}
                         </p>
                       </>
                     )}
@@ -954,7 +953,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       </button>
                     </div>
                     <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
-                      Curated by {selectedHost?.name || 'AI'}
+                      Video Call with {selectedHost?.name || 'AI'}
                     </div>
                   </div>
                 </div>
@@ -982,6 +981,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   }
                 </span>
               </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+                {showcaseContent.type === 'host-selection' 
+                  ? 'Choose your AI curator and customize their personality'
+                  : 'Live product demonstrations and curated recommendations'
+                }
+              </p>
             </div>
             
             <div className="p-4 lg:p-6 flex-1 min-h-0 overflow-y-auto">
@@ -1002,21 +1007,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         </div>
       </div>
-
-      {/* User Input - Only show when host is selected and not connected */}
-      {selectedHost && !isConnected && (
-        <div className="flex-shrink-0 p-4 lg:p-6 pt-0">
-          <UserInput 
-            onMessageSend={(message) => {
-              // Start conversation immediately when user sends a message
-              startConversation();
-            }}
-            onFocus={() => {}}
-            disabled={isConnecting}
-            placeholder={`Tell ${selectedHost.name} what you're looking for...`}
-          />
-        </div>
-      )}
     </div>
   );
 };
