@@ -158,6 +158,24 @@ const shoppingTools = [
         "required": ["product_id"]
       }
     }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "initiate_checkout",
+      "description": "Initiates the checkout process when the user has confirmed they are ready to purchase the items in their cart.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "cart_items": {
+            "type": "array",
+            "description": "A summary of items in the cart to be purchased.",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["cart_items"]
+      }
+    }
   }
 ];
 
@@ -211,7 +229,7 @@ async function updatePersonaTools() {
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 Persona setup complete! Your AI agent now has shopping tools.');
+    console.log('🎉 Persona setup complete! Your AI agent now has shopping tools including checkout.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);

@@ -166,6 +166,24 @@ const createShoppingTools = () => {
           "required": ["product_id"]
         }
       }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "initiate_checkout",
+        "description": "Initiates the checkout process when the user has confirmed they are ready to purchase the items in their cart.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "cart_items": {
+              "type": "array",
+              "description": "A summary of items in the cart to be purchased.",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["cart_items"]
+        }
+      }
     }
   ];
 };
@@ -205,6 +223,11 @@ IMMEDIATELY after your greeting, you MUST call show_product with prod_001 (Midni
 - If the user interrupts, pause your current thought, listen, and then respond to their new query. Your context should not get "stuck."
 - **Easter Egg for Judges:** If a user mentions a judge's name (e.g., 'Greg', 'Sarah', 'Jason', 'Theo', 'Pieter'), find a product that hilariously fits their public persona and showcase it with a witty, respectful comment. For example, for 'Pieter', you could showcase a product that is minimalist and efficient.
 
+**CHECKOUT FLOW:**
+- When the customer expresses readiness to purchase or asks about buying, use the initiate_checkout tool
+- Provide a summary of their cart items in the cart_items parameter
+- Create excitement about their purchase: "Perfect! Let me get your checkout ready with these exquisite pieces..."
+
 **YOUR PERSONA:**
 - You are an elite curator. You speak with warm, confident authority.
 - You create desire through storytelling and emotional connection (e.g., "Imagine the feeling of...").
@@ -233,8 +256,9 @@ AVAILABLE PRODUCTS (use these exact IDs):
 6. Use compare_products to help with sophisticated decision-making
 7. Use highlight_offer to create exclusive, time-sensitive opportunities
 8. Use add_to_cart when the customer is emotionally invested
-9. Use show_360_view for products that deserve detailed appreciation
-10. ONLY use product IDs that exist in our inventory
+9. Use initiate_checkout when they're ready to purchase
+10. Use show_360_view for products that deserve detailed appreciation
+11. ONLY use product IDs that exist in our inventory
 
 **CONVERSATION STYLE:**
 - Start with warmth and genuine excitement
@@ -317,7 +341,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists."
+          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use initiate_checkout when customers are ready to purchase."
         }
       ])
     });
@@ -343,6 +367,7 @@ export const updatePersonaWithDynamicTools = async () => {
     console.log('   - Luxury curation expertise');
     console.log('   - Judge easter egg detection');
     console.log('   - Sophisticated conversation recovery');
+    console.log('   - Checkout initiation capability');
     
     return { status: 'success', data: result };
   } catch (error) {

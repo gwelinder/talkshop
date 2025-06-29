@@ -5,6 +5,7 @@ import ProductGrid from './components/ProductGrid';
 import AIShoppingAssistant from './components/AIShoppingAssistant';
 import EnvironmentSetup from './components/EnvironmentSetup';
 import Cart from './components/Cart';
+import Checkout from './components/Checkout';
 import FOMORibbon from './components/FOMORibbon';
 import { useProducts } from './hooks/useProducts';
 import { getProductById } from './services/productService';
@@ -113,6 +114,11 @@ function App() {
         
       case 'show_360_view':
         setShow360(toolCall.function.arguments.product_id);
+        break;
+        
+      case 'initiate_checkout':
+        console.log('🛒 Initiating checkout with items:', toolCall.function.arguments.cart_items);
+        setCurrentView('checkout');
         break;
     }
   }, [products, addToCart]);
@@ -290,6 +296,14 @@ function App() {
               ));
             }
           }}
+          onClose={() => setCurrentView('home')}
+          onCheckout={() => setCurrentView('checkout')}
+        />
+      )}
+
+      {currentView === 'checkout' && (
+        <Checkout 
+          cartItems={cartItems}
           onClose={() => setCurrentView('home')}
         />
       )}
