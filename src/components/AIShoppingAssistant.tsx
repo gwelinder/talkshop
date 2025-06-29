@@ -63,14 +63,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [transcript, setTranscript] = useState<string>('');
   
   // UI state
-  const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 50) + 10);
   const [cartAnimation, setCartAnimation] = useState(false);
   const [cartSuccessTimer, setCartSuccessTimer] = useState<NodeJS.Timeout | null>(null);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showcaseGlow, setShowcaseGlow] = useState(false);
-  const [rotation360, setRotation360] = useState(0);
-  const [showDragHint, setShowDragHint] = useState(true);
   const [focusedProductId, setFocusedProductId] = useState<string | null>(null);
   
   // Product display state with proper typing
@@ -88,22 +85,17 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [callState, setCallState] = useState<string>('idle');
   
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const rotation360Ref = useRef<NodeJS.Timeout | null>(null);
 
   // Magic cart animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
 
+  // Perception throttling
+  const lastPerceptionTime = useRef<number>(0);
+  const PERCEPTION_THROTTLE_MS = 5000; // 5 seconds between perception calls
+
   // Update persona tools on component mount
   useEffect(() => {
     updatePersonaWithDynamicTools().catch(console.error);
-  }, []);
-
-  // Simulate live viewer count changes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setViewerCount(prev => Math.max(1, prev + Math.floor(Math.random() * 5) - 2));
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   // Trigger showcase glow effect when spotlight product changes
@@ -123,32 +115,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   }, [comparisonProducts]);
 
-  // Auto-rotate 360 view
-  useEffect(() => {
-    if (show360) {
-      rotation360Ref.current = setInterval(() => {
-        setRotation360(prev => (prev + 5) % 360);
-      }, 100);
-      
-      const hintTimer = setTimeout(() => setShowDragHint(false), 3000);
-      
-      return () => {
-        if (rotation360Ref.current) {
-          clearInterval(rotation360Ref.current);
-        }
-        clearTimeout(hintTimer);
-      };
-    } else {
-      setRotation360(0);
-      setShowDragHint(true);
-    }
-  }, [show360]);
-
-  // Enhanced tool call handler with proper state management
+  // Enhanced tool call handler with optimized cart experience
   const handleToolCall = useCallback(async (toolCall: any) => {
     console.log('🔧 AI Assistant received tool call:', toolCall);
     
-    // Handle cart animation with persistent success state
+    // Handle cart animation with enhanced experience
     if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
       setCartAnimation(true);
       onCartJiggle();
@@ -158,11 +129,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         clearTimeout(cartSuccessTimer);
       }
       
-      // Set new timer for 1.2s persistence
+      // Enhanced cart success animation
       const timer = setTimeout(() => {
         setCartAnimation(false);
         setCartSuccessTimer(null);
-      }, 1200);
+      }, 2000); // Longer for better UX
       
       setCartSuccessTimer(timer);
 
@@ -297,7 +268,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     onToolCall(toolCall);
   }, [onToolCall, cartSuccessTimer, onCartJiggle, spotlightProduct, triggerMagicCart]);
 
-  // Enhanced tool call parsing with better error handling
+  // Enhanced tool call parsing with perception throttling
   const parseToolCall = useCallback((data: any) => {
     try {
       console.log('🔧 Parsing tool call data:', data);
@@ -330,13 +301,21 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
       }
 
-      // Handle perception tool calls - STEP 1: Style detection
+      // Handle perception tool calls with throttling
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
+        
+        // Throttle perception calls to prevent spam
+        const now = Date.now();
+        if (now - lastPerceptionTime.current < PERCEPTION_THROTTLE_MS) {
+          console.log('🚫 Perception call throttled');
+          return null;
+        }
         
         // For style detection, we need to trigger the resolver tool
         if (name === 'detected_user_style') {
           console.log('🎨 Step 1: Style detection completed:', args);
+          lastPerceptionTime.current = now;
           
           // Trigger the RESOLVER TOOL after a brief delay
           setTimeout(() => {
@@ -356,6 +335,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           return null; // Don't process as regular tool call
         }
         
+        lastPerceptionTime.current = now;
         return {
           function: {
             name: name,
@@ -519,7 +499,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     
     setIsConnecting(true);
     try {
-      console.log('🎬 Starting state-aware AI shopping conversation with host:', selectedHost.name);
+      console.log('🎬 Starting optimized AI shopping conversation with host:', selectedHost.name);
       
       const session = await createEnhancedShoppingSession(
         'luxury shopping experience',
@@ -529,7 +509,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         showcaseContent.type // Pass current UI state
       );
       
-      console.log('✅ State-aware AI session created:', session);
+      console.log('✅ Optimized AI session created:', session);
       setConversationUrl(session.conversation_url);
       
     } catch (error) {
@@ -643,7 +623,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   <Wand2 className="w-4 h-4" />
                   <span>Style Analysis Complete</span>
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-purple-700 dark:text-purple-300 font-medium">Color:</span>
                     <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.dominant_color || 'Not detected'}</p>
@@ -706,43 +686,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Product Image */}
               <div className="relative">
-                {show360 === spotlightProduct.id ? (
-                  <div className="aspect-square bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-900/20 dark:to-blue-900/20 rounded-lg flex items-center justify-center border border-brand-200 dark:border-brand-700/50 relative overflow-hidden">
-                    <div 
-                      className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
-                      style={{ transform: `rotate(${rotation360}deg)` }}
-                    >
-                      <RotateCcw className="w-12 h-12 mx-auto mb-2 text-brand-500" />
-                      <p className="font-semibold">360° Interactive View</p>
-                    </div>
-                    {showDragHint && (
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
-                        Drag to spin
-                      </div>
-                    )}
-                    <button 
-                      onClick={() => onShow360Change(false)}
-                      className="absolute top-4 right-4 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200 underline text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 rounded"
-                    >
-                      Exit 360° View
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <img 
-                      src={spotlightProduct.image || spotlightProduct.thumbnail} 
-                      alt={spotlightProduct.title || spotlightProduct.name}
-                      className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
-                    />
-                    <button
-                      onClick={() => onShow360Change(spotlightProduct.id)}
-                      className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      aria-label="View in 360 degrees"
-                    >
-                      <Maximize className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                <img 
+                  src={spotlightProduct.image || spotlightProduct.thumbnail} 
+                  alt={spotlightProduct.title || spotlightProduct.name}
+                  className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                />
                 
                 {activeOffer && activeOffer.productId === spotlightProduct.id && (
                   <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
@@ -797,24 +745,43 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
                 <button 
                   onClick={() => addToCart(spotlightProduct.id, 1)}
-                  className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                  className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                     cartAnimation 
-                      ? 'bg-green-500 scale-105 animate-cart-success' 
+                      ? 'bg-green-500 scale-105 shadow-green-500/50 shadow-2xl' 
                       : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 hover:scale-105'
                   } shadow-lg`}
                   aria-label={`Add ${spotlightProduct.title || spotlightProduct.name} to cart`}
                 >
-                  {cartAnimation ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <span>✓</span>
-                      <span>Added to Cart!</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center space-x-2">
-                      <ShoppingCart className="w-5 h-5" />
-                      <span>Add to Cart</span>
-                    </div>
-                  )}
+                  <AnimatePresence mode="wait">
+                    {cartAnimation ? (
+                      <motion.div 
+                        className="flex items-center justify-center space-x-2"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          ✓
+                        </motion.span>
+                        <span>Added to Cart!</span>
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        className="flex items-center justify-center space-x-2"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <ShoppingCart className="w-5 h-5" />
+                        <span>Add to Cart</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </button>
               </div>
             </div>
@@ -971,15 +938,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
                         LIVE
                       </span>
-                    </div>
-
-                    <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
-                      <div className="flex items-center space-x-2 text-white text-xs">
-                        <div className="flex items-center space-x-1">
-                          <Eye className="w-3 h-3" />
-                          <span>{viewerCount}</span>
-                        </div>
-                      </div>
                     </div>
                   </>
                 )}

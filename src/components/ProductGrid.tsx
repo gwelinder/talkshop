@@ -13,7 +13,6 @@ interface Product {
   thumbnail?: string;
   image?: string;
   rating?: { rate: number; count: number; };
-  viewers?: number;
   features?: string[];
 }
 
@@ -56,7 +55,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           const productName = product.name || product.title || 'Product';
           const productImage = product.thumbnail || product.image || 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400';
           const productRating = product.rating || { rate: 4.5, count: 100 };
-          const productViewers = product.viewers || Math.floor(Math.random() * 50) + 10;
           const productFeatures = product.features || ['High quality', 'Great value'];
           const isFocused = focusedProductId === product.id;
           
@@ -97,12 +95,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                 <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                   <span>Available</span>
-                </div>
-
-                {/* Viewers Count */}
-                <div className="absolute top-3 right-3 bg-black/70 text-white px-2 py-1 rounded-full text-xs flex items-center space-x-1 backdrop-blur-sm">
-                  <Users className="w-3 h-3" />
-                  <span>{productViewers}</span>
                 </div>
 
                 {/* Focus Indicator */}
