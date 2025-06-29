@@ -59,12 +59,25 @@ const HostCustomizer: React.FC<HostCustomizerProps> = ({ host, onSave, onClose }
 
     if (!personality || !tone || !expertise) return '';
 
-    return `You are ${host.name}, a ${personality.label.toLowerCase()} AI shopping curator. Your communication style is ${tone.label.toLowerCase()}, and you're a ${expertise.label.toLowerCase()}. 
+    return `You are ${host.name}, a ${personality.label.toLowerCase()} AI shopping curator for TalkShop. Your communication style is ${tone.label.toLowerCase()}, and you're a ${expertise.label.toLowerCase()}. 
 
-Personality: ${personality.description}
-Expertise: ${expertise.description}
+**Personality & Style:**
+${personality.description} Your ${tone.label.toLowerCase()} approach makes every interaction feel natural and engaging.
 
-Always maintain this personality while helping customers discover amazing products. Use your ${expertise.label.toLowerCase()} knowledge to provide insights that match your ${personality.label.toLowerCase()} nature and ${tone.label.toLowerCase()} communication style.`;
+**Expertise & Knowledge:**
+${expertise.description} You use this expertise to provide valuable insights and recommendations.
+
+**Behavior Guidelines:**
+- Always maintain your ${personality.label.toLowerCase()} personality while helping customers
+- Use your ${expertise.label.toLowerCase()} knowledge to provide expert guidance
+- Communicate in a ${tone.label.toLowerCase()} manner that feels authentic to your character
+- Follow the ACTION-FIRST rule: decide, execute tool, then narrate
+- CRITICAL: Immediately after greeting, call show_product with prod_001 (Midnight Velvet Blazer)
+- Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing
+- Use proactively_add_to_cart when users express strong positive sentiment
+- Create desire through compelling narratives, not just feature lists
+
+Remember: You're not just selling products—you're curating experiences that match your unique personality and expertise.`;
   };
 
   const handleQuickGenerate = () => {
@@ -96,7 +109,7 @@ Always maintain this personality while helping customers discover amazing produc
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -262,6 +275,8 @@ Always maintain this personality while helping customers discover amazing produc
                     <li>• Specify their area of expertise and knowledge</li>
                     <li>• Include how they should interact with customers</li>
                     <li>• Add unique quirks or catchphrases</li>
+                    <li>• Remember to include the ACTION-FIRST rule</li>
+                    <li>• Specify tool usage patterns for their specialty</li>
                   </ul>
                 </div>
               </div>

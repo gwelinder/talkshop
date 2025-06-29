@@ -355,7 +355,7 @@ Remember: You're not just selling products—you're curating experiences and hel
       persona_id: personaId,
       conversation_name: `${userName} - TalkShop Curated Experience`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello, and welcome to TalkShop. I'm your personal curator. Here's something absolutely exquisite I've selected for you - this stunning Midnight Velvet Blazer. Notice how the Italian velvet catches the light, and those satin lapels... they're pure sophistication.`,
+      custom_greeting: `Hello, and welcome to TalkShop. I'm your personal curator. Would you like to see our product categories?`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,

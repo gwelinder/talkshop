@@ -570,6 +570,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <HostSelector 
               onHostSelect={handleHostSelect}
               selectedHost={selectedHost}
+              onStartConversation={startConversation}
+              isConnecting={isConnecting}
             />
           </div>
         );
@@ -826,14 +828,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         onComplete={completeMagicCart}
       />
 
-      {/* Main Content - Fixed Height Side-by-Side Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-6 p-6 min-h-0">
-        {/* AI Video Section - Fixed Width on Desktop, Full Width on Mobile */}
-        <div className="w-full lg:w-80 flex-shrink-0">
+      {/* Main Content - Optimized Layout for All Devices */}
+      <div className="flex-1 flex flex-col xl:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-0">
+        {/* AI Video Section - Responsive Width */}
+        <div className="w-full xl:w-96 flex-shrink-0 order-2 xl:order-1">
           <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden h-full flex flex-col">
             <div 
               ref={videoContainerRef}
-              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300"
+              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300 aspect-[9/16] xl:aspect-auto"
             >
               {/* Remote participants video/audio */}
               {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
@@ -874,31 +876,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
                           {selectedHost 
-                            ? `${selectedHost.description}. Click the button below to start your conversation.`
+                            ? `${selectedHost.description}. Ready to start your conversation.`
                             : 'Select your personal shopping curator to transform your shopping experience.'
                           }
                         </p>
-                        {selectedHost && (
-                          <motion.button
-                            onClick={startConversation}
-                            disabled={isConnecting}
-                            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            {isConnecting ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Connecting to {selectedHost.name}...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-4 h-4" />
-                                <span>Start with {selectedHost.name}</span>
-                              </>
-                            )}
-                          </motion.button>
-                        )}
                       </>
                     ) : (
                       <>
@@ -983,14 +964,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         </div>
 
         {/* Dynamic Showcase (Flexible Width) */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 order-1 xl:order-2">
           <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden h-full flex flex-col transition-all duration-1000 ${
             showcaseGlow 
               ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
               : 'border-white/20 dark:border-gray-700/20'
           }`}>
-            <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+            <div className="p-4 lg:p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
+              <h3 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
                 <Zap className="w-5 h-5 text-brand-500" />
                 <span>
                   {showcaseContent.type === 'host-selection' 
@@ -1011,7 +992,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               </p>
             </div>
             
-            <div className="p-6 flex-1 min-h-0 overflow-y-auto">
+            <div className="p-4 lg:p-6 flex-1 min-h-0 overflow-y-auto">
               {renderShowcase()}
 
               {/* Live Transcript */}
@@ -1032,7 +1013,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
       {/* User Input - Only show when host is selected and not connected */}
       {selectedHost && !isConnected && (
-        <div className="flex-shrink-0 p-6 pt-0">
+        <div className="flex-shrink-0 p-4 lg:p-6 pt-0">
           <UserInput 
             onMessageSend={(message) => {
               // Start conversation immediately when user sends a message
