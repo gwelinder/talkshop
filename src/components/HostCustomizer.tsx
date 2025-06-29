@@ -119,7 +119,8 @@ Remember: You're not just selling products—you're curating experiences that ma
         <div className="bg-gradient-to-r from-purple-500 to-brand-600 p-6 text-white relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+            aria-label="Close customizer"
           >
             <X className="w-6 h-6" />
           </button>
@@ -163,8 +164,8 @@ Remember: You're not just selling products—you're curating experiences that ma
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                             : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
                         }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         <div className="font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
@@ -188,8 +189,8 @@ Remember: You're not just selling products—you're curating experiences that ma
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                             : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
                         }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         <div className="text-2xl mb-1">{option.emoji}</div>
                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
@@ -213,8 +214,8 @@ Remember: You're not just selling products—you're curating experiences that ma
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                             : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
                         }`}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
                         <div className="font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
@@ -227,9 +228,9 @@ Remember: You're not just selling products—you're curating experiences that ma
                 <motion.button
                   onClick={handleQuickGenerate}
                   disabled={!selectedPersonality || !selectedTone || !selectedExpertise}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  whileHover={selectedPersonality && selectedTone && selectedExpertise ? { scale: 1.02 } : {}}
+                  whileTap={selectedPersonality && selectedTone && selectedExpertise ? { scale: 0.98 } : {}}
                 >
                   <Zap className="w-4 h-4" />
                   <span>Generate Custom Prompt</span>
@@ -313,7 +314,7 @@ Remember: You're not just selling products—you're curating experiences that ma
             </button>
             <motion.button
               onClick={handleSave}
-              className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 shadow-lg"
+              className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 shadow-lg transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
