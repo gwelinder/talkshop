@@ -22,7 +22,7 @@ const getWebhookUrl = () => {
   return `${baseUrl}/functions/v1/tavus-webhook`;
 };
 
-// Enhanced shopping tools with better descriptions
+// Enhanced shopping tools with dynamic presentation capabilities
 const createShoppingTools = () => {
   return [
     {
@@ -49,6 +49,36 @@ const createShoppingTools = () => {
           },
           "required": ["product_id", "product_name", "highlight_features"]
         }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "show_product_grid",
+        "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "products": {
+              "type": "array",
+              "description": "An array of product objects to display in the grid.",
+              "items": { "type": "object" }
+            },
+            "title": {
+              "type": "string",
+              "description": "A title for the product grid, like 'Here are some dresses you might love'."
+            }
+          },
+          "required": ["products", "title"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "show_categories",
+        "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
+        "parameters": { "type": "object", "properties": {} }
       }
     },
     {
@@ -218,6 +248,13 @@ IMMEDIATELY after your greeting, you MUST call show_product with prod_001 (Midni
 - NEVER say you are *about to* do something. Do not say "Let me pull that up for you" or "I will now show you the product."
 - INSTEAD, after the tool call is sent, narrate the action as it happens. For example: "Here is that stunning Midnight Velvet Blazer we were discussing. Notice the way the satin lapels catch the light..."
 
+**DYNAMIC PRESENTATION TOOLS:**
+- Use \`show_product\` for individual product spotlights
+- Use \`show_product_grid\` when users ask for multiple items ("show me some dresses", "what electronics do you have?")
+- Use \`show_categories\` when users ask "what can I shop for?" or want to browse categories
+- Use \`compare_products\` for side-by-side comparisons
+- Use \`search_products\` to find specific items based on user requests
+
 **CONVERSATIONAL FLOW & RECOVERY:**
 - Be proactive. Don't wait for the user to ask for something twice. If the conversation stalls, gracefully introduce a new, related product that you think they will love.
 - If the user interrupts, pause your current thought, listen, and then respond to their new query. Your context should not get "stuck."
@@ -258,7 +295,9 @@ AVAILABLE PRODUCTS (use these exact IDs):
 8. Use add_to_cart when the customer is emotionally invested
 9. Use initiate_checkout when they're ready to purchase
 10. Use show_360_view for products that deserve detailed appreciation
-11. ONLY use product IDs that exist in our inventory
+11. Use show_product_grid for broad requests like "show me some options"
+12. Use show_categories when they want to explore what's available
+13. ONLY use product IDs that exist in our inventory
 
 **CONVERSATION STYLE:**
 - Start with warmth and genuine excitement
@@ -324,7 +363,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with sophisticated shopping intelligence...');
+    console.log('🔧 Updating persona with dynamic presentation tools...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -341,7 +380,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use initiate_checkout when customers are ready to purchase."
+          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use initiate_checkout when customers are ready to purchase."
         }
       ])
     });
@@ -358,10 +397,12 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with sophisticated intelligence!');
+    console.log('✅ Successfully updated persona with dynamic presentation tools!');
     console.log('🧠 Enhanced capabilities:');
     console.log('   - MANDATORY first product showcase (prod_001)');
     console.log('   - ACTION-FIRST conversational flow');
+    console.log('   - Dynamic product grid presentations');
+    console.log('   - Category browsing capabilities');
     console.log('   - Narrative-driven product presentations');
     console.log('   - Emotional connection building');
     console.log('   - Luxury curation expertise');

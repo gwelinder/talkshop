@@ -76,6 +76,36 @@ const shoppingTools = [
   {
     "type": "function",
     "function": {
+      "name": "show_product_grid",
+      "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "description": "An array of product objects to display in the grid.",
+            "items": { "type": "object" }
+          },
+          "title": {
+            "type": "string",
+            "description": "A title for the product grid, like 'Here are some dresses you might love'."
+          }
+        },
+        "required": ["products", "title"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "show_categories",
+      "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
+      "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "compare_products",
       "description": "Show multiple products side-by-side for comparison when customer asks to compare items",
       "parameters": {
@@ -229,7 +259,7 @@ async function updatePersonaTools() {
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 Persona setup complete! Your AI agent now has shopping tools including checkout.');
+    console.log('🎉 Persona setup complete! Your AI agent now has dynamic presentation tools.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);
