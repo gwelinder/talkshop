@@ -23,6 +23,7 @@ interface Host {
   specialty: string;
   personality: string;
   image: string;
+  customPrompt?: string;
 }
 
 interface AIShoppingAssistantProps {
@@ -76,15 +77,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [showcaseGlow, setShowcaseGlow] = useState(false);
   const [rotation360, setRotation360] = useState(0);
   const [showDragHint, setShowDragHint] = useState(true);
-  const [isAwake, setIsAwake] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   
   // Magic Cart Animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
   
-  // New unified showcase state
+  // New unified showcase state - starts with host selection
   const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ 
     type: 'host-selection', 
     data: null 
@@ -464,7 +463,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     };
   }, [conversationUrl]);
 
-  const startConversation = async (initialMessage?: string) => {
+  const startConversation = async () => {
     if (!selectedHost) {
       console.error('No host selected');
       return;
@@ -474,10 +473,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     try {
       console.log('🎬 Starting enhanced AI shopping conversation with host:', selectedHost.name);
       
+      // Use custom prompt if available
       const session = await createEnhancedShoppingSession(
-        initialMessage || 'luxury shopping experience',
+        'luxury shopping experience',
         'Guest',
-        selectedHost.replicaId // Pass the selected host's replica ID
+        selectedHost.replicaId,
+        selectedHost.customPrompt // Pass custom prompt if available
       );
       
       console.log('✅ Enhanced AI session created:', session);
@@ -505,7 +506,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setReplicaState('connecting');
     setRemoteParticipants({});
     setShowcaseContent({ type: 'host-selection', data: null });
-    setIsAwake(false);
     setProactiveCartMessage(null);
     setSelectedHost(null);
     
@@ -553,34 +553,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Handle host selection
   const handleHostSelect = (host: Host) => {
     setSelectedHost(host);
-    setShowcaseContent({ type: 'initial', data: null });
-  };
-
-  // Handle wake up sequence
-  const handleWakeUp = () => {
-    setIsAwake(true);
-  };
-
-  // Handle user message
-  const handleUserMessage = (message: string) => {
-    if (!selectedHost) {
-      alert('Please select a host first');
-      return;
-    }
-
-    if (!isConnected) {
-      // Start conversation with the user's message
-      setPendingMessage(message);
-      startConversation(message);
-    } else {
-      // Send message to existing conversation
-      if (callRef.current) {
-        callRef.current.sendAppMessage({
-          type: 'conversation-user-message',
-          text: message
-        });
-      }
-    }
+    // Keep showing host selector until they start conversation
   };
 
   // Check if product is in cart
@@ -860,9 +833,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden h-full flex flex-col">
             <div 
               ref={videoContainerRef}
-              className={`relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300 ${
-                !isAwake ? 'backdrop-blur-xs opacity-75' : ''
-              }`}
+              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300"
             >
               {/* Remote participants video/audio */}
               {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
@@ -903,10 +874,31 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
                           {selectedHost 
-                            ? `${selectedHost.description}. Start a conversation below to begin.`
+                            ? `${selectedHost.description}. Click the button below to start your conversation.`
                             : 'Select your personal shopping curator to transform your shopping experience.'
                           }
                         </p>
+                        {selectedHost && (
+                          <motion.button
+                            onClick={startConversation}
+                            disabled={isConnecting}
+                            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {isConnecting ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                <span>Connecting to {selectedHost.name}...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-4 h-4" />
+                                <span>Start with {selectedHost.name}</span>
+                              </>
+                            )}
+                          </motion.button>
+                        )}
                       </>
                     ) : (
                       <>
@@ -1038,21 +1030,20 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         </div>
       </div>
 
-      {/* User Input - Always Visible at Bottom */}
-      <div className="flex-shrink-0 p-6 pt-0">
-        <UserInput 
-          onMessageSend={handleUserMessage}
-          onFocus={handleWakeUp}
-          disabled={isConnecting || !selectedHost}
-          placeholder={
-            !selectedHost 
-              ? "Please select a host above to begin..." 
-              : selectedHost 
-                ? `Tell ${selectedHost.name} what you're looking for...`
-                : "Describe a style, a mood, or an occasion..."
-          }
-        />
-      </div>
+      {/* User Input - Only show when host is selected and not connected */}
+      {selectedHost && !isConnected && (
+        <div className="flex-shrink-0 p-6 pt-0">
+          <UserInput 
+            onMessageSend={(message) => {
+              // Start conversation immediately when user sends a message
+              startConversation();
+            }}
+            onFocus={() => {}}
+            disabled={isConnecting}
+            placeholder={`Tell ${selectedHost.name} what you're looking for...`}
+          />
+        </div>
+      )}
     </div>
   );
 };

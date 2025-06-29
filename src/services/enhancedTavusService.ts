@@ -241,7 +241,8 @@ const createShoppingTools = () => {
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
   userName: string = 'Guest',
-  replicaId: string = "rb54819da0d5" // Default replica, can be overridden
+  replicaId: string = "rb54819da0d5", // Default replica, can be overridden
+  customPrompt?: string // Optional custom system prompt
 ) => {
   const apiKey = getTavusApiKey();
   
@@ -251,8 +252,8 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // ENHANCED CONVERSATIONAL CONTEXT WITH AMBIENT INTELLIGENCE
-  const conversationalContext = `You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
+  // Use custom prompt if provided, otherwise use default enhanced context
+  const conversationalContext = customPrompt || `You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
 
 *** YOUR GOLDEN RULE: ACTION-FIRST & CONTEXTUAL AWARENESS ***
 Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate the action. You NEVER say you're *about to* do something.
@@ -439,6 +440,7 @@ export const updatePersonaWithDynamicTools = async () => {
     console.log('   - Sophisticated conversation recovery');
     console.log('   - Checkout initiation capability');
     console.log('   - Multi-host support with different replica IDs');
+    console.log('   - Custom prompt support for personalized hosts');
     
     return { status: 'success', data: result };
   } catch (error) {

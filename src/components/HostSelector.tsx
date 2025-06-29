@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Sparkles, User, Settings, Wand2, ArrowRight, Edit3 } from 'lucide-react';
+import { Check, Sparkles, User, Settings, Wand2, ArrowRight, Edit3, Play } from 'lucide-react';
 import HostCustomizer from './HostCustomizer';
 
 interface Host {
@@ -17,10 +17,9 @@ interface Host {
 interface HostSelectorProps {
   onHostSelect: (host: Host) => void;
   selectedHost?: Host | null;
-  onStartConversation: () => void;
 }
 
-const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost, onStartConversation }) => {
+const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost }) => {
   const [hoveredHost, setHoveredHost] = useState<string | null>(null);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [customizingHost, setCustomizingHost] = useState<Host | null>(null);
@@ -230,7 +229,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost,
             })}
           </div>
 
-          {/* Selected Host Preview & CTA */}
+          {/* Selected Host Preview & Primary CTA */}
           {selectedHost && (
             <motion.div
               className="mt-auto"
@@ -239,9 +238,9 @@ const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost,
               transition={{ duration: 0.3 }}
             >
               <div className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-brand-200 dark:border-brand-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand-300 dark:border-brand-600 relative">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                  <div className="flex items-center space-x-4 flex-1">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-brand-300 dark:border-brand-600 relative flex-shrink-0">
                       <img
                         src={selectedHost.image}
                         alt={selectedHost.name}
@@ -253,15 +252,15 @@ const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost,
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
                         {selectedHost.name} is ready to assist you
                       </h4>
                       <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">
                         {selectedHost.description} • Specializes in {selectedHost.specialty.toLowerCase()}
                       </p>
-                      <div className="flex items-center space-x-2">
-                        <Sparkles className="w-4 h-4 text-brand-500" />
+                      <div className="flex items-center space-x-2 flex-wrap">
+                        <Sparkles className="w-4 h-4 text-brand-500 flex-shrink-0" />
                         <span className="text-brand-700 dark:text-brand-300 text-sm font-medium">
                           {selectedHost.personality}
                         </span>
@@ -274,16 +273,18 @@ const HostSelector: React.FC<HostSelectorProps> = ({ onHostSelect, selectedHost,
                     </div>
                   </div>
                   
-                  {/* Primary CTA */}
-                  <motion.button
-                    onClick={onStartConversation}
-                    className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center space-x-3 shadow-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  {/* Primary CTA - This is the main action button */}
+                  <motion.div
+                    className="flex-shrink-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <span>Start Shopping with {selectedHost.name}</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </motion.button>
+                    <div className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-8 py-4 rounded-xl font-bold text-lg flex items-center space-x-3 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500">
+                      <Play className="w-5 h-5" />
+                      <span>Start Shopping with {selectedHost.name}</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </div>
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
