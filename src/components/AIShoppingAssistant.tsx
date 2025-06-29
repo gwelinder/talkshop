@@ -467,10 +467,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     call.on('track-started', updateRemoteParticipants);
     call.on('track-stopped', updateRemoteParticipants);
 
-    // Handle app messages for tool calls
+    // Handle app messages for tool calls - REDUCED LOGGING
     call.on('app-message', (event: any) => {
-      console.log('📨 AI app message received:', event);
       const { data } = event;
+      
+      // Only log important messages, not every single one
+      if (data.event_type === 'conversation.tool_call' || data.type === 'conversation-toolcall') {
+        console.log('📨 AI tool call received:', data);
+      }
       
       // Parse the tool call properly
       const toolCall = parseToolCall(data);

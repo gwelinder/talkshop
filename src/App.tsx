@@ -131,6 +131,16 @@ function App() {
         console.log('🛒 Initiating checkout with items:', toolCall.function.arguments.cart_items);
         setCurrentView('checkout');
         break;
+        
+      case 'show_product_grid':
+        // Handle product grid display - this is now handled in AIShoppingAssistant
+        console.log('📋 Product grid requested:', toolCall.function.arguments);
+        break;
+        
+      case 'show_categories':
+        // Handle category display - this is now handled in AIShoppingAssistant
+        console.log('📂 Categories requested');
+        break;
     }
   }, [products, addToCart]);
 
