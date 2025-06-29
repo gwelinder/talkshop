@@ -23,6 +23,7 @@ interface ProductGridProps {
   title?: string;
   loading?: boolean;
   onProductHover?: (productId: string) => void;
+  focusedProductId?: string | null;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ 
@@ -30,7 +31,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   onJoinRoom, 
   title = "Products", 
   loading = false,
-  onProductHover 
+  onProductHover,
+  focusedProductId
 }) => {
   if (loading) {
     return (
@@ -56,16 +58,31 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           const productRating = product.rating || { rate: 4.5, count: 100 };
           const productViewers = product.viewers || Math.floor(Math.random() * 50) + 10;
           const productFeatures = product.features || ['High quality', 'Great value'];
+          const isFocused = focusedProductId === product.id;
           
           return (
             <motion.div 
               key={product.id}
               data-product-id={product.id}
-              className="group bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl overflow-hidden border border-white/20 dark:border-gray-700/20 hover:border-brand-300 dark:hover:border-brand-600 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-500/10"
+              className={`group bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl overflow-hidden border transition-all duration-500 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-500/10 ${
+                isFocused 
+                  ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl scale-105 z-10 ring-2 ring-brand-500 ring-opacity-50' 
+                  : 'border-white/20 dark:border-gray-700/20 hover:border-brand-300 dark:hover:border-brand-600'
+              }`}
               onMouseEnter={() => onProductHover?.(product.id)}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+                scale: isFocused ? 1.05 : 1,
+                zIndex: isFocused ? 10 : 1
+              }}
+              transition={{ 
+                delay: index * 0.1, 
+                duration: 0.5,
+                scale: { duration: 0.3 },
+                zIndex: { duration: 0 }
+              }}
               whileHover={{ y: -4 }}
             >
               {/* Product Image */}
@@ -87,6 +104,20 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   <Users className="w-3 h-3" />
                   <span>{productViewers}</span>
                 </div>
+
+                {/* Focus Indicator */}
+                {isFocused && (
+                  <motion.div
+                    className="absolute inset-0 bg-brand-500/20 flex items-center justify-center"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <div className="bg-brand-500 text-white px-4 py-2 rounded-full font-semibold text-sm shadow-lg">
+                      ✨ Featured Item
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Hover Overlay with Magic Button */}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -153,6 +184,13 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                       +{productFeatures.length - 2} more
                     </span>
                   )}
+                </div>
+
+                {/* Item Number for Voice Commands */}
+                <div className="mt-2 text-center">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                    Item {index + 1}
+                  </span>
                 </div>
               </div>
             </motion.div>

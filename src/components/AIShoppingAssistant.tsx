@@ -71,10 +71,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [showcaseGlow, setShowcaseGlow] = useState(false);
   const [rotation360, setRotation360] = useState(0);
   const [showDragHint, setShowDragHint] = useState(true);
+  const [focusedProductId, setFocusedProductId] = useState<string | null>(null);
   
   // Product display state with proper typing
   const [showcaseContent, setShowcaseContent] = useState<{
-    type: 'empty' | 'analyzing_style' | 'analyzing_object' | 'product_grid' | 'categories' | 'spotlight' | 'comparison';
+    type: 'empty' | 'product_grid' | 'categories' | 'spotlight' | 'comparison';
     data?: any;
   }>({ type: 'empty' });
   
@@ -143,6 +144,27 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       setShowDragHint(true);
     }
   }, [show360]);
+
+  // Two-step perception orchestration
+  useEffect(() => {
+    if (pendingStyleAnalysis) {
+      console.log('🎨 Step 2: Triggering find_products_for_style with:', pendingStyleAnalysis);
+      
+      // Simulate the LLM tool call that would happen after perception
+      const findProductsToolCall = {
+        function: {
+          name: 'find_products_for_style',
+          arguments: pendingStyleAnalysis
+        }
+      };
+      
+      // Process this as a regular tool call
+      setTimeout(() => {
+        handleToolCall(findProductsToolCall);
+        setPendingStyleAnalysis(null);
+      }, 1000);
+    }
+  }, [pendingStyleAnalysis]);
 
   // Enhanced tool call handler with proper state management
   const handleToolCall = useCallback(async (toolCall: any) => {
@@ -229,15 +251,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       return; // Don't forward to parent
     }
 
-    // Handle style analysis (perception tool) - STEP 1
-    if (toolCall.function.name === 'detect_user_style_attributes') {
-      console.log('🎨 Step 1: Style detection initiated:', toolCall.function.arguments);
-      setShowcaseContent({ type: 'analyzing_style' });
-      setPendingStyleAnalysis(toolCall.function.arguments);
-      return; // Don't forward to parent
-    }
-
-    // Handle style product finding (LLM tool) - STEP 2
+    // Handle style analysis - STEP 2: Find products for detected style
     if (toolCall.function.name === 'find_products_for_style') {
       console.log('🎨 Step 2: Finding products for style:', toolCall.function.arguments);
       const { dominant_color, style_category, detected_accessories } = toolCall.function.arguments;
@@ -270,7 +284,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     // Handle object analysis (perception tool)
     if (toolCall.function.name === 'analyze_object_in_view') {
       console.log('🔍 Processing object analysis:', toolCall.function.arguments);
-      setShowcaseContent({ type: 'analyzing_object' });
       setObjectAnalysisData(toolCall.function.arguments);
       
       // Auto-search for complementary products
@@ -288,6 +301,18 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           });
         }
       }
+      return; // Don't forward to parent
+    }
+
+    // Handle focus on product
+    if (toolCall.function.name === 'focus_on_product') {
+      console.log('🎯 Focusing on product:', toolCall.function.arguments);
+      setFocusedProductId(toolCall.function.arguments.product_id);
+      
+      // Clear focus after 5 seconds
+      setTimeout(() => {
+        setFocusedProductId(null);
+      }, 5000);
       return; // Don't forward to parent
     }
     
@@ -328,9 +353,17 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
       }
 
-      // Handle perception tool calls
+      // Handle perception tool calls - STEP 1: Style detection
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
+        
+        // For style detection, we need to trigger the second step
+        if (name === 'detect_user_style_attributes') {
+          console.log('🎨 Step 1: Style detection completed:', args);
+          // Store the analysis data to trigger step 2
+          setPendingStyleAnalysis(args);
+          return null; // Don't process as regular tool call
+        }
         
         return {
           function: {
@@ -535,6 +568,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setStyleAnalysisData(null);
     setObjectAnalysisData(null);
     setPendingStyleAnalysis(null);
+    setFocusedProductId(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -605,56 +639,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Render showcase content based on current state
   const renderShowcaseContent = () => {
     switch (showcaseContent.type) {
-      case 'analyzing_style':
-        return (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <motion.div
-              className="mb-6"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Brain className="w-16 h-16 text-purple-500" />
-            </motion.div>
-            <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Analyzing Your Style...
-            </h4>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {selectedHost?.name} is using AI vision to understand your personal style
-            </p>
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-700 max-w-md">
-              <div className="flex items-center space-x-2 text-purple-700 dark:text-purple-300 text-sm">
-                <Wand2 className="w-4 h-4" />
-                <span>Detecting colors, style, and accessories...</span>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'analyzing_object':
-        return (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <motion.div
-              className="mb-6"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Eye className="w-16 h-16 text-blue-500" />
-            </motion.div>
-            <h4 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Analyzing Object...
-            </h4>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              {selectedHost?.name} is identifying the object to find complementary products
-            </p>
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700 max-w-md">
-              <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300 text-sm">
-                <Search className="w-4 h-4" />
-                <span>Detecting color, category, and style...</span>
-              </div>
-            </div>
-          </div>
-        );
-
       case 'product_grid':
         return (
           <div className="animate-fade-in flex-1">
@@ -720,6 +704,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               products={showcaseContent.data.products}
               title={showcaseContent.data.title}
               onJoinRoom={(product) => addToCart(product.id, 1)}
+              focusedProductId={focusedProductId}
             />
           </div>
         );
