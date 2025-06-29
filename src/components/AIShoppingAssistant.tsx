@@ -81,7 +81,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   
   const [styleAnalysisData, setStyleAnalysisData] = useState<any>(null);
   const [objectAnalysisData, setObjectAnalysisData] = useState<any>(null);
-  const [pendingStyleAnalysis, setPendingStyleAnalysis] = useState<any>(null);
   
   // Daily.js state
   const callRef = useRef<any>(null);
@@ -144,27 +143,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       setShowDragHint(true);
     }
   }, [show360]);
-
-  // Two-step perception orchestration
-  useEffect(() => {
-    if (pendingStyleAnalysis) {
-      console.log('🎨 Step 2: Triggering find_products_for_style with:', pendingStyleAnalysis);
-      
-      // Simulate the LLM tool call that would happen after perception
-      const findProductsToolCall = {
-        function: {
-          name: 'find_products_for_style',
-          arguments: pendingStyleAnalysis
-        }
-      };
-      
-      // Process this as a regular tool call
-      setTimeout(() => {
-        handleToolCall(findProductsToolCall);
-        setPendingStyleAnalysis(null);
-      }, 1000);
-    }
-  }, [pendingStyleAnalysis]);
 
   // Enhanced tool call handler with proper state management
   const handleToolCall = useCallback(async (toolCall: any) => {
@@ -251,16 +229,15 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       return; // Don't forward to parent
     }
 
-    // Handle style analysis - STEP 2: Find products for detected style
-    if (toolCall.function.name === 'find_products_for_style') {
-      console.log('🎨 Step 2: Finding products for style:', toolCall.function.arguments);
-      const { dominant_color, style_category, detected_accessories } = toolCall.function.arguments;
+    // Handle the RESOLVER TOOL - find_and_display_style_matches
+    if (toolCall.function.name === 'find_and_display_style_matches') {
+      console.log('🎨 RESOLVER: Processing style matches:', toolCall.function.arguments);
+      const { dominant_color, style_category, curation_title } = toolCall.function.arguments;
       
       // Store the complete style analysis data
       setStyleAnalysisData({
         dominant_color,
-        style_category,
-        detected_accessories: detected_accessories || []
+        style_category
       });
       
       // Auto-search based on style analysis
@@ -273,7 +250,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             type: 'product_grid',
             data: {
               products: results,
-              title: `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
+              title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
             }
           });
         }
@@ -357,11 +334,25 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
         
-        // For style detection, we need to trigger the second step
+        // For style detection, we need to trigger the resolver tool
         if (name === 'detected_user_style') {
           console.log('🎨 Step 1: Style detection completed:', args);
-          // Store the analysis data to trigger step 2
-          setPendingStyleAnalysis(args);
+          
+          // Trigger the RESOLVER TOOL after a brief delay
+          setTimeout(() => {
+            const resolverToolCall = {
+              function: {
+                name: 'find_and_display_style_matches',
+                arguments: {
+                  dominant_color: args.dominant_color,
+                  style_category: args.style_category,
+                  curation_title: `Inspired by your ${args.style_category} ${args.dominant_color} style`
+                }
+              }
+            };
+            handleToolCall(resolverToolCall);
+          }, 1000);
+          
           return null; // Don't process as regular tool call
         }
         
@@ -378,7 +369,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       console.error('Error parsing tool call:', error);
       return null;
     }
-  }, []);
+  }, [handleToolCall]);
 
   // Update remote participants
   const updateRemoteParticipants = useCallback(() => {
@@ -528,7 +519,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     
     setIsConnecting(true);
     try {
-      console.log('🎬 Starting enhanced AI shopping conversation with host:', selectedHost.name);
+      console.log('🎬 Starting state-aware AI shopping conversation with host:', selectedHost.name);
       
       const session = await createEnhancedShoppingSession(
         'luxury shopping experience',
@@ -538,7 +529,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         showcaseContent.type // Pass current UI state
       );
       
-      console.log('✅ Enhanced AI session created:', session);
+      console.log('✅ State-aware AI session created:', session);
       setConversationUrl(session.conversation_url);
       
     } catch (error) {
@@ -567,7 +558,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setShowcaseContent({ type: 'empty' });
     setStyleAnalysisData(null);
     setObjectAnalysisData(null);
-    setPendingStyleAnalysis(null);
     setFocusedProductId(null);
     
     if (cartSuccessTimer) {
@@ -662,12 +652,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     <span className="text-purple-700 dark:text-purple-300 font-medium">Style:</span>
                     <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.style_category || 'Not detected'}</p>
                   </div>
-                  {styleAnalysisData.detected_accessories && styleAnalysisData.detected_accessories.length > 0 && (
-                    <div>
-                      <span className="text-purple-700 dark:text-purple-300 font-medium">Accessories:</span>
-                      <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.detected_accessories.join(', ')}</p>
-                    </div>
-                  )}
                 </div>
               </motion.div>
             )}

@@ -127,26 +127,25 @@ const shoppingTools = [
   {
     "type": "function",
     "function": {
-      "name": "find_products_for_style",
-      "description": "Search for products based on detected style attributes from perception analysis. This is the second step after style detection.",
+      "name": "find_and_display_style_matches",
+      "description": "Takes style attributes as input, searches for matching products, and displays them in a grid. This is the second and final step of the style analysis flow.",
       "parameters": {
         "type": "object",
         "properties": {
-          "dominant_color": {
+          "dominant_color": { 
             "type": "string",
-            "description": "The dominant color detected from style analysis"
+            "description": "The dominant color from style analysis"
           },
-          "style_category": {
+          "style_category": { 
             "type": "string",
-            "description": "The style category detected from analysis"
+            "description": "The style category from analysis"
           },
-          "detected_accessories": {
-            "type": "array",
-            "description": "Any accessories detected",
-            "items": { "type": "string" }
+          "curation_title": { 
+            "type": "string", 
+            "description": "A creative title for the product grid, like 'Inspired by your Classic Blue Style'." 
           }
         },
-        "required": ["dominant_color", "style_category"]
+        "required": ["dominant_color", "style_category", "curation_title"]
       }
     }
   },
@@ -314,7 +313,7 @@ async function updatePersonaTools() {
   }
 
   try {
-    console.log('🔧 Updating persona with master perception layer and state-aware brain...');
+    console.log('🔧 Updating persona with FINAL perception architecture...');
     console.log(`   Persona ID: ${PERSONA_ID}`);
     console.log(`   API Key: ${TAVUS_API_KEY.slice(0, 8)}...`);
     
@@ -398,7 +397,7 @@ async function updatePersonaTools() {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are a world-renowned AI curator for TalkShop with master perception capabilities and state awareness. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY - TWO-STEP PROCESS: 1) When users ask to 'shop my style', the system handles perception automatically. 2) You'll receive find_products_for_style tool call with results. 3) Finally display with show_product_grid. INTERRUPTION HANDLING: If UI state is 'analyzing_style' and user says 'nevermind' or requests something else, immediately abandon analysis flow and fulfill their new request. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Use focus_on_product when users show interest in specific grid items. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
+          "value": "You are a state-aware AI curator for TalkShop with master perception capabilities. Your actions are governed by user intent and the CURRENT_UI_STATE. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. STATE AWARENESS: If CURRENT_UI_STATE is 'analyzing_style', you MUST wait. Do not act. INTERRUPTIBILITY: If the user interrupts you during 'analyzing_style', your immediate priority is to abandon the analysis and fulfill their new request (e.g., call show_categories). PERCEPTION FLOW: This is a strict two-step process. 1) USER ASKS: 'Shop my style.' 2) YOU RESPOND & WAIT: Simply say, 'Of course. Let me take a look at your style...' The system will automatically trigger the detected_user_style perception tool. 3) YOU RECEIVE & ACT: You will receive a new conversational turn with a find_and_display_style_matches tool call containing the results. Your ONLY job here is to execute that tool call to search for products and then call show_product_grid to display them. INTERACTIVE GRID FLOW: When a grid is displayed, listen for user requests like 'tell me about item three.' Use the focus_on_product tool to highlight the corresponding item visually. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
@@ -415,17 +414,18 @@ async function updatePersonaTools() {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with state-aware perception layer!');
-    console.log('🧠 Enhanced capabilities:');
+    console.log('✅ Successfully updated persona with FINAL perception architecture!');
+    console.log('🧠 FINAL Enhanced capabilities:');
     console.log('   - 🔍 MASTER PERCEPTION LAYER: raven-0 vision model activated');
     console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
-    console.log('   - 🎨 TWO-STEP STYLE ANALYSIS: detected_user_style → find_products_for_style');
+    console.log('   - 🎨 TWO-STEP STYLE ANALYSIS: detected_user_style → find_and_display_style_matches');
     console.log('   - 🛍️ OBJECT RECOGNITION: analyze_object_in_view perception tool');
     console.log('   - 🔄 STATE AWARENESS: UI state injection for contextual responses');
     console.log('   - 🚫 INTERRUPTION HANDLING: Graceful conversation pivots');
     console.log('   - 📦 REAL-WORLD INTERACTION: Object-based product recommendations');
     console.log('   - 💬 PROPER GREETING: Ask about preferences instead of immediate product showcase');
     console.log('   - 🎯 INTERACTIVE GRID: focus_on_product for voice-driven product selection');
+    console.log('   - 🔧 RESOLVER TOOL: find_and_display_style_matches for seamless style flow');
     console.log('   - ACTION-FIRST conversational flow');
     console.log('   - Dynamic product grid presentations');
     console.log('   - Category browsing capabilities');
@@ -449,7 +449,7 @@ async function updatePersonaTools() {
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 Persona setup complete! Your AI agent now has state-aware perception capabilities.');
+    console.log('🎉 FINAL Persona setup complete! Your AI agent now has state-aware perception capabilities with resolver tool.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);
