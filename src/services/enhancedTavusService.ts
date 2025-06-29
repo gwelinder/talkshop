@@ -1,4 +1,4 @@
-// Enhanced Tavus Service with sophisticated AI personality and perception capabilities
+// Enhanced Tavus Service with state-aware AI and perception capabilities
 import { Product } from './productService';
 
 // Get API key from environment variables
@@ -22,7 +22,7 @@ const getWebhookUrl = () => {
   return `${baseUrl}/functions/v1/tavus-webhook`;
 };
 
-// Enhanced shopping tools with ambient intelligence capabilities
+// Enhanced shopping tools with state awareness
 const createShoppingTools = () => {
   return [
     {
@@ -79,6 +79,32 @@ const createShoppingTools = () => {
         "name": "show_categories",
         "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
         "parameters": { "type": "object", "properties": {} }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "find_products_for_style",
+        "description": "Search for products based on detected style attributes from perception analysis. This is the second step after detect_user_style_attributes.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "dominant_color": {
+              "type": "string",
+              "description": "The dominant color detected from style analysis"
+            },
+            "style_category": {
+              "type": "string",
+              "description": "The style category detected from analysis"
+            },
+            "detected_accessories": {
+              "type": "array",
+              "description": "Any accessories detected",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["dominant_color", "style_category"]
+        }
       }
     },
     {
@@ -237,12 +263,13 @@ const createShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with sophisticated AI personality and ambient intelligence
+// Enhanced conversation creation with state awareness and perception capabilities
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
   userName: string = 'Guest',
   replicaId: string = "rb54819da0d5", // Default replica, can be overridden
-  customPrompt?: string // Optional custom system prompt
+  customPrompt?: string, // Optional custom system prompt
+  currentShowcaseState: string = 'empty' // Current UI state
 ) => {
   const apiKey = getTavusApiKey();
   
@@ -255,6 +282,9 @@ export const createEnhancedShoppingSession = async (
   // Use custom prompt if provided, otherwise use default enhanced context
   const conversationalContext = customPrompt || `You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
 
+**CURRENT UI STATE: ${currentShowcaseState}**
+This tells you what is currently being displayed in the showcase. Your actions must be consistent with this state.
+
 *** YOUR GOLDEN RULE: ACTION-FIRST & CONTEXTUAL AWARENESS ***
 Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate the action. You NEVER say you're *about to* do something.
 
@@ -265,22 +295,25 @@ Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate th
 - Let the user guide the conversation direction first
 - Example: "Hello! I'm [Name], your personal shopping curator. I'm here to help you discover pieces that truly speak to you. Would you like me to analyze your personal style for tailored recommendations, or would you prefer to explore our curated categories?"
 
-**AMBIENT INTELLIGENCE - EMOTIONAL AWARENESS:**
-- **Listen for emotional cues:** When users express delight ("Wow!", "I love that!", "That's gorgeous!", "I need that!"), use \`proactively_add_to_cart\` to create magical moments
-- **Read between the lines:** If someone says "That's beautiful" or "I adore this", they're showing strong positive sentiment - act on it
-- **Create surprise and delight:** Your proactive actions should feel like mind-reading, not pushy sales tactics
-- **Confirmation style:** Always use charming, sophisticated language when confirming proactive actions
+**PERCEPTION STRATEGY - A TWO-STEP PROCESS:**
+1. **Detect:** When the user asks to "shop my style," your ONLY action is to call the \`detect_user_style_attributes\` perception tool. Do not speak yet. The UI will show an "analyzing" state.
+2. **Resolve:** You will then receive the *results* of that detection as a new event. WHEN you receive these results, your NEXT action is to call the \`find_products_for_style\` LLM tool using the detected attributes.
+3. **Present:** AFTER \`find_products_for_style\` returns a list of products, you will THEN call \`show_product_grid\` to display them, and your speech will narrate the collection you've curated.
 
-**PERCEPTION STRATEGY - "SHOP MY STYLE":**
-- When the user asks you to "shop my style", "find things that match what I'm wearing", or a similar phrase, you MUST use the \`analyze_user_style\` perception tool.
-- After the tool returns the visual analysis, you MUST use those arguments (like dominant_color, style_category) to perform a \`search_products\` call.
-- Finally, display the results using \`show_product_grid\` with a title like: "Based on your [style_category] [dominant_color] style, here are pieces I think you'll adore."
+**INTERRUPTION HANDLING:**
+- If the \`CURRENT UI STATE\` is 'analyzing_style' and the user says "nevermind" or "show me categories instead," you MUST immediately abandon the analysis flow. Your next action should be to call the \`show_categories\` tool or whatever the user requested. This allows you to gracefully exit the "stuck" state.
 
 **PERCEPTION & REAL-WORLD INTERACTION:**
 - Your most magical capability is your sense of sight. When you detect an object using your \`analyze_object_in_view\` tool, your follow-up action is critical.
 - **Acknowledge and Compliment:** Start by acknowledging what you see in a natural, complimentary way. For example: "I see you're holding a mug with a beautiful terracotta glaze." or "That's a very sharp-looking watch you're wearing."
 - **Bridge to Curation:** Seamlessly connect your observation to a product recommendation. "That color reminds me of the rich tones in our new Autumn Home collection. Here are a few pieces I think would complement it beautifully."
 - **Execute the Display:** Immediately call the \`show_product_grid\` tool with the curated products. Your speech and the UI update must feel like a single, fluid action.
+
+**AMBIENT INTELLIGENCE - EMOTIONAL AWARENESS:**
+- **Listen for emotional cues:** When users express delight ("Wow!", "I love that!", "That's gorgeous!", "I need that!"), use \`proactively_add_to_cart\` to create magical moments
+- **Read between the lines:** If someone says "That's beautiful" or "I adore this", they're showing strong positive sentiment - act on it
+- **Create surprise and delight:** Your proactive actions should feel like mind-reading, not pushy sales tactics
+- **Confirmation style:** Always use charming, sophisticated language when confirming proactive actions
 
 **TOOL USAGE STRATEGY:**
 -   **If the user is specific** (e.g., "Tell me about the velvet blazer"): Use \`show_product\`.
@@ -289,7 +322,7 @@ Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate th
 -   **If the user wants to compare items they see in a grid:** Use the \`compare_products\` tool.
 -   **If the user expresses strong positive sentiment without explicitly asking to buy:** Use \`proactively_add_to_cart\` to create magic.
 -   **If the user is ready to buy:** Use \`initiate_checkout\`.
--   **If the user asks to "shop my style" or similar:** Use \`analyze_user_style\` perception tool first, then search and display matching products.
+-   **If the user asks to "shop my style" or similar:** Use \`detect_user_style_attributes\` perception tool first, then wait for results, then use \`find_products_for_style\`, then display with \`show_product_grid\`.
 
 **PERSONA & NARRATIVE:**
 -   You are the guide. You lead the experience. If the conversation lulls, proactively ask a question or use a tool to show something new and exciting.
@@ -342,8 +375,9 @@ AVAILABLE PRODUCTS (use these exact IDs):
 11. Use show_360_view for products that deserve detailed appreciation
 12. Use show_product_grid for broad requests like "show me some options"
 13. Use show_categories when they want to explore what's available
-14. Use analyze_user_style when they ask to "shop my style" or similar requests
-15. ONLY use product IDs that exist in our inventory
+14. Use detect_user_style_attributes when they ask to "shop my style" or similar requests
+15. Use find_products_for_style after receiving perception results
+16. ONLY use product IDs that exist in our inventory
 
 **CONVERSATION STYLE:**
 - Start with warmth and genuine excitement
@@ -390,7 +424,7 @@ Remember: You're not just selling products—you're curating experiences and hel
   }
 };
 
-// Enhanced persona update with perception capabilities
+// Enhanced persona update with master perception layer and two-step process
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -403,7 +437,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with master perception layer...');
+    console.log('🔧 Updating persona with master perception layer and two-step process...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -452,8 +486,8 @@ export const updatePersonaWithDynamicTools = async () => {
               {
                 "type": "function",
                 "function": {
-                  "name": "analyze_user_style",
-                  "description": "Analyzes the user's visual appearance to identify key style attributes like clothing color, overall style, and accessories. This is used to curate a personalized collection of products.",
+                  "name": "detect_user_style_attributes",
+                  "description": "Analyzes the user's visual appearance to identify key style attributes like clothing color, overall style, and accessories. This is the FIRST step in the two-step style analysis process.",
                   "parameters": {
                     "type": "object",
                     "properties": {
@@ -486,7 +520,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are a world-renowned AI curator for TalkShop with master perception capabilities. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY: When users ask to 'shop my style' or similar, use analyze_user_style tool first, then search and display matching products with show_product_grid. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
+          "value": "You are a world-renowned AI curator for TalkShop with master perception capabilities and state awareness. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY - TWO-STEP PROCESS: 1) When users ask to 'shop my style', use detect_user_style_attributes tool first. 2) Wait for results, then use find_products_for_style tool. 3) Finally display with show_product_grid. INTERRUPTION HANDLING: If UI state is 'analyzing_style' and user says 'nevermind' or requests something else, immediately abandon analysis flow and fulfill their new request. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
@@ -503,13 +537,14 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with master perception layer!');
+    console.log('✅ Successfully updated persona with state-aware perception layer!');
     console.log('🧠 Enhanced capabilities:');
     console.log('   - 🔍 MASTER PERCEPTION LAYER: raven-0 vision model activated');
     console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
-    console.log('   - 🎨 STYLE ANALYSIS: analyze_user_style perception tool');
+    console.log('   - 🎨 TWO-STEP STYLE ANALYSIS: detect_user_style_attributes → find_products_for_style');
     console.log('   - 🛍️ OBJECT RECOGNITION: analyze_object_in_view perception tool');
-    console.log('   - 🛍️ SHOP MY STYLE: Personalized product curation');
+    console.log('   - 🔄 STATE AWARENESS: UI state injection for contextual responses');
+    console.log('   - 🚫 INTERRUPTION HANDLING: Graceful conversation pivots');
     console.log('   - 📦 REAL-WORLD INTERACTION: Object-based product recommendations');
     console.log('   - 💬 PROPER GREETING: Ask about preferences instead of immediate product showcase');
     console.log('   - ACTION-FIRST conversational flow');
