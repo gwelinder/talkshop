@@ -42,17 +42,6 @@ const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettin
             </span>
           </div>
 
-          {/* Search Bar - Moved to header */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search products, brands, or ask AI..."
-                className="w-full bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border border-gray-300/50 dark:border-gray-600/50 rounded-lg py-3 pl-10 pr-4 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200"
-              />
-            </div>
-          </div>
 
           {/* Actions */}
           <div className="flex items-center space-x-3">
