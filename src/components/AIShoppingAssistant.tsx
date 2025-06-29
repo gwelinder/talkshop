@@ -982,14 +982,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   }
                 </span>
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                {showcaseContent.type === 'host-selection'
-                  ? 'Choose your personal shopping curator to begin your luxury experience'
-                  : selectedHost
-                    ? `${selectedHost.name} curates and presents products with sophisticated storytelling and expert insights`
-                    : 'AI curates and presents products with sophisticated storytelling and expert insights'
-                }
-              </p>
             </div>
             
             <div className="p-4 lg:p-6 flex-1 min-h-0 overflow-y-auto">
