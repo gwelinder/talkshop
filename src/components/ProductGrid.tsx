@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star, Users, Zap, ShoppingCart } from 'lucide-react';
+import { motion } from 'framer-motion';
 import ProductSkeleton from './ProductSkeleton';
 
 interface Product {
@@ -48,7 +49,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
     <section className="mb-16">
       <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-12 text-center">{title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {products.map((product) => {
+        {products.map((product, index) => {
           // Safely handle product data with fallbacks
           const productName = product.name || product.title || 'Product';
           const productImage = product.thumbnail || product.image || 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400';
@@ -57,10 +58,15 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           const productFeatures = product.features || ['High quality', 'Great value'];
           
           return (
-            <div 
+            <motion.div 
               key={product.id}
+              data-product-id={product.id}
               className="group bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl overflow-hidden border border-white/20 dark:border-gray-700/20 hover:border-brand-300 dark:hover:border-brand-600 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-500/10"
               onMouseEnter={() => onProductHover?.(product.id)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+              whileHover={{ y: -4 }}
             >
               {/* Product Image */}
               <div className="relative aspect-square overflow-hidden">
@@ -82,16 +88,21 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   <span>{productViewers}</span>
                 </div>
 
-                {/* Hover Overlay */}
+                {/* Hover Overlay with Magic Button */}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <button 
+                  <motion.button 
                     onClick={() => onJoinRoom(product)}
-                    className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-400"
+                    className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
                     aria-label={`Quick add ${productName} to cart`}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <ShoppingCart className="w-4 h-4" />
                     <span>Quick Add</span>
-                  </button>
+                  </motion.button>
                 </div>
               </div>
 
@@ -144,7 +155,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

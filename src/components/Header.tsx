@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Settings, User, Search, Bell, Moon, Sun } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface HeaderProps {
   cartItemCount: number;
   onShowCart: () => void;
   onShowSettings: () => void;
+  cartJiggle?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettings }) => {
+const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettings, cartJiggle = false }) => {
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-theme') === 'dark'
   );
@@ -89,19 +91,54 @@ const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettin
               <User className="w-5 h-5" />
             </button>
 
-            {/* Cart */}
-            <button 
+            {/* Magic Cart with Enhanced Animations */}
+            <motion.button 
               onClick={onShowCart}
+              data-cart-icon
               className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-all duration-200 rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-brand-500 hover:scale-105"
               aria-label={`Shopping cart with ${cartItemCount} items`}
+              animate={cartJiggle ? {
+                rotate: [0, -10, 10, -10, 10, 0],
+                scale: [1, 1.1, 1]
+              } : {}}
+              transition={{
+                duration: 0.6,
+                ease: "easeInOut"
+              }}
             >
-              <ShoppingBag className="w-5 h-5" />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-scale-in">
-                  {cartItemCount}
-                </span>
+              {/* Magical Glow Effect */}
+              {cartJiggle && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-brand-400 to-purple-400 rounded-lg opacity-30 blur-sm"
+                  animate={{
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.6, 0.3]
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    ease: "easeInOut"
+                  }}
+                />
               )}
-            </button>
+              
+              <ShoppingBag className="w-5 h-5 relative z-10" />
+              
+              {cartItemCount > 0 && (
+                <motion.span 
+                  className="absolute -top-1 -right-1 bg-brand-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 500, 
+                    damping: 30 
+                  }}
+                  key={cartItemCount} // Re-animate when count changes
+                >
+                  {cartItemCount}
+                </motion.span>
+              )}
+            </motion.button>
           </div>
         </div>
       </div>

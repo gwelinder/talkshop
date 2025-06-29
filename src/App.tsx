@@ -18,6 +18,7 @@ function App() {
   const [comparisonProducts, setComparisonProducts] = useState([]);
   const [activeOffer, setActiveOffer] = useState(null);
   const [show360, setShow360] = useState(false);
+  const [cartJiggle, setCartJiggle] = useState(false);
 
   // Use the optimized products hook
   const { products, categories, loading, error, getFeatured, prefetchProduct } = useProducts();
@@ -52,6 +53,12 @@ function App() {
       });
     }
   }, [products]);
+
+  // Cart jiggle handler
+  const handleCartJiggle = useCallback(() => {
+    setCartJiggle(true);
+    setTimeout(() => setCartJiggle(false), 600);
+  }, []);
 
   // Enhanced tool call handler with proactive cart support
   const handleToolCall = useCallback(async (toolCall) => {
@@ -158,6 +165,7 @@ function App() {
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onShowCart={() => setCurrentView('cart')}
         onShowSettings={() => setShowEnvSetup(true)}
+        cartJiggle={cartJiggle}
       />
 
       {currentView === 'home' && (
@@ -175,6 +183,7 @@ function App() {
                 show360={show360}
                 onShow360Change={setShow360}
                 cartItems={cartItems}
+                onCartJiggle={handleCartJiggle}
               />
             </div>
           </div>

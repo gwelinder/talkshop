@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CreditCard, Lock, CheckCircle, Sparkles, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CartItem {
   id: string;
@@ -53,7 +54,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
     // Auto-close after success animation
     setTimeout(() => {
       onClose();
-    }, 2000);
+    }, 3000);
   };
 
   // Prevent body scroll when modal is open
@@ -67,27 +68,109 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
   if (isSuccess) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full mx-4 text-center animate-scale-in">
-          <div className="w-16 h-16 bg-green-500 rounded-full mx-auto mb-4 flex items-center justify-center animate-bounce">
-            <CheckCircle className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+        <motion.div 
+          className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full mx-4 text-center"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          {/* Animated Checkmark */}
+          <motion.div 
+            className="w-20 h-20 bg-green-500 rounded-full mx-auto mb-6 flex items-center justify-center relative overflow-hidden"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 400, damping: 25 }}
+          >
+            {/* Checkmark Drawing Animation */}
+            <motion.svg
+              className="w-10 h-10 text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <motion.path
+                d="M20 6L9 17l-5-5"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ delay: 0.5, duration: 0.8, ease: "easeInOut" }}
+              />
+            </motion.svg>
+            
+            {/* Ripple Effect */}
+            <motion.div
+              className="absolute inset-0 bg-green-400 rounded-full"
+              initial={{ scale: 1, opacity: 0.6 }}
+              animate={{ scale: 2, opacity: 0 }}
+              transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
+            />
+          </motion.div>
+
+          {/* Success Text with Staggered Animation */}
+          <motion.h2 
+            className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+          >
             Payment Successful!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+          </motion.h2>
+          
+          <motion.p 
+            className="text-gray-600 dark:text-gray-300 mb-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1, duration: 0.5 }}
+          >
             Thank you for your purchase. Your order is being processed.
-          </p>
-          <div className="text-3xl font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">
+          </motion.p>
+          
+          <motion.div 
+            className="text-3xl font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 1.2, duration: 0.5, type: "spring", stiffness: 300 }}
+          >
             ${total.toFixed(2)}
-          </div>
-        </div>
+          </motion.div>
+
+          {/* Floating Sparkles */}
+          {[...Array(6)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-brand-400 rounded-full"
+              style={{
+                left: `${20 + Math.random() * 60}%`,
+                top: `${20 + Math.random() * 60}%`,
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ 
+                scale: [0, 1, 0],
+                opacity: [0, 1, 0],
+                y: [0, -20, -40]
+              }}
+              transition={{
+                delay: 1.5 + i * 0.1,
+                duration: 2,
+                ease: "easeOut"
+              }}
+            />
+          ))}
+        </motion.div>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden animate-scale-in">
+      <motion.div 
+        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden"
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-brand-500 to-brand-600 p-6 text-white relative">
           <button
@@ -119,7 +202,13 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
             {/* Cart Items */}
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4 bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200/50 dark:border-gray-700/50">
+                <motion.div 
+                  key={item.id} 
+                  className="flex items-center space-x-4 bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200/50 dark:border-gray-700/50"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <img
                     src={item.thumbnail || item.image}
                     alt={item.title || item.name}
@@ -138,7 +227,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
@@ -314,24 +403,42 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
                 </div>
               </div>
 
-              {/* Pay Button */}
-              <button
+              {/* Magic Pay Button */}
+              <motion.button
                 type="submit"
                 disabled={isProcessing}
-                className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg"
+                className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white py-4 rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                whileHover={!isProcessing ? { scale: 1.02 } : {}}
+                whileTap={!isProcessing ? { scale: 0.98 } : {}}
               >
-                {isProcessing ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Processing Payment...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Lock className="w-5 h-5" />
-                    <span>Pay ${total.toFixed(2)}</span>
-                  </div>
-                )}
-              </button>
+                <AnimatePresence mode="wait">
+                  {isProcessing ? (
+                    <motion.div 
+                      className="flex items-center justify-center space-x-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <motion.div 
+                        className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                      <span>Processing Payment...</span>
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      className="flex items-center justify-center space-x-2"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <Lock className="w-5 h-5" />
+                      <span>Pay ${total.toFixed(2)}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
 
               {/* Trust Indicators */}
               <div className="text-center text-sm text-gray-500 dark:text-gray-400">
@@ -345,7 +452,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClose }) => {
             </form>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

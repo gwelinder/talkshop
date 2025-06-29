@@ -3,12 +3,15 @@ import {
   Mic, MicOff, Volume2, VolumeX, ShoppingCart, Eye, Heart, 
   RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star, Check 
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { createEnhancedShoppingSession, updatePersonaWithDynamicTools } from '../services/enhancedTavusService';
 import { searchProducts, getProductById } from '../services/productService';
 import AriaStatus from './AriaStatus';
 import CategoryGridDisplay from './CategoryGridDisplay';
 import ProductGrid from './ProductGrid';
 import UserInput from './UserInput';
+import MagicCartAnimation from './MagicCartAnimation';
+import { useMagicCart } from '../hooks/useMagicCart';
 import DailyIframe from '@daily-co/daily-js';
 
 interface AIShoppingAssistantProps {
@@ -20,7 +23,8 @@ interface AIShoppingAssistantProps {
   activeOffer: any;
   show360: string | false;
   onShow360Change: (productId: string | false) => void;
-  cartItems?: any[]; // Add cart items to check if product is already in cart
+  cartItems?: any[];
+  onCartJiggle?: () => void; // New prop to trigger cart jiggle
 }
 
 interface ShowcaseContent {
@@ -45,7 +49,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   activeOffer,
   show360,
   onShow360Change,
-  cartItems = []
+  cartItems = [],
+  onCartJiggle
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -63,6 +68,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [isAwake, setIsAwake] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
+  
+  // Magic Cart Animation
+  const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
   
   // New unified showcase state
   const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ type: 'initial', data: null });
@@ -134,6 +142,29 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         }
       });
     }
+  };
+
+  // Enhanced magic cart handler
+  const handleMagicAddToCart = (productId: string, quantity: number, sourceElement?: HTMLElement) => {
+    // Find the product for the animation
+    const product = allProducts.find(p => p.id === productId) || showcaseContent.data;
+    
+    if (product && sourceElement) {
+      // Trigger magic cart animation
+      triggerMagicCart(
+        product.image || product.thumbnail,
+        product.title || product.name,
+        sourceElement
+      );
+      
+      // Trigger cart jiggle in header
+      if (onCartJiggle) {
+        setTimeout(() => onCartJiggle(), 800); // Delay to sync with animation
+      }
+    }
+    
+    // Add to cart
+    addToCart(productId, quantity);
   };
 
   // Enhanced tool call handler with ambient intelligence support
@@ -563,6 +594,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       src={product.image || product.thumbnail} 
                       alt={product.title || product.name}
                       className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                      id="showcase-product-image"
                     />
                     <button
                       onClick={() => onShow360Change(product.id)}
@@ -612,22 +644,27 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
                     <div className="space-y-2">
                       {product.highlightFeatures.map((feature: string, idx: number) => (
-                        <div 
+                        <motion.div 
                           key={idx} 
-                          className="flex items-center space-x-2 animate-fade-in" 
-                          style={{animationDelay: `${idx * 0.1}s`}}
+                          className="flex items-center space-x-2" 
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.1 }}
                         >
                           <span className="text-brand-500">✨</span>
                           <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                        </div>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Contextual Add to Cart Button */}
-                <button 
-                  onClick={() => addToCart(product.id, 1)}
+                {/* Magic Add to Cart Button */}
+                <motion.button 
+                  onClick={(e) => {
+                    const sourceElement = e.currentTarget;
+                    handleMagicAddToCart(product.id, 1, sourceElement);
+                  }}
                   className={`w-full py-4 rounded-lg font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg ${
                     productInCart
                       ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 cursor-default'
@@ -637,6 +674,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   }`}
                   disabled={productInCart && !cartAnimation}
                   aria-label={`${productInCart ? 'Already in cart' : 'Add to cart'}: ${product.title || product.name}`}
+                  whileHover={!productInCart ? { scale: 1.02 } : {}}
+                  whileTap={!productInCart ? { scale: 0.98 } : {}}
                 >
                   {productInCart ? (
                     <div className="flex items-center justify-center space-x-2">
@@ -654,11 +693,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       <span>Add to Cart</span>
                     </div>
                   )}
-                </button>
+                </motion.button>
 
                 {/* Proactive Cart Message */}
                 {proactiveCartMessage && (
-                  <div className="mt-4 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 rounded-lg p-4 animate-fade-in">
+                  <motion.div 
+                    className="mt-4 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 rounded-lg p-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                  >
                     <div className="flex items-start space-x-3">
                       <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <Sparkles className="w-4 h-4 text-white" />
@@ -668,7 +712,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         <p className="text-brand-700 dark:text-brand-300 text-sm italic mt-1">"{proactiveCartMessage}"</p>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
@@ -689,8 +733,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
                     <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
                     <p className="text-brand-600 font-bold mb-3">${item.price}</p>
-                    <button 
-                      onClick={() => addToCart(item.id, 1)}
+                    <motion.button 
+                      onClick={(e) => {
+                        if (!itemInCart) {
+                          handleMagicAddToCart(item.id, 1, e.currentTarget);
+                        }
+                      }}
                       disabled={itemInCart}
                       className={`w-full py-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                         itemInCart
@@ -698,9 +746,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                           : 'bg-brand-500 text-white hover:bg-brand-600'
                       }`}
                       aria-label={`${itemInCart ? 'Already in cart' : 'Add to cart'}: ${item.title || item.name}`}
+                      whileHover={!itemInCart ? { scale: 1.02 } : {}}
+                      whileTap={!itemInCart ? { scale: 0.98 } : {}}
                     >
                       {itemInCart ? '✓ Added' : 'Add to Cart'}
-                    </button>
+                    </motion.button>
                   </div>
                 );
               })}
@@ -714,7 +764,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <ProductGrid 
               products={showcaseContent.data.products}
               title={showcaseContent.data.title}
-              onJoinRoom={() => {}}
+              onJoinRoom={(product) => {
+                // Handle quick add with magic animation
+                const productElement = document.querySelector(`[data-product-id="${product.id}"]`) as HTMLElement;
+                if (productElement) {
+                  handleMagicAddToCart(product.id, 1, productElement);
+                }
+              }}
               onProductHover={() => {}}
             />
           </div>
@@ -738,6 +794,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
   return (
     <div className="flex flex-col items-center space-y-12">
+      {/* Magic Cart Animation Overlay */}
+      <MagicCartAnimation
+        isActive={animationState.isActive}
+        productImage={animationState.productImage}
+        productName={animationState.productName}
+        startPosition={animationState.startPosition}
+        endPosition={animationState.endPosition}
+        onComplete={completeMagicCart}
+      />
+
       {/* AI Video Section - Centered and Prominent with Wake Up Effect */}
       <div className="w-full max-w-md">
         <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
