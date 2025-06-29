@@ -110,7 +110,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
       
       // If user just signed in and we have a pending host, proceed
       if (user && pendingHost) {
-        handleHostSelection(pendingHost);
+        onHostSelect(pendingHost);
         setPendingHost(null);
       }
     });
@@ -118,7 +118,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
     return () => {
       subscription?.unsubscribe();
     };
-  }, [pendingHost]);
+  }, [pendingHost, onHostSelect]);
 
   // Handle auth callback from URL
   useEffect(() => {
@@ -131,13 +131,8 @@ const HostSelector: React.FC<HostSelectorProps> = ({
   }, []);
 
   const handleHostSelection = (host: Host) => {
-    if (!authUser) {
-      // Store the selected host and trigger auth
-      setPendingHost(host);
-      return;
-    }
-
-    // User is authenticated, proceed with host selection
+    // Allow host selection without auth for demo purposes
+    // The auth will be triggered when they try to start the conversation
     onHostSelect(host);
   };
 
@@ -159,13 +154,26 @@ const HostSelector: React.FC<HostSelectorProps> = ({
     }
   };
 
+  const handleStartConversation = () => {
+    if (!authUser && selectedHost) {
+      // Store the selected host and trigger auth
+      setPendingHost(selectedHost);
+      return;
+    }
+
+    // User is authenticated, proceed with conversation
+    if (onStartConversation) {
+      onStartConversation();
+    }
+  };
+
   const handleAuthComplete = (user: AuthUser) => {
     setAuthUser(user);
     setShowAuthCallback(false);
     
     // If we have a pending host, select it now
     if (pendingHost) {
-      handleHostSelection(pendingHost);
+      onHostSelect(pendingHost);
       setPendingHost(null);
     }
   };
@@ -200,10 +208,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
               Choose Your AI Curator
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
-              {authUser ? 
-                `Welcome back, ${authUser.name || 'Shopper'}! Select your personal shopping assistant` :
-                'Sign in to unlock your personalized AI shopping experience'
-              }
+              Select your personal shopping assistant
             </p>
           </motion.div>
         </div>
@@ -213,40 +218,8 @@ const HostSelector: React.FC<HostSelectorProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : !authUser ? (
-          /* Sign In Prompt */
-          <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto">
-            <motion.div
-              className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl p-8 border border-white/20 dark:border-gray-700/20 text-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <LogIn className="w-8 h-8 text-white" />
-              </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Sign In to Continue
-              </h2>
-              
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                Create your account to unlock personalized AI shopping with our expert hosts
-              </p>
-              
-              <GoogleSignInButton
-                onSignIn={() => setShowAuthCallback(true)}
-                size="lg"
-                variant="primary"
-              />
-              
-              <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
-                By signing in, you agree to our Terms of Service and Privacy Policy
-              </div>
-            </motion.div>
-          </div>
         ) : (
-          /* Host Grid - Only show when authenticated */
+          /* Host Grid */
           <div className="flex-1 flex flex-col">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
               {hosts.map((host, index) => {
@@ -411,25 +384,33 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         <span>Customize</span>
                       </motion.button>
                       
-                      <motion.button
-                        onClick={onStartConversation}
-                        disabled={isConnecting}
-                        className="w-full sm:w-auto bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-[140px] lg:min-w-[160px] text-sm sm:text-base"
-                        whileHover={!isConnecting ? { scale: 1.02 } : {}}
-                        whileTap={!isConnecting ? { scale: 0.98 } : {}}
-                      >
-                        {isConnecting ? (
-                          <>
-                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>Connecting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span>Start Shopping</span>
-                          </>
-                        )}
-                      </motion.button>
+                      {!authUser ? (
+                        <GoogleSignInButton
+                          onSignIn={() => setShowAuthCallback(true)}
+                          size="md"
+                          variant="primary"
+                        />
+                      ) : (
+                        <motion.button
+                          onClick={handleStartConversation}
+                          disabled={isConnecting}
+                          className="w-full sm:w-auto bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-[140px] lg:min-w-[160px] text-sm sm:text-base"
+                          whileHover={!isConnecting ? { scale: 1.02 } : {}}
+                          whileTap={!isConnecting ? { scale: 0.98 } : {}}
+                        >
+                          {isConnecting ? (
+                            <>
+                              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                              <span>Connecting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span>Start Shopping</span>
+                            </>
+                          )}
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 </div>

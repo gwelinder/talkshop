@@ -59,14 +59,6 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({
     }
   };
 
-  const getColor = () => {
-    switch (status) {
-      case 'loading': return 'blue';
-      case 'success': return 'green';
-      case 'error': return 'red';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <motion.div
@@ -85,7 +77,11 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({
         </motion.div>
 
         <motion.h2
-          className={`text-2xl font-bold mb-4 text-${getColor()}-600 dark:text-${getColor()}-400`}
+          className={`text-2xl font-bold mb-4 ${
+            status === 'loading' ? 'text-blue-600 dark:text-blue-400' :
+            status === 'success' ? 'text-green-600 dark:text-green-400' :
+            'text-red-600 dark:text-red-400'
+          }`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}

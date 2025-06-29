@@ -1,4 +1,4 @@
-// Enhanced Supabase Service with real-time data and user management
+// Supabase Service with user profile management
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -23,31 +23,7 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export interface ShoppingSession {
-  id: string;
-  user_id: string;
-  session_type: 'voice' | 'video';
-  host_id: string;
-  duration_minutes: number;
-  products_viewed: string[];
-  products_added_to_cart: string[];
-  total_spent: number;
-  session_data: any;
-  created_at: string;
-}
-
-export interface ViralContent {
-  id: string;
-  user_id: string;
-  content_type: 'product_reveal' | 'style_transformation' | 'price_drop';
-  product_id: string;
-  shares: number;
-  views: number;
-  likes: number;
-  created_at: string;
-}
-
-// User Management
+// User Profile Management
 export const createUserProfile = async (userId: string, email: string) => {
   try {
     const { data, error } = await supabase
@@ -108,57 +84,44 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
   }
 };
 
-// Session Tracking with Real-time Updates
-export const startShoppingSession = async (
+// Subscription Management
+export const updateSubscriptionTier = async (
   userId: string,
-  sessionType: 'voice' | 'video',
-  hostId: string
-): Promise<string | null> => {
-  try {
-    const { data, error } = await supabase
-      .from('shopping_sessions')
-      .insert({
-        user_id: userId,
-        session_type: sessionType,
-        host_id: hostId,
-        duration_minutes: 0,
-        products_viewed: [],
-        products_added_to_cart: [],
-        total_spent: 0,
-        session_data: {}
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data.id;
-  } catch (error) {
-    console.error('Error starting shopping session:', error);
-    return null;
-  }
-};
-
-export const updateShoppingSession = async (
-  sessionId: string,
-  updates: Partial<ShoppingSession>
+  newTier: 'free' | 'plus' | 'vip',
+  transactionId?: string
 ) => {
   try {
-    const { data, error } = await supabase
-      .from('shopping_sessions')
-      .update(updates)
-      .eq('id', sessionId)
-      .select()
-      .single();
+    const updates: Partial<UserProfile> = {
+      subscription_tier: newTier
+    };
     
-    if (error) throw error;
-    return data;
+    // Reset daily usage when upgrading
+    if (newTier !== 'free') {
+      updates.ai_minutes_used_today = 0;
+    }
+    
+    const result = await updateUserProfile(userId, updates);
+    
+    // Log subscription change
+    if (result && transactionId) {
+      await supabase
+        .from('subscription_events')
+        .insert({
+          user_id: userId,
+          event_type: 'upgrade',
+          tier_id: newTier,
+          transaction_id: transactionId
+        });
+    }
+    
+    return result;
   } catch (error) {
-    console.error('Error updating shopping session:', error);
+    console.error('Error updating subscription tier:', error);
     return null;
   }
 };
 
-// AI Usage Tracking for Subscription Limits
+// Usage Tracking
 export const trackAIUsage = async (userId: string, minutesUsed: number) => {
   try {
     // Get current usage
@@ -210,124 +173,6 @@ export const checkAIUsageLimit = async (userId: string): Promise<{
   } catch (error) {
     console.error('Error checking AI usage limit:', error);
     return { canUse: false, minutesUsed: 0, minutesRemaining: 0, tier: 'free' };
-  }
-};
-
-// Viral Content Tracking
-export const createViralContent = async (
-  userId: string,
-  contentType: 'product_reveal' | 'style_transformation' | 'price_drop',
-  productId: string
-) => {
-  try {
-    const { data, error } = await supabase
-      .from('viral_content')
-      .insert({
-        user_id: userId,
-        content_type: contentType,
-        product_id: productId,
-        shares: 0,
-        views: 0,
-        likes: 0
-      })
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating viral content:', error);
-    return null;
-  }
-};
-
-export const trackViralMetric = async (
-  contentId: string,
-  metricType: 'share' | 'view' | 'like'
-) => {
-  try {
-    const { data, error } = await supabase.rpc('increment_viral_metric', {
-      content_id: contentId,
-      metric_type: metricType
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error tracking viral metric:', error);
-    return null;
-  }
-};
-
-// Real-time Analytics
-export const getRealtimeAnalytics = () => {
-  return supabase
-    .channel('analytics')
-    .on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'shopping_sessions' },
-      (payload) => {
-        console.log('Real-time session update:', payload);
-      }
-    )
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'viral_content' },
-      (payload) => {
-        console.log('Real-time viral update:', payload);
-      }
-    )
-    .subscribe();
-};
-
-// Subscription Management Integration
-export const updateSubscriptionTier = async (
-  userId: string,
-  newTier: 'free' | 'plus' | 'vip',
-  transactionId?: string
-) => {
-  try {
-    const updates: Partial<UserProfile> = {
-      subscription_tier: newTier
-    };
-    
-    // Reset daily usage when upgrading
-    if (newTier !== 'free') {
-      updates.ai_minutes_used_today = 0;
-    }
-    
-    const result = await updateUserProfile(userId, updates);
-    
-    // Log subscription change
-    if (result && transactionId) {
-      await supabase
-        .from('subscription_changes')
-        .insert({
-          user_id: userId,
-          old_tier: 'free', // Would get from current profile in real app
-          new_tier: newTier,
-          transaction_id: transactionId,
-          created_at: new Date().toISOString()
-        });
-    }
-    
-    return result;
-  } catch (error) {
-    console.error('Error updating subscription tier:', error);
-    return null;
-  }
-};
-
-// Daily Usage Reset (would be called by a cron job)
-export const resetDailyUsage = async () => {
-  try {
-    const { error } = await supabase
-      .from('user_profiles')
-      .update({ ai_minutes_used_today: 0 });
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error resetting daily usage:', error);
-    return false;
   }
 };
 

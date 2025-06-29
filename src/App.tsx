@@ -229,7 +229,7 @@ function App() {
     );
   }
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -268,36 +268,25 @@ function App() {
 
       {currentView === 'home' && (
         <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          {!authUser || !sessionType ? (
-            <SessionTypeSelector
-              userTier={userProfile?.subscription_tier || 'free'}
-              userId={authUser?.id || ''}
-              onSelectSession={handleSessionSelect}
-              onUpgradeRequired={handleUpgradeRequired}
+          {/* AI Shopping Assistant - Full Height Container */}
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <AIShoppingAssistant 
+              allProducts={products}
+              onToolCall={handleToolCall}
+              addToCart={addToCart}
+              spotlightProduct={spotlightProduct}
+              comparisonProducts={comparisonProducts}
+              activeOffer={activeOffer}
+              show360={show360}
+              onShow360Change={setShow360}
+              cartItems={cartItems}
+              onCartJiggle={handleCartJiggle}
             />
-          ) : (
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-              <AIShoppingAssistant 
-                allProducts={products}
-                onToolCall={handleToolCall}
-                addToCart={addToCart}
-                spotlightProduct={spotlightProduct}
-                comparisonProducts={comparisonProducts}
-                activeOffer={activeOffer}
-                show360={show360}
-                onShow360Change={setShow360}
-                cartItems={cartItems}
-                onCartJiggle={handleCartJiggle}
-                sessionType={sessionType}
-                userTier={userProfile?.subscription_tier || 'free'}
-                userId={authUser.id}
-              />
-            </div>
-          )}
+          </div>
         </main>
       )}
 
-      {currentView === 'shopping' && authUser && sessionType && (
+      {currentView === 'shopping' && sessionType && (
         <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <AIShoppingAssistant 
             allProducts={products}
@@ -312,7 +301,7 @@ function App() {
             onCartJiggle={handleCartJiggle}
             sessionType={sessionType}
             userTier={userProfile?.subscription_tier || 'free'}
-            userId={authUser.id}
+            userId={authUser?.id || ''}
           />
         </main>
       )}
@@ -329,7 +318,7 @@ function App() {
               ));
             }
           }}
-          onClose={() => setCurrentView(sessionType ? 'shopping' : 'home')}
+          onClose={() => setCurrentView('home')}
           onCheckout={() => setCurrentView('checkout')}
         />
       )}
@@ -337,7 +326,7 @@ function App() {
       {currentView === 'checkout' && (
         <Checkout 
           cartItems={cartItems}
-          onClose={() => setCurrentView(sessionType ? 'shopping' : 'home')}
+          onClose={() => setCurrentView('home')}
         />
       )}
 

@@ -1,6 +1,5 @@
 // Google Authentication Service with Supabase integration
-import { supabase, createUserProfile } from './supabaseService';
-import { initializeRevenueCat } from './revenuecatService';
+import { supabase } from './supabaseService';
 
 export interface AuthUser {
   id: string;
@@ -9,23 +8,6 @@ export interface AuthUser {
   avatar?: string;
   isNewUser: boolean;
 }
-
-// Initialize Google Auth
-const initializeGoogleAuth = () => {
-  return new Promise<void>((resolve) => {
-    if (typeof window !== 'undefined' && window.google) {
-      resolve();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    document.head.appendChild(script);
-  });
-};
 
 // Google Sign-In with Supabase
 export const signInWithGoogle = async (): Promise<AuthUser | null> => {
@@ -36,7 +18,7 @@ export const signInWithGoogle = async (): Promise<AuthUser | null> => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}?auth=callback`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -80,10 +62,18 @@ export const handleAuthCallback = async (): Promise<AuthUser | null> => {
     // Create profile if new user
     if (isNewUser) {
       console.log('🆕 Creating new user profile...');
-      await createUserProfile(user.id, user.email!);
-      
-      // Initialize RevenueCat for new user
-      await initializeRevenueCat(user.id);
+      await supabase.from('user_profiles').insert({
+        id: user.id,
+        email: user.email!,
+        subscription_tier: 'free',
+        ai_minutes_used_today: 0,
+        preferences: {
+          preferred_hosts: [],
+          style_preferences: [],
+          budget_range: 'any',
+          favorite_categories: []
+        }
+      });
     }
 
     return {
@@ -137,18 +127,16 @@ export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => 
     console.log('🔄 Auth state changed:', event);
     
     if (session?.user) {
-      const authUser = await getCurrentUser();
+      const authUser: AuthUser = {
+        id: session.user.id,
+        email: session.user.email!,
+        name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
+        avatar: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+        isNewUser: false
+      };
       callback(authUser);
     } else {
       callback(null);
     }
   });
-};
-
-export default {
-  signInWithGoogle,
-  handleAuthCallback,
-  getCurrentUser,
-  signOut,
-  onAuthStateChange
 };
