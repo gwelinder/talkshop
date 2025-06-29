@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Wand2, Sparkles, Save, RotateCcw, User, MessageCircle, Zap } from 'lucide-react';
+import { X, Wand2, Sparkles, Save, RotateCcw, User, MessageCircle, Zap, ArrowRight } from 'lucide-react';
 
 interface Host {
   id: string;
@@ -24,32 +24,33 @@ const HostCustomizer: React.FC<HostCustomizerProps> = ({ host, onSave, onClose }
   const [selectedPersonality, setSelectedPersonality] = useState('');
   const [selectedTone, setSelectedTone] = useState('');
   const [selectedExpertise, setSelectedExpertise] = useState('');
+  const [step, setStep] = useState<'builder' | 'advanced'>('builder');
 
   const personalityOptions = [
-    { id: 'enthusiastic', label: 'Enthusiastic & Energetic', description: 'Bubbly and excited about every product' },
-    { id: 'sophisticated', label: 'Sophisticated & Refined', description: 'Elegant and discerning with impeccable taste' },
-    { id: 'friendly', label: 'Friendly & Approachable', description: 'Warm and conversational like a best friend' },
-    { id: 'professional', label: 'Professional & Expert', description: 'Knowledgeable and business-focused' },
-    { id: 'quirky', label: 'Quirky & Creative', description: 'Unique perspective with artistic flair' },
-    { id: 'minimalist', label: 'Minimalist & Zen', description: 'Calm, focused on quality over quantity' }
+    { id: 'enthusiastic', label: 'Enthusiastic', emoji: '🎉', description: 'Bubbly and excited about every product' },
+    { id: 'sophisticated', label: 'Sophisticated', emoji: '✨', description: 'Elegant and discerning with impeccable taste' },
+    { id: 'friendly', label: 'Friendly', emoji: '😊', description: 'Warm and conversational like a best friend' },
+    { id: 'professional', label: 'Professional', emoji: '💼', description: 'Knowledgeable and business-focused' },
+    { id: 'quirky', label: 'Quirky', emoji: '🎨', description: 'Unique perspective with artistic flair' },
+    { id: 'zen', label: 'Zen', emoji: '🧘', description: 'Calm, focused on quality over quantity' }
   ];
 
   const toneOptions = [
-    { id: 'casual', label: 'Casual & Relaxed', emoji: '😊' },
-    { id: 'luxury', label: 'Luxury & Premium', emoji: '✨' },
-    { id: 'trendy', label: 'Trendy & Hip', emoji: '🔥' },
-    { id: 'classic', label: 'Classic & Timeless', emoji: '👑' },
-    { id: 'playful', label: 'Playful & Fun', emoji: '🎉' },
-    { id: 'serious', label: 'Serious & Focused', emoji: '🎯' }
+    { id: 'casual', label: 'Casual', emoji: '😊', description: 'Relaxed and easy-going' },
+    { id: 'luxury', label: 'Luxury', emoji: '💎', description: 'Premium and exclusive' },
+    { id: 'trendy', label: 'Trendy', emoji: '🔥', description: 'Hip and current' },
+    { id: 'classic', label: 'Classic', emoji: '👑', description: 'Timeless and refined' },
+    { id: 'playful', label: 'Playful', emoji: '🎈', description: 'Fun and lighthearted' },
+    { id: 'focused', label: 'Focused', emoji: '🎯', description: 'Direct and efficient' }
   ];
 
   const expertiseOptions = [
-    { id: 'fashion', label: 'Fashion Expert', description: 'Deep knowledge of style, trends, and designers' },
-    { id: 'tech', label: 'Tech Specialist', description: 'Latest gadgets, specs, and innovations' },
-    { id: 'lifestyle', label: 'Lifestyle Guru', description: 'Home, wellness, and life enhancement' },
-    { id: 'luxury', label: 'Luxury Connoisseur', description: 'High-end products and premium experiences' },
-    { id: 'budget', label: 'Value Hunter', description: 'Best deals and cost-effective choices' },
-    { id: 'sustainable', label: 'Sustainability Advocate', description: 'Eco-friendly and ethical products' }
+    { id: 'fashion', label: 'Fashion Expert', emoji: '👗', description: 'Style, trends, and designers' },
+    { id: 'tech', label: 'Tech Specialist', emoji: '📱', description: 'Gadgets and innovations' },
+    { id: 'lifestyle', label: 'Lifestyle Guru', emoji: '🏠', description: 'Home and wellness' },
+    { id: 'luxury', label: 'Luxury Guide', emoji: '💎', description: 'High-end experiences' },
+    { id: 'budget', label: 'Value Hunter', emoji: '💰', description: 'Best deals and savings' },
+    { id: 'sustainable', label: 'Eco Expert', emoji: '🌱', description: 'Sustainable choices' }
   ];
 
   const generateCustomPrompt = () => {
@@ -59,30 +60,36 @@ const HostCustomizer: React.FC<HostCustomizerProps> = ({ host, onSave, onClose }
 
     if (!personality || !tone || !expertise) return '';
 
-    return `You are ${host.name}, a ${personality.label.toLowerCase()} AI shopping curator for TalkShop. Your communication style is ${tone.label.toLowerCase()}, and you're a ${expertise.label.toLowerCase()}. 
+    return `You are ${host.name}, a ${personality.label.toLowerCase()} AI shopping curator for TalkShop. Your communication style is ${tone.label.toLowerCase()}, and you're a ${expertise.label.toLowerCase()}.
 
-**Personality & Style:**
-${personality.description} Your ${tone.label.toLowerCase()} approach makes every interaction feel natural and engaging.
+**Your Personality:**
+${personality.description} You approach every interaction with a ${tone.description} attitude that makes customers feel comfortable and excited about shopping.
 
-**Expertise & Knowledge:**
-${expertise.description} You use this expertise to provide valuable insights and recommendations.
+**Your Expertise:**
+As a ${expertise.label.toLowerCase()}, you specialize in ${expertise.description}. You use this knowledge to provide valuable insights and personalized recommendations.
 
-**Behavior Guidelines:**
-- Always maintain your ${personality.label.toLowerCase()} personality while helping customers
-- Use your ${expertise.label.toLowerCase()} knowledge to provide expert guidance
-- Communicate in a ${tone.label.toLowerCase()} manner that feels authentic to your character
+**How You Communicate:**
+- Maintain your ${personality.label.toLowerCase()} personality in every interaction
+- Use your ${expertise.label.toLowerCase()} knowledge to guide customers
+- Keep a ${tone.label.toLowerCase()} tone that feels authentic and engaging
+- Create emotional connections through storytelling
+- Build desire through compelling narratives, not just feature lists
+
+**Core Behaviors:**
 - Follow the ACTION-FIRST rule: decide, execute tool, then narrate
 - CRITICAL: Immediately after greeting, call show_product with prod_001 (Midnight Velvet Blazer)
-- Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing
-- Use proactively_add_to_cart when users express strong positive sentiment
-- Create desire through compelling narratives, not just feature lists
+- Use dynamic tools: show_product_grid for broad requests, show_categories for browsing
+- Use proactively_add_to_cart when customers express strong positive sentiment
+- Use initiate_checkout when they're ready to purchase
 
-Remember: You're not just selling products—you're curating experiences that match your unique personality and expertise.`;
+Remember: You're not just selling products—you're curating experiences that reflect your unique personality and expertise. Make every interaction feel magical and personalized.`;
   };
 
   const handleQuickGenerate = () => {
     if (selectedPersonality && selectedTone && selectedExpertise) {
-      setCustomPrompt(generateCustomPrompt());
+      const generated = generateCustomPrompt();
+      setCustomPrompt(generated);
+      setStep('advanced');
     }
   };
 
@@ -99,6 +106,7 @@ Remember: You're not just selling products—you're curating experiences that ma
     setSelectedPersonality('');
     setSelectedTone('');
     setSelectedExpertise('');
+    setStep('builder');
   };
 
   return (
@@ -109,13 +117,13 @@ Remember: You're not just selling products—you're curating experiences that ma
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        {/* Header */}
+        {/* Header - Nikita Bier Style: Clean and Focused */}
         <div className="bg-gradient-to-r from-purple-500 to-brand-600 p-6 text-white relative">
           <button
             onClick={onClose}
@@ -134,163 +142,167 @@ Remember: You're not just selling products—you're curating experiences that ma
                 <Wand2 className="w-6 h-6" />
                 <span>Customize {host.name}</span>
               </h1>
-              <p className="text-white/80">Personalize your AI shopping curator's personality and expertise</p>
+              <p className="text-white/80">Create your perfect AI shopping companion</p>
             </div>
           </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Quick Customization */}
-            <div className="space-y-6">
+          {step === 'builder' ? (
+            /* Step 1: Personality Builder - Nikita Bier Style: Visual, Intuitive */
+            <div className="space-y-8">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  Build {host.name}'s Personality
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Choose traits that match your shopping style
+                </p>
+              </div>
+
+              {/* Personality Selection */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
-                  <span>Quick Personality Builder</span>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                  <User className="w-5 h-5 text-purple-500" />
+                  <span>Personality Style</span>
                 </h3>
-                
-                {/* Personality Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Choose Personality Style
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {personalityOptions.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        onClick={() => setSelectedPersonality(option.id)}
-                        className={`text-left p-3 rounded-lg border transition-all ${
-                          selectedPersonality === option.id
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-                        }`}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
-                      </motion.button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {personalityOptions.map((option) => (
+                    <motion.button
+                      key={option.id}
+                      onClick={() => setSelectedPersonality(option.id)}
+                      className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                        selectedPersonality === option.id
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:shadow-md'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="text-3xl mb-2">{option.emoji}</div>
+                      <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{option.label}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
+                    </motion.button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Tone Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Communication Tone
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {toneOptions.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        onClick={() => setSelectedTone(option.id)}
-                        className={`p-3 rounded-lg border transition-all text-center ${
-                          selectedTone === option.id
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-                        }`}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <div className="text-2xl mb-1">{option.emoji}</div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
-                      </motion.button>
-                    ))}
-                  </div>
+              {/* Tone Selection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5 text-blue-500" />
+                  <span>Communication Style</span>
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {toneOptions.map((option) => (
+                    <motion.button
+                      key={option.id}
+                      onClick={() => setSelectedTone(option.id)}
+                      className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                        selectedTone === option.id
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:shadow-md'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="text-3xl mb-2">{option.emoji}</div>
+                      <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{option.label}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
+                    </motion.button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Expertise Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Area of Expertise
-                  </label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {expertiseOptions.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        onClick={() => setSelectedExpertise(option.id)}
-                        className={`text-left p-3 rounded-lg border transition-all ${
-                          selectedExpertise === option.id
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-purple-300'
-                        }`}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{option.label}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
-                      </motion.button>
-                    ))}
-                  </div>
+              {/* Expertise Selection */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                  <Sparkles className="w-5 h-5 text-green-500" />
+                  <span>Area of Expertise</span>
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {expertiseOptions.map((option) => (
+                    <motion.button
+                      key={option.id}
+                      onClick={() => setSelectedExpertise(option.id)}
+                      className={`p-4 rounded-2xl border-2 transition-all text-center ${
+                        selectedExpertise === option.id
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20 shadow-lg'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-green-300 hover:shadow-md'
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="text-3xl mb-2">{option.emoji}</div>
+                      <div className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{option.label}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{option.description}</div>
+                    </motion.button>
+                  ))}
                 </div>
+              </div>
 
-                {/* Generate Button */}
+              {/* Generate Button */}
+              <div className="text-center">
                 <motion.button
                   onClick={handleQuickGenerate}
                   disabled={!selectedPersonality || !selectedTone || !selectedExpertise}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                  className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 mx-auto shadow-lg"
                   whileHover={selectedPersonality && selectedTone && selectedExpertise ? { scale: 1.02 } : {}}
                   whileTap={selectedPersonality && selectedTone && selectedExpertise ? { scale: 0.98 } : {}}
                 >
-                  <Zap className="w-4 h-4" />
-                  <span>Generate Custom Prompt</span>
+                  <Zap className="w-5 h-5" />
+                  <span>Generate Personality</span>
+                  <ArrowRight className="w-5 h-5" />
                 </motion.button>
               </div>
             </div>
-
-            {/* Custom Prompt Editor */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5 text-brand-500" />
-                <span>Custom System Prompt</span>
-              </h3>
+          ) : (
+            /* Step 2: Advanced Editor */
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Fine-tune {host.name}'s Personality
+                </h2>
+                <button
+                  onClick={() => setStep('builder')}
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors"
+                >
+                  ← Back to Builder
+                </button>
+              </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    System Prompt (Advanced)
-                  </label>
-                  <textarea
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder={`Write a custom system prompt for ${host.name}. This will define their personality, expertise, and how they interact with customers...`}
-                    className="w-full h-64 px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300/50 dark:border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 resize-none"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Custom System Prompt
+                </label>
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder={`Write a custom system prompt for ${host.name}...`}
+                  className="w-full h-64 px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 resize-none"
+                />
+              </div>
 
-                {/* Preview */}
-                {customPrompt && (
-                  <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Preview:</h4>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 max-h-32 overflow-y-auto">
-                      {customPrompt.slice(0, 200)}...
-                    </div>
-                  </div>
-                )}
-
-                {/* Tips */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">💡 Tips for Great Prompts:</h4>
-                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                    <li>• Define their personality and communication style</li>
-                    <li>• Specify their area of expertise and knowledge</li>
-                    <li>• Include how they should interact with customers</li>
-                    <li>• Add unique quirks or catchphrases</li>
-                    <li>• Remember to include the ACTION-FIRST rule</li>
-                    <li>• Specify tool usage patterns for their specialty</li>
-                  </ul>
-                </div>
+              {/* Tips */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-700">
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">💡 Pro Tips:</h4>
+                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                  <li>• Define their unique personality and communication style</li>
+                  <li>• Specify their area of expertise and knowledge</li>
+                  <li>• Include how they should interact with customers</li>
+                  <li>• Add unique quirks or catchphrases that make them memorable</li>
+                </ul>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer Actions - Nikita Bier Style: Clear, Prominent */}
         <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <motion.button
               onClick={handleReset}
-              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -299,7 +311,7 @@ Remember: You're not just selling products—you're curating experiences that ma
             </motion.button>
             
             {host.customPrompt && (
-              <span className="text-sm text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">
+              <span className="text-sm text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
                 Currently Customized
               </span>
             )}
@@ -314,12 +326,12 @@ Remember: You're not just selling products—you're curating experiences that ma
             </button>
             <motion.button
               onClick={handleSave}
-              className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-2 rounded-lg font-semibold flex items-center space-x-2 shadow-lg transition-all duration-300"
+              className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-8 py-3 rounded-xl font-bold flex items-center space-x-2 shadow-lg transition-all duration-300"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Save className="w-4 h-4" />
-              <span>Save Customization</span>
+              <span>Save {host.name}</span>
             </motion.button>
           </div>
         </div>
