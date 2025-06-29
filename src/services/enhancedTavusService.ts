@@ -267,7 +267,13 @@ Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate th
 **PERCEPTION STRATEGY - "SHOP MY STYLE":**
 - When the user asks you to "shop my style", "find things that match what I'm wearing", or a similar phrase, you MUST use the \`analyze_user_style\` perception tool.
 - After the tool returns the visual analysis, you MUST use those arguments (like dominant_color, style_category) to perform a \`search_products\` call.
-- Finally, display the results using \`show_product_grid\` with a title like: "Based on your style, here are a few pieces I think you'll adore."
+- Finally, display the results using \`show_product_grid\` with a title like: "Based on your [style_category] [dominant_color] style, here are pieces I think you'll adore."
+
+**PERCEPTION & REAL-WORLD INTERACTION:**
+- Your most magical capability is your sense of sight. When you detect an object using your \`analyze_object_in_view\` tool, your follow-up action is critical.
+- **Acknowledge and Compliment:** Start by acknowledging what you see in a natural, complimentary way. For example: "I see you're holding a mug with a beautiful terracotta glaze." or "That's a very sharp-looking watch you're wearing."
+- **Bridge to Curation:** Seamlessly connect your observation to a product recommendation. "That color reminds me of the rich tones in our new Autumn Home collection. Here are a few pieces I think would complement it beautifully."
+- **Execute the Display:** Immediately call the \`show_product_grid\` tool with the curated products. Your speech and the UI update must feel like a single, fluid action.
 
 **TOOL USAGE STRATEGY:**
 -   **If the user is specific** (e.g., "Tell me about the velvet blazer"): Use \`show_product\`.
@@ -362,7 +368,7 @@ Remember: You're not just selling products—you're curating experiences and hel
       persona_id: personaId,
       conversation_name: `${userName} - TalkShop Curated Experience`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello, and welcome to TalkShop. I'm your personal curator. Would you like to see our product categories?`,
+      custom_greeting: `Hello, and welcome to TalkShop. I'm your personal curator. Here's something absolutely exquisite I've selected for you - this stunning Midnight Velvet Blazer. Notice how the Italian velvet catches the light, and those satin lapels... they're pure sophistication.`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -399,7 +405,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with perception capabilities...');
+    console.log('🔧 Updating persona with master perception layer...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -414,12 +420,37 @@ export const updatePersonaWithDynamicTools = async () => {
           "value": {
             "perception_model": "raven-0",
             "ambient_awareness_queries": [
-              "What is the dominant color of the user's current outfit?",
-              "What is the general style of the user's clothing (e.g., casual, formal, sporty, minimalist)?",
-              "Is the user wearing any prominent accessories like glasses, a hat, or a necklace?"
+              "Is the user holding up an object to the camera?",
+              "What is the dominant color of the object the user is presenting?",
+              "What is the object's general category (e.g., apparel, accessory, home good)?"
             ],
-            "perception_tool_prompt": "You have a tool named 'analyze_user_style'. When the user asks you to analyze their style or find matching products, you MUST use this tool to understand their visual appearance.",
+            "perception_tool_prompt": "You are equipped with a powerful visual analysis tool called 'analyze_object_in_view'. If, and only if, you detect with high confidence that the user is intentionally presenting an object to the camera, you MUST use this tool to identify it and then find complementary products. Do not be intrusive; only trigger this if the user's intent is clear.",
             "perception_tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "analyze_object_in_view",
+                  "description": "Analyzes a physical object the user is showing to the camera to identify its color and category, then curates a collection of complementary products.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "dominant_color": {
+                        "type": "string",
+                        "description": "The primary color of the object detected (e.g., 'terracotta', 'forest green', 'navy blue')."
+                      },
+                      "object_category": {
+                        "type": "string",
+                        "description": "The general category of the object (e.g., 'drinkware', 'clothing', 'accessory', 'book')."
+                      },
+                      "object_description": {
+                        "type": "string",
+                        "description": "A brief, one-sentence description of the object."
+                      }
+                    },
+                    "required": ["dominant_color", "object_category", "object_description"]
+                  }
+                }
+              },
               {
                 "type": "function",
                 "function": {
@@ -457,7 +488,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are a world-renowned AI curator for TalkShop with perception capabilities. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY: When users ask to 'shop my style' or similar, use analyze_user_style tool first, then search and display matching products with show_product_grid. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
+          "value": "You are a world-renowned AI curator for TalkShop with master perception capabilities. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY: When users ask to 'shop my style' or similar, use analyze_user_style tool first, then search and display matching products with show_product_grid. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
@@ -474,12 +505,14 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with perception capabilities!');
+    console.log('✅ Successfully updated persona with master perception layer!');
     console.log('🧠 Enhanced capabilities:');
-    console.log('   - 🔍 PERCEPTION LAYER: raven-0 vision model activated');
+    console.log('   - 🔍 MASTER PERCEPTION LAYER: raven-0 vision model activated');
     console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
     console.log('   - 🎨 STYLE ANALYSIS: analyze_user_style perception tool');
+    console.log('   - 🛍️ OBJECT RECOGNITION: analyze_object_in_view perception tool');
     console.log('   - 🛍️ SHOP MY STYLE: Personalized product curation');
+    console.log('   - 📦 REAL-WORLD INTERACTION: Object-based product recommendations');
     console.log('   - MANDATORY first product showcase (prod_001)');
     console.log('   - ACTION-FIRST conversational flow');
     console.log('   - Dynamic product grid presentations');

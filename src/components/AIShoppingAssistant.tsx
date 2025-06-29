@@ -39,7 +39,7 @@ interface AIShoppingAssistantProps {
 }
 
 interface ShowcaseContent {
-  type: 'initial' | 'product' | 'comparison' | 'grid' | 'categories' | 'host-selection' | 'style-analysis';
+  type: 'initial' | 'product' | 'comparison' | 'grid' | 'categories' | 'host-selection' | 'style-analysis' | 'object-analysis';
   data: any;
 }
 
@@ -79,7 +79,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
   const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   const [styleAnalysisResult, setStyleAnalysisResult] = useState<any>(null);
+  const [objectAnalysisResult, setObjectAnalysisResult] = useState<any>(null);
   const [isAnalyzingStyle, setIsAnalyzingStyle] = useState(false);
+  const [isAnalyzingObject, setIsAnalyzingObject] = useState(false);
   
   // Magic Cart Animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
@@ -247,7 +249,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             type: 'grid',
             data: {
               products: results,
-              title: `Based on your ${styleResult.style_category} ${styleResult.dominant_color} style, here are pieces I think you'll adore`
+              title: `Based on your ${styleResult.dominant_color} ${styleResult.style_category} style, here are pieces I think you'll adore`
             }
           });
           
@@ -255,6 +257,57 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         } catch (error) {
           console.error('Style-based search error:', error);
           setIsAnalyzingStyle(false);
+        }
+      }, 3000); // Show analysis for 3 seconds before showing results
+      
+      return; // Don't forward perception tool calls to parent
+    }
+
+    // Handle object analysis perception tool calls
+    if (toolCall.function.name === 'analyze_object_in_view') {
+      console.log('🔍 Processing object analysis:', toolCall.function.arguments);
+      setIsAnalyzingObject(true);
+      
+      // Store the object analysis result
+      const objectResult = {
+        dominant_color: toolCall.function.arguments.dominant_color,
+        object_category: toolCall.function.arguments.object_category,
+        object_description: toolCall.function.arguments.object_description
+      };
+      
+      setObjectAnalysisResult(objectResult);
+      
+      // Show object analysis in showcase
+      setShowcaseContent({
+        type: 'object-analysis',
+        data: objectResult
+      });
+      
+      // Automatically search for complementary products after a brief display
+      setTimeout(async () => {
+        try {
+          // Create search query based on object analysis
+          const searchQuery = `${objectResult.dominant_color} ${objectResult.object_category}`;
+          const searchParams = {
+            search: searchQuery,
+            limit: 8
+          };
+          
+          const results = await searchProducts(searchParams);
+          
+          // Display curated results
+          setShowcaseContent({
+            type: 'grid',
+            data: {
+              products: results,
+              title: `Perfect complements to your ${objectResult.dominant_color} ${objectResult.object_category}`
+            }
+          });
+          
+          setIsAnalyzingObject(false);
+        } catch (error) {
+          console.error('Object-based search error:', error);
+          setIsAnalyzingObject(false);
         }
       }, 3000); // Show analysis for 3 seconds before showing results
       
@@ -381,6 +434,18 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           }
         };
       }
+
+      // Handle perception tool calls specifically
+      if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
+        const { name, arguments: args } = data.properties;
+        
+        return {
+          function: {
+            name: name,
+            arguments: args
+          }
+        };
+      }
       
       return null;
     } catch (error) {
@@ -472,7 +537,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       const { data } = event;
       
       // Only log important messages, not every single one
-      if (data.event_type === 'conversation.tool_call' || data.type === 'conversation-toolcall') {
+      if (data.event_type === 'conversation.tool_call' || 
+          data.event_type === 'conversation.perception_tool_call' || 
+          data.type === 'conversation-toolcall') {
         console.log('📨 AI tool call received:', data);
       }
       
@@ -565,7 +632,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setProactiveCartMessage(null);
     setSelectedHost(null);
     setStyleAnalysisResult(null);
+    setObjectAnalysisResult(null);
     setIsAnalyzingStyle(false);
+    setIsAnalyzingObject(false);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -699,6 +768,61 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         );
 
+      case 'object-analysis':
+        const objectData = showcaseContent.data;
+        return (
+          <div className="animate-fade-in h-full flex flex-col justify-center">
+            <div className="text-center">
+              <motion.div
+                className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mx-auto mb-6 flex items-center justify-center"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Search className="w-10 h-10 text-white" />
+              </motion.div>
+              
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                Analyzing Your Object...
+              </h3>
+              
+              <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl p-6 max-w-md mx-auto border border-white/20 dark:border-gray-700/20">
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <p className="text-gray-700 dark:text-gray-300 italic">
+                      "{objectData.object_description}"
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300">Color:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                      {objectData.dominant_color}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-300">Category:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                      {objectData.object_category}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-gray-500 dark:text-gray-400 mt-6">
+                Finding perfect complements...
+              </p>
+            </div>
+          </div>
+        );
+
       case 'product':
         const product = showcaseContent.data;
         const productInCart = isProductInCart(product.id);
@@ -807,6 +931,18 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       <Camera className="w-4 h-4 text-purple-600" />
                       <span className="text-purple-800 dark:text-purple-200 font-medium text-sm">
                         Matches your {styleAnalysisResult.style_category} {styleAnalysisResult.dominant_color} style
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Object Match Indicator */}
+                {objectAnalysisResult && (
+                  <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+                    <div className="flex items-center space-x-2">
+                      <Search className="w-4 h-4 text-blue-600" />
+                      <span className="text-blue-800 dark:text-blue-200 font-medium text-sm">
+                        Complements your {objectAnalysisResult.dominant_color} {objectAnalysisResult.object_category}
                       </span>
                     </div>
                   </div>
@@ -946,14 +1082,26 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 {selectedHost ? `${selectedHost.name} is ready to assist you` : 'Select a host to begin your curated journey'}
               </p>
               {isConnected && (
-                <div className="mt-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4 max-w-md mx-auto">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <Camera className="w-5 h-5 text-purple-600" />
-                    <span className="text-purple-800 dark:text-purple-200 font-semibold">Shop My Style</span>
+                <div className="mt-4 space-y-3">
+                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4 max-w-md mx-auto">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <Camera className="w-5 h-5 text-purple-600" />
+                      <span className="text-purple-800 dark:text-purple-200 font-semibold">Shop My Style</span>
+                    </div>
+                    <p className="text-purple-700 dark:text-purple-300 text-sm">
+                      Say "shop my style" and I'll analyze what you're wearing to find perfect matches!
+                    </p>
                   </div>
-                  <p className="text-purple-700 dark:text-purple-300 text-sm">
-                    Say "shop my style" and I'll analyze what you're wearing to find perfect matches!
-                  </p>
+                  
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 max-w-md mx-auto">
+                    <div className="flex items-center justify-center space-x-2 mb-2">
+                      <Search className="w-5 h-5 text-blue-600" />
+                      <span className="text-blue-800 dark:text-blue-200 font-semibold">Object Recognition</span>
+                    </div>
+                    <p className="text-blue-700 dark:text-blue-300 text-sm">
+                      Hold up any object to the camera and I'll find products that complement it perfectly!
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
