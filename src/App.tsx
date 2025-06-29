@@ -5,7 +5,6 @@ import AIShoppingAssistant from './components/AIShoppingAssistant';
 import EnvironmentSetup from './components/EnvironmentSetup';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
-import FOMORibbon from './components/FOMORibbon';
 import { useProducts } from './hooks/useProducts';
 import { getProductById } from './services/productService';
 import { getApiConfig } from './services/tavusService';
@@ -157,42 +156,11 @@ function App() {
         onShowSettings={() => setShowEnvSetup(true)}
       />
 
-
-
       {currentView === 'home' && (
-        <main>
-          {/* Hero Section - Focused and Minimal */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
-            <div className="container mx-auto px-4 py-12">
-              <div className="text-center max-w-4xl mx-auto">
-                <h1 className="text-6xl lg:text-7xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-6">
-                  Shop with <span className="bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">AI</span>
-                </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                  Meet Aria, your personal shopping curator. Experience live product demonstrations, 
-                  expert recommendations, and personalized styling advice.
-                </p>
-                <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Live AI Curator</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Video className="w-4 h-4" />
-                    <span>Real-time Demos</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Zap className="w-4 h-4" />
-                    <span>{products.length}+ Products</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Shopping Assistant - Now the Main Stage */}
+        <main className="min-h-screen">
+          {/* AI Shopping Assistant - Now the Immediate Entry Point */}
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl min-h-screen">
-            <div className="container mx-auto px-4 py-16">
+            <div className="container mx-auto px-4 py-8">
               <AIShoppingAssistant 
                 allProducts={products}
                 onToolCall={handleToolCall}

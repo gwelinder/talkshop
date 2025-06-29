@@ -8,6 +8,7 @@ import { searchProducts, getProductById } from '../services/productService';
 import AriaStatus from './AriaStatus';
 import CategoryGridDisplay from './CategoryGridDisplay';
 import ProductGrid from './ProductGrid';
+import UserInput from './UserInput';
 import DailyIframe from '@daily-co/daily-js';
 
 interface AIShoppingAssistantProps {
@@ -57,6 +58,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [showcaseGlow, setShowcaseGlow] = useState(false);
   const [rotation360, setRotation360] = useState(0);
   const [showDragHint, setShowDragHint] = useState(true);
+  const [isAwake, setIsAwake] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   
   // New unified showcase state
   const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ type: 'initial', data: null });
@@ -406,13 +409,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     };
   }, [conversationUrl]);
 
-  const startConversation = async () => {
+  const startConversation = async (initialMessage?: string) => {
     setIsConnecting(true);
     try {
       console.log('🎬 Starting enhanced AI shopping conversation...');
       
       const session = await createEnhancedShoppingSession(
-        'luxury shopping experience',
+        initialMessage || 'luxury shopping experience',
         'Guest'
       );
       
@@ -441,6 +444,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setReplicaState('connecting');
     setRemoteParticipants({});
     setShowcaseContent({ type: 'initial', data: null });
+    setIsAwake(false);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -480,6 +484,28 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       });
     } catch (error) {
       console.error('Category search error:', error);
+    }
+  };
+
+  // Handle wake up sequence
+  const handleWakeUp = () => {
+    setIsAwake(true);
+  };
+
+  // Handle user message
+  const handleUserMessage = (message: string) => {
+    if (!isConnected) {
+      // Start conversation with the user's message
+      setPendingMessage(message);
+      startConversation(message);
+    } else {
+      // Send message to existing conversation
+      if (callRef.current) {
+        callRef.current.sendAppMessage({
+          type: 'conversation-user-message',
+          text: message
+        });
+      }
     }
   };
 
@@ -653,8 +679,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <div className="text-6xl mb-4">✨</div>
-              <p className="text-lg mb-2">Begin your curated experience</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">Aria will guide you through our collection with sophisticated storytelling and expert insights</p>
+              <p className="text-lg mb-2">Welcome to your personal shopping experience</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">Start a conversation below to begin your curated journey with Aria</p>
             </div>
           </div>
         );
@@ -663,24 +689,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
   return (
     <div className="flex flex-col items-center space-y-12">
-      {/* Cinematic Introduction */}
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-4 flex items-center justify-center space-x-3">
-          <Sparkles className="w-8 h-8 text-brand-500" />
-          <span>Meet Aria, Your AI Shopping Curator</span>
-          <Sparkles className="w-8 h-8 text-brand-600" />
-        </h2>
-        <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
-          Experience luxury shopping with our world-renowned AI curator who transforms product discovery into an art form
-        </p>
-      </div>
-
-      {/* AI Video Section - Centered and Prominent */}
+      {/* AI Video Section - Centered and Prominent with Wake Up Effect */}
       <div className="w-full max-w-md">
         <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
           <div 
             ref={videoContainerRef}
-            className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16]"
+            className={`relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16] transition-all duration-300 ${
+              !isAwake ? 'backdrop-blur-xs opacity-75' : ''
+            }`}
           >
             {/* Remote participants video/audio */}
             {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
@@ -708,29 +724,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                         <MessageCircle className="w-8 h-8 text-white" />
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Ready for a Curated Experience?</h3>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Meet Aria</h3>
                       <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                        Meet Aria, your personal curator who transforms shopping into an art form. 
-                        Discover products through sophisticated storytelling and expert guidance.
+                        Your personal shopping curator is ready to transform your shopping experience. 
+                        Start a conversation below to begin.
                       </p>
-                      <button
-                        onClick={startConversation}
-                        disabled={isConnecting}
-                        className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                        aria-label="Start AI shopping experience"
-                      >
-                        {isConnecting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            <span>Connecting to Aria...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4" />
-                            <span>Begin Curated Experience</span>
-                          </>
-                        )}
-                      </button>
                     </>
                   ) : (
                     <>
@@ -847,6 +845,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             )}
           </div>
         </div>
+      </div>
+
+      {/* User Input - Always Accessible */}
+      <div className="w-full max-w-4xl">
+        <UserInput 
+          onMessageSend={handleUserMessage}
+          onFocus={handleWakeUp}
+          disabled={isConnecting}
+          placeholder="Describe a style, a mood, or an occasion..."
+        />
       </div>
     </div>
   );
