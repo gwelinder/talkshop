@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Wand2, Sparkles, Save, RotateCcw, User, MessageCircle, Zap, ArrowRight } from 'lucide-react';
+import { X, Wand2, Sparkles, Save, RotateCcw, User, MessageCircle, Zap, ArrowRight, Edit3 } from 'lucide-react';
 
 interface Host {
   id: string;
@@ -109,6 +109,11 @@ Remember: You're not just selling products—you're curating experiences that re
     setStep('builder');
   };
 
+  // Skip to advanced if host already has custom prompt
+  const handleSkipToAdvanced = () => {
+    setStep('advanced');
+  };
+
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
@@ -145,6 +150,23 @@ Remember: You're not just selling products—you're curating experiences that re
               <p className="text-white/80">Create your perfect AI shopping companion</p>
             </div>
           </div>
+
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center mt-4 space-x-4">
+            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+              step === 'builder' ? 'bg-white/20 text-white' : 'text-white/60'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${step === 'builder' ? 'bg-white' : 'bg-white/40'}`} />
+              <span>Builder</span>
+            </div>
+            <div className="w-8 h-px bg-white/40" />
+            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+              step === 'advanced' ? 'bg-white/20 text-white' : 'text-white/60'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${step === 'advanced' ? 'bg-white' : 'bg-white/40'}`} />
+              <span>Advanced</span>
+            </div>
+          </div>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
@@ -155,9 +177,25 @@ Remember: You're not just selling products—you're curating experiences that re
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   Build {host.name}'s Personality
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
                   Choose traits that match your shopping style
                 </p>
+                
+                {/* Quick Actions */}
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={handleSkipToAdvanced}
+                    className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors text-sm flex items-center space-x-1"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Skip to Advanced Editor</span>
+                  </button>
+                  {host.customPrompt && (
+                    <span className="text-sm text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
+                      Already Customized
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Personality Selection */}
@@ -254,6 +292,12 @@ Remember: You're not just selling products—you're curating experiences that re
                   <span>Generate Personality</span>
                   <ArrowRight className="w-5 h-5" />
                 </motion.button>
+                
+                {(!selectedPersonality || !selectedTone || !selectedExpertise) && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                    Select one option from each category to continue
+                  </p>
+                )}
               </div>
             </div>
           ) : (
@@ -265,9 +309,10 @@ Remember: You're not just selling products—you're curating experiences that re
                 </h2>
                 <button
                   onClick={() => setStep('builder')}
-                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors"
+                  className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors flex items-center space-x-1"
                 >
-                  ← Back to Builder
+                  <ArrowRight className="w-4 h-4 rotate-180" />
+                  <span>Back to Builder</span>
                 </button>
               </div>
               
@@ -278,9 +323,27 @@ Remember: You're not just selling products—you're curating experiences that re
                 <textarea
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder={`Write a custom system prompt for ${host.name}...`}
+                  placeholder={`Write a custom system prompt for ${host.name}...
+
+Example:
+You are ${host.name}, a sophisticated AI shopping curator...
+
+Define their personality, expertise, and how they should interact with customers.`}
                   className="w-full h-64 px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300/50 dark:border-gray-600/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 resize-none"
                 />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {customPrompt.length} characters
+                  </span>
+                  {customPrompt.length > 0 && (
+                    <button
+                      onClick={() => setCustomPrompt('')}
+                      className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Tips */}
@@ -291,8 +354,19 @@ Remember: You're not just selling products—you're curating experiences that re
                   <li>• Specify their area of expertise and knowledge</li>
                   <li>• Include how they should interact with customers</li>
                   <li>• Add unique quirks or catchphrases that make them memorable</li>
+                  <li>• Keep the core behaviors for tool usage and product showcasing</li>
                 </ul>
               </div>
+
+              {/* Preview */}
+              {customPrompt && (
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-700">
+                  <h4 className="text-sm font-medium text-green-900 dark:text-green-100 mb-2">✨ Preview:</h4>
+                  <div className="text-sm text-green-800 dark:text-green-200 max-h-32 overflow-y-auto">
+                    {customPrompt.slice(0, 200)}...
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -307,7 +381,7 @@ Remember: You're not just selling products—you're curating experiences that re
               whileTap={{ scale: 0.95 }}
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Reset</span>
+              <span>Reset All</span>
             </motion.button>
             
             {host.customPrompt && (

@@ -81,7 +81,10 @@ const HostSelector: React.FC<HostSelectorProps> = ({
 
   const [hosts, setHosts] = useState<Host[]>(defaultHosts);
 
-  const handleCustomizeHost = (host: Host) => {
+  const handleCustomizeHost = (host: Host, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
     setCustomizingHost(host);
     setShowCustomizer(true);
   };
@@ -111,7 +114,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
               Choose Your AI Curator
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto leading-relaxed">
-              Meet our world-class AI curators. Tap to customize their personality.
+              Meet our world-class AI curators. Select one and customize their personality to match your style.
             </p>
           </motion.div>
         </div>
@@ -176,24 +179,22 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         </motion.div>
                       )}
                       
-                      {/* Customize Button - Always Visible on Mobile, Hover on Desktop */}
+                      {/* Customize Button - Always Visible, More Prominent */}
                       <motion.button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleCustomizeHost(host);
-                        }}
-                        className="absolute bottom-3 right-3 w-10 h-10 bg-white/90 dark:bg-gray-800/90 rounded-full flex items-center justify-center shadow-lg opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white dark:hover:bg-gray-800"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => handleCustomizeHost(host, e)}
+                        className="absolute bottom-3 right-3 bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full flex items-center space-x-1 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 text-sm font-medium border border-gray-200 dark:border-gray-600"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        <Edit3 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit</span>
                       </motion.button>
                       
                       {/* Overlay with Info - Cleaner Design */}
                       <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-300 ${
                         isHovered || isSelected ? 'opacity-100' : 'opacity-0'
                       }`}>
-                        <div className="absolute bottom-4 left-4 right-16 text-white">
+                        <div className="absolute bottom-16 left-4 right-4 text-white">
                           <div className="flex items-center space-x-2 mb-2">
                             <Sparkles className="w-4 h-4" />
                             <span className="text-sm font-medium">{host.specialty}</span>
@@ -286,27 +287,39 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                     </div>
                   </div>
                   
-                  {/* Primary CTA - Nikita Bier Style: Big, Obvious, Delightful */}
-                  <motion.button
-                    onClick={onStartConversation}
-                    disabled={isConnecting}
-                    className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-8 py-4 rounded-2xl font-bold text-lg flex items-center justify-center space-x-3 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
-                    whileHover={!isConnecting ? { scale: 1.02 } : {}}
-                    whileTap={!isConnecting ? { scale: 0.98 } : {}}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Connecting...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-5 h-5" />
-                        <span>Start Shopping</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </motion.button>
+                  <div className="flex items-center space-x-3">
+                    {/* Secondary CTA - Customize */}
+                    <motion.button
+                      onClick={(e) => handleCustomizeHost(selectedHost, e)}
+                      className="bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Edit3 className="w-4 h-4" />
+                      <span>Customize</span>
+                    </motion.button>
+                    
+                    {/* Primary CTA - Start Shopping */}
+                    <motion.button
+                      onClick={onStartConversation}
+                      disabled={isConnecting}
+                      className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-8 py-3 rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+                      whileHover={!isConnecting ? { scale: 1.02 } : {}}
+                      whileTap={!isConnecting ? { scale: 0.98 } : {}}
+                    >
+                      {isConnecting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <span>Connecting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4" />
+                          <span>Start Shopping</span>
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </motion.div>
