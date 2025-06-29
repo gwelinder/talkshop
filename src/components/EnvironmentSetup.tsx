@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, AlertCircle, CheckCircle, ExternalLink, TestTube, Zap, Settings } from 'lucide-react';
+import { Key, AlertCircle, CheckCircle, ExternalLink, TestTube, Zap, Settings, Code } from 'lucide-react';
 import { testTavusConnection, getApiConfig } from '../services/tavusService';
 
 interface EnvironmentSetupProps {
@@ -37,6 +37,17 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onSetup }) => {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">TalkShop AI</h1>
           <p className="text-gray-600">AI-powered video shopping with Tavus</p>
+          
+          {/* Development Mode Indicator */}
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="flex items-center justify-center space-x-2 text-yellow-800">
+              <Code className="w-4 h-4" />
+              <span className="text-sm font-medium">Development Mode</span>
+            </div>
+            <p className="text-yellow-700 text-xs mt-1">
+              This setup screen only appears in development. Production users go directly to the app.
+            </p>
+          </div>
         </div>
 
         {!showDemo ? (
@@ -60,6 +71,12 @@ const EnvironmentSetup: React.FC<EnvironmentSetupProps> = ({ onSetup }) => {
               </div>
               
               <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Environment:</span>
+                  <span className="text-gray-900 font-mono">
+                    {apiConfig.isDevelopment ? 'Development' : 'Production'}
+                  </span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">API Key:</span>
                   <span className="text-gray-900 font-mono">

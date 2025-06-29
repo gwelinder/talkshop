@@ -23,10 +23,20 @@ function App() {
   // Use the optimized products hook
   const { products, categories, loading, error, getFeatured, prefetchProduct } = useProducts();
 
-  // Check API configuration on load
+  // Check API configuration on load - ONLY show setup in dev mode
   useEffect(() => {
     const config = getApiConfig();
-    setShowEnvSetup(true);
+    console.log('🔍 Environment check:', {
+      isProduction: config.isProduction,
+      isDevelopment: config.isDevelopment,
+      shouldShowSetup: config.shouldShowSetup,
+      hostname: window.location.hostname
+    });
+    
+    // Only show environment setup in development mode
+    if (config.shouldShowSetup) {
+      setShowEnvSetup(true);
+    }
   }, []);
 
   // Optimized addToCart function
@@ -124,6 +134,7 @@ function App() {
     }
   }, [products, addToCart]);
 
+  // Show environment setup only in dev mode
   if (showEnvSetup) {
     return (
       <EnvironmentSetup 

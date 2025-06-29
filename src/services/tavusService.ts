@@ -1,3 +1,4 @@
+// Enhanced Tavus Service with deployment detection
 import DailyIframe from '@daily-co/daily-js';
 
 export interface TavusApiKeys {
@@ -11,6 +12,28 @@ export interface ToolCall {
     arguments: any;
   };
 }
+
+// Detect if we're in production/deployed environment
+const isProduction = (): boolean => {
+  // Check multiple indicators of production environment
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local');
+  const hasProductionDomain = hostname.includes('.app') || hostname.includes('.com') || hostname.includes('.io') || hostname.includes('.dev');
+  const isWebContainer = hostname.includes('webcontainer') || hostname.includes('stackblitz') || hostname.includes('bolt.new');
+  
+  // If it's a real domain (not localhost/webcontainer), consider it production
+  return !isLocalhost && (hasProductionDomain || isWebContainer);
+};
+
+// Detect if we're in dev mode
+const isDevMode = (): boolean => {
+  // Check for dev indicators
+  const isDev = import.meta.env.DEV;
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const hasDevPort = window.location.port === '5173' || window.location.port === '3000';
+  
+  return isDev || (isLocalhost && hasDevPort);
+};
 
 // Get API key from environment variables
 const getTavusApiKey = (): string => {
@@ -526,11 +549,22 @@ export const testTavusConnection = async (): Promise<boolean> => {
   }
 };
 
-// Get current API configuration
+// Get current API configuration with deployment detection
 export const getApiConfig = () => {
+  const apiKey = getTavusApiKey();
+  const isDemo = apiKey === 'demo-tavus-key';
+  const isProd = isProduction();
+  const isDev = isDevMode();
+  
   return {
-    apiKey: getTavusApiKey(),
+    apiKey,
     webhookUrl: getWebhookUrl(),
-    isDemo: getTavusApiKey() === 'demo-tavus-key'
+    isDemo,
+    isProduction: isProd,
+    isDevelopment: isDev,
+    shouldShowSetup: isDev && !isProd // Only show setup in dev mode
   };
 };
+
+// Export deployment detection functions
+export { isProduction, isDevMode };
