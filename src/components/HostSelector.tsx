@@ -119,7 +119,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
           </motion.div>
         </div>
 
-        {/* Host Cards - Nikita Bier Style: Large, Tappable, Visual */}
+        {/* Host Cards - Fixed Hover Issues */}
         <div className="flex-1 flex flex-col">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
             {hosts.map((host, index) => {
@@ -146,7 +146,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         ? 'border-brand-300 dark:border-brand-600 shadow-lg'
                         : 'border-white/20 dark:border-gray-700/20'
                   }`}>
-                    {/* Host Image - Larger, More Visual */}
+                    {/* Host Image - Fixed Z-Index Issues */}
                     <div className="relative aspect-[4/5] overflow-hidden">
                       <img
                         src={host.image}
@@ -154,10 +154,10 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       
-                      {/* Customization Badge - More Prominent */}
+                      {/* Customization Badge - Higher Z-Index */}
                       {isCustomized && (
                         <motion.div 
-                          className="absolute top-3 left-3 bg-purple-500 text-white px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg text-xs font-medium"
+                          className="absolute top-3 left-3 bg-purple-500 text-white px-2 py-1 rounded-full flex items-center space-x-1 shadow-lg text-xs font-medium z-30"
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -167,10 +167,10 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         </motion.div>
                       )}
                       
-                      {/* Selection Indicator - Bigger, More Obvious */}
+                      {/* Selection Indicator - Higher Z-Index */}
                       {isSelected && (
                         <motion.div
-                          className="absolute top-3 right-3 w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center shadow-lg"
+                          className="absolute top-3 right-3 w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center shadow-lg z-30"
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -179,10 +179,11 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         </motion.div>
                       )}
                       
-                      {/* Customize Button - Always Visible, More Prominent */}
+                      {/* Edit Button - FIXED: Always visible, highest z-index, no hover conflicts */}
                       <motion.button
                         onClick={(e) => handleCustomizeHost(host, e)}
-                        className="absolute bottom-3 right-3 bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full flex items-center space-x-1 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 text-sm font-medium border border-gray-200 dark:border-gray-600"
+                        className="absolute bottom-3 right-3 bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full flex items-center space-x-1 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 text-sm font-medium border border-gray-200 dark:border-gray-600 z-40"
+                        style={{ pointerEvents: 'auto' }} // Ensure it's always clickable
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                       >
@@ -190,10 +191,13 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         <span>Edit</span>
                       </motion.button>
                       
-                      {/* Overlay with Info - Cleaner Design */}
-                      <div className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-300 ${
-                        isHovered || isSelected ? 'opacity-100' : 'opacity-0'
-                      }`}>
+                      {/* Overlay with Info - Lower Z-Index, No Pointer Events */}
+                      <div 
+                        className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-300 z-10 ${
+                          isHovered || isSelected ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        style={{ pointerEvents: 'none' }} // Prevent blocking edit button
+                      >
                         <div className="absolute bottom-16 left-4 right-4 text-white">
                           <div className="flex items-center space-x-2 mb-2">
                             <Sparkles className="w-4 h-4" />

@@ -122,14 +122,14 @@ Remember: You're not just selling products—you're curating experiences that re
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        {/* Header - Nikita Bier Style: Clean and Focused */}
-        <div className="bg-gradient-to-r from-purple-500 to-brand-600 p-6 text-white relative">
+        {/* Header - Fixed Height */}
+        <div className="bg-gradient-to-r from-purple-500 to-brand-600 p-6 text-white relative flex-shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
@@ -169,7 +169,8 @@ Remember: You're not just selling products—you're curating experiences that re
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        {/* Content - Scrollable with Fixed Height */}
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
           {step === 'builder' ? (
             /* Step 1: Personality Builder - Nikita Bier Style: Visual, Intuitive */
             <div className="space-y-8">
@@ -371,8 +372,8 @@ Define their personality, expertise, and how they should interact with customers
           )}
         </div>
 
-        {/* Footer Actions - Nikita Bier Style: Clear, Prominent */}
-        <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between">
+        {/* Footer Actions - Fixed Height, Always Visible */}
+        <div className="bg-gray-50/50 dark:bg-gray-800/50 p-6 border-t border-gray-200/50 dark:border-gray-700/50 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center space-x-4">
             <motion.button
               onClick={handleReset}
