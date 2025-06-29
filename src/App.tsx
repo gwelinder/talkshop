@@ -172,7 +172,7 @@ function App() {
         <main className="min-h-screen">
           {/* AI Shopping Assistant - Now the Immediate Entry Point */}
           <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl min-h-screen">
-            <div className="container mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 pt-2 pb-4">
               <AIShoppingAssistant 
                 allProducts={products}
                 onToolCall={handleToolCall}
