@@ -793,7 +793,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center space-y-12">
+    <div className="flex flex-col space-y-8">
       {/* Magic Cart Animation Overlay */}
       <MagicCartAnimation
         isActive={animationState.isActive}
@@ -804,166 +804,169 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         onComplete={completeMagicCart}
       />
 
-      {/* AI Video Section - Centered and Prominent with Wake Up Effect */}
-      <div className="w-full max-w-md">
-        <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
-          <div 
-            ref={videoContainerRef}
-            className={`relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16] transition-all duration-300 ${
-              !isAwake ? 'backdrop-blur-xs opacity-75' : ''
-            }`}
-          >
-            {/* Remote participants video/audio */}
-            {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
-              <div key={id} className="w-full h-full relative">
-                <video
-                  id={`ai-video-${id}`}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-                <audio 
-                  id={`ai-audio-${id}`} 
-                  autoPlay 
-                  playsInline 
-                />
-              </div>
-            ))}
-            
-            {/* Connection State Overlay */}
-            {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
-                <div className="text-center px-4">
-                  {!conversationUrl ? (
-                    <>
-                      <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                        <MessageCircle className="w-8 h-8 text-white" />
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Meet Aria</h3>
-                      <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                        Your personal shopping curator is ready to transform your shopping experience. 
-                        Start a conversation below to begin.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        {callState === 'joining' ? 'Joining...' : 
-                         callState === 'joined' ? 'Waiting for Aria...' : 
-                         callState === 'error' ? 'Connection failed' :
-                         'Connecting...'}
-                      </p>
-                    </>
-                  )}
+      {/* Main Content - AI Assistant and Showcase Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* AI Video Section - Left Column (1/3 width) */}
+        <div className="lg:col-span-1">
+          <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
+            <div 
+              ref={videoContainerRef}
+              className={`relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16] transition-all duration-300 ${
+                !isAwake ? 'backdrop-blur-xs opacity-75' : ''
+              }`}
+            >
+              {/* Remote participants video/audio */}
+              {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
+                <div key={id} className="w-full h-full relative">
+                  <video
+                    id={`ai-video-${id}`}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-cover"
+                  />
+                  <audio 
+                    id={`ai-audio-${id}`} 
+                    autoPlay 
+                    playsInline 
+                  />
                 </div>
-              </div>
-            )}
-            
-            {/* Status Indicators */}
-            {callState === 'joined' && (
-              <>
-                <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
-                  <div className={`w-2 h-2 rounded-full ${
-                    replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
-                    replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
-                  }`}></div>
-                  <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
-                    LIVE
-                  </span>
+              ))}
+              
+              {/* Connection State Overlay */}
+              {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
+                  <div className="text-center px-4">
+                    {!conversationUrl ? (
+                      <>
+                        <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                          <MessageCircle className="w-8 h-8 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Meet Aria</h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
+                          Your personal shopping curator is ready to transform your shopping experience. 
+                          Start a conversation below to begin.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          {callState === 'joining' ? 'Joining...' : 
+                           callState === 'joined' ? 'Waiting for Aria...' : 
+                           callState === 'error' ? 'Connection failed' :
+                           'Connecting...'}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
+              )}
+              
+              {/* Status Indicators */}
+              {callState === 'joined' && (
+                <>
+                  <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
+                    <div className={`w-2 h-2 rounded-full ${
+                      replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
+                      replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
+                      LIVE
+                    </span>
+                  </div>
 
-                <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
-                  <div className="flex items-center space-x-2 text-white text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Eye className="w-3 h-3" />
-                      <span>{viewerCount}</span>
+                  <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
+                    <div className="flex items-center space-x-2 text-white text-xs">
+                      <div className="flex items-center space-x-1">
+                        <Eye className="w-3 h-3" />
+                        <span>{viewerCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            {/* Controls with Aria Status */}
+            {isConnected && (
+              <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
+                {/* Aria Status Component */}
+                <AriaStatus replicaState={replicaState} />
+                
+                {/* Control Buttons */}
+                <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={toggleMute}
+                        className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                        aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                      >
+                        {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                      </button>
+                      <button
+                        onClick={toggleVideo}
+                        className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                        aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
+                      >
+                        {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                      </button>
+                      <button
+                        onClick={stopConversation}
+                        className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                        aria-label="End conversation"
+                      >
+                        <Pause className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
+                      Curated by Aria
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
-          
-          {/* Controls with Aria Status */}
-          {isConnected && (
-            <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
-              {/* Aria Status Component */}
-              <AriaStatus replicaState={replicaState} />
-              
-              {/* Control Buttons */}
-              <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={toggleMute}
-                      className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                      aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
-                    >
-                      {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                    </button>
-                    <button
-                      onClick={toggleVideo}
-                      className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                      aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
-                    >
-                      {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                    </button>
-                    <button
-                      onClick={stopConversation}
-                      className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                      aria-label="End conversation"
-                    >
-                      <Pause className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
-                    Curated by Aria
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Aria's Stage - Wide Dynamic Showcase */}
-      <div className="w-full max-w-5xl">
-        <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
-          showcaseGlow 
-            ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
-            : 'border-white/20 dark:border-gray-700/20'
-        }`}>
-          <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-brand-500" />
-              <span>Aria's Dynamic Showcase</span>
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-              Aria curates and presents products with sophisticated storytelling and expert insights
-            </p>
-          </div>
-          
-          <div className="p-8 min-h-[600px] flex flex-col">
-            {renderShowcase()}
+        {/* Aria's Stage - Dynamic Showcase (2/3 width) */}
+        <div className="lg:col-span-2">
+          <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
+            showcaseGlow 
+              ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
+              : 'border-white/20 dark:border-gray-700/20'
+          }`}>
+            <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                <Zap className="w-5 h-5 text-brand-500" />
+                <span>Aria's Dynamic Showcase</span>
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+                Aria curates and presents products with sophisticated storytelling and expert insights
+              </p>
+            </div>
+            
+            <div className="p-8 min-h-[600px] flex flex-col">
+              {renderShowcase()}
 
-            {/* Live Transcript */}
-            {transcript && (
-              <div className="mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
-                <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
-                  {transcript.split('\n').slice(-3).map((line, idx) => (
-                    <p key={idx} className="mb-1">{line}</p>
-                  ))}
+              {/* Live Transcript */}
+              {transcript && (
+                <div className="mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
+                  <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
+                    {transcript.split('\n').slice(-3).map((line, idx) => (
+                      <p key={idx} className="mb-1">{line}</p>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* User Input - Always Accessible */}
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-4xl mx-auto">
         <UserInput 
           onMessageSend={handleUserMessage}
           onFocus={handleWakeUp}
