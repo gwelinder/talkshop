@@ -1,4 +1,4 @@
-// Enhanced Tavus Service with sophisticated AI personality
+// Enhanced Tavus Service with sophisticated AI personality and perception capabilities
 import { Product } from './productService';
 
 // Get API key from environment variables
@@ -264,6 +264,11 @@ Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate th
 - **Create surprise and delight:** Your proactive actions should feel like mind-reading, not pushy sales tactics
 - **Confirmation style:** Always use charming, sophisticated language when confirming proactive actions
 
+**PERCEPTION STRATEGY - "SHOP MY STYLE":**
+- When the user asks you to "shop my style", "find things that match what I'm wearing", or a similar phrase, you MUST use the \`analyze_user_style\` perception tool.
+- After the tool returns the visual analysis, you MUST use those arguments (like dominant_color, style_category) to perform a \`search_products\` call.
+- Finally, display the results using \`show_product_grid\` with a title like: "Based on your style, here are a few pieces I think you'll adore."
+
 **TOOL USAGE STRATEGY:**
 -   **If the user is specific** (e.g., "Tell me about the velvet blazer"): Use \`show_product\`.
 -   **If the user is broad or exploratory** (e.g., "Show me some nice watches," "I need a gift for my husband"): Use your judgment to find relevant products and display them using \`show_product_grid\`.
@@ -271,6 +276,7 @@ Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate th
 -   **If the user wants to compare items they see in a grid:** Use the \`compare_products\` tool.
 -   **If the user expresses strong positive sentiment without explicitly asking to buy:** Use \`proactively_add_to_cart\` to create magic.
 -   **If the user is ready to buy:** Use \`initiate_checkout\`.
+-   **If the user asks to "shop my style" or similar:** Use \`analyze_user_style\` perception tool first, then search and display matching products.
 
 **PERSONA & NARRATIVE:**
 -   You are the guide. You lead the experience. If the conversation lulls, proactively ask a question or use a tool to show something new and exciting.
@@ -326,7 +332,8 @@ AVAILABLE PRODUCTS (use these exact IDs):
 11. Use show_360_view for products that deserve detailed appreciation
 12. Use show_product_grid for broad requests like "show me some options"
 13. Use show_categories when they want to explore what's available
-14. ONLY use product IDs that exist in our inventory
+14. Use analyze_user_style when they ask to "shop my style" or similar requests
+15. ONLY use product IDs that exist in our inventory
 
 **CONVERSATION STYLE:**
 - Start with warmth and genuine excitement
@@ -342,7 +349,7 @@ The moment you start the conversation, immediately call show_product with:
 - product_name: "Midnight Velvet Blazer"
 - highlight_features: ["Premium Italian velvet", "Satin peak lapels", "Evening sophistication", "Timeless elegance"]
 
-Remember: You're not just selling products—you're curating experiences and helping people express their best selves. Your ambient intelligence makes every interaction feel magical and personalized.`;
+Remember: You're not just selling products—you're curating experiences and helping people express their best selves. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized.`;
   
   const options = {
     method: 'POST',
@@ -379,7 +386,7 @@ Remember: You're not just selling products—you're curating experiences and hel
   }
 };
 
-// Enhanced persona update with ambient intelligence
+// Enhanced persona update with perception capabilities
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -392,7 +399,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with ambient intelligence tools...');
+    console.log('🔧 Updating persona with perception capabilities...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -403,13 +410,54 @@ export const updatePersonaWithDynamicTools = async () => {
       body: JSON.stringify([
         {
           "op": "replace",
+          "path": "/layers/perception",
+          "value": {
+            "perception_model": "raven-0",
+            "ambient_awareness_queries": [
+              "What is the dominant color of the user's current outfit?",
+              "What is the general style of the user's clothing (e.g., casual, formal, sporty, minimalist)?",
+              "Is the user wearing any prominent accessories like glasses, a hat, or a necklace?"
+            ],
+            "perception_tool_prompt": "You have a tool named 'analyze_user_style'. When the user asks you to analyze their style or find matching products, you MUST use this tool to understand their visual appearance.",
+            "perception_tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "analyze_user_style",
+                  "description": "Analyzes the user's visual appearance to identify key style attributes like clothing color, overall style, and accessories. This is used to curate a personalized collection of products.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "dominant_color": {
+                        "type": "string",
+                        "description": "The primary color of the user's outfit (e.g., 'blue', 'black', 'white')."
+                      },
+                      "style_category": {
+                        "type": "string",
+                        "description": "The general style category of the outfit (e.g., 'casual', 'formal', 'bohemian')."
+                      },
+                      "detected_accessories": {
+                        "type": "array",
+                        "description": "A list of any detected accessories.",
+                        "items": { "type": "string" }
+                      }
+                    },
+                    "required": ["dominant_color", "style_category"]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "op": "replace",
           "path": "/layers/llm/tools",
           "value": tools
         },
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your ambient intelligence makes every interaction feel magical and personalized."
+          "value": "You are a world-renowned AI curator for TalkShop with perception capabilities. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY: When users ask to 'shop my style' or similar, use analyze_user_style tool first, then search and display matching products with show_product_grid. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
@@ -426,8 +474,12 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with ambient intelligence!');
+    console.log('✅ Successfully updated persona with perception capabilities!');
     console.log('🧠 Enhanced capabilities:');
+    console.log('   - 🔍 PERCEPTION LAYER: raven-0 vision model activated');
+    console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
+    console.log('   - 🎨 STYLE ANALYSIS: analyze_user_style perception tool');
+    console.log('   - 🛍️ SHOP MY STYLE: Personalized product curation');
     console.log('   - MANDATORY first product showcase (prod_001)');
     console.log('   - ACTION-FIRST conversational flow');
     console.log('   - Dynamic product grid presentations');
