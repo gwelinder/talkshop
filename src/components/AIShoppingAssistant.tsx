@@ -358,7 +358,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         const { name, arguments: args } = data.properties;
         
         // For style detection, we need to trigger the second step
-        if (name === 'detect_user_style_attributes') {
+        if (name === 'detected_user_style') {
           console.log('🎨 Step 1: Style detection completed:', args);
           // Store the analysis data to trigger step 2
           setPendingStyleAnalysis(args);
@@ -881,6 +881,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 <p>• "Shop my style" - for personalized recommendations</p>
                 <p>• "Show me some electronics" - to browse categories</p>
                 <p>• "I need a gift for my partner" - for gift ideas</p>
+                <p>• "Tell me more about item 2" - to focus on products</p>
                 <p>• Hold up an item to find matching products</p>
               </div>
             </div>

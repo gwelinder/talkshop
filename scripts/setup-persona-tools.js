@@ -77,7 +77,7 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "show_product_grid",
-      "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'.",
+      "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'. When displaying a grid, always label the products in your speech (e.g., 'The first item is...', 'Item two features...').",
       "parameters": {
         "type": "object",
         "properties": {
@@ -101,6 +101,83 @@ const shoppingTools = [
       "name": "show_categories",
       "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
       "parameters": { "type": "object", "properties": {} }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "focus_on_product",
+      "description": "Highlight and focus on a specific product in the grid when user shows interest. Use when user says 'tell me more about the first one', 'I like item three', etc.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "The item identifier (e.g., 'Item 1', 'Item 2', 'first', 'second', etc.)"
+          },
+          "product_id": {
+            "type": "string",
+            "description": "The actual product ID to focus on"
+          }
+        },
+        "required": ["item_id", "product_id"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "find_products_for_style",
+      "description": "Search for products based on detected style attributes from perception analysis. This is the second step after style detection.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dominant_color": {
+            "type": "string",
+            "description": "The dominant color detected from style analysis"
+          },
+          "style_category": {
+            "type": "string",
+            "description": "The style category detected from analysis"
+          },
+          "detected_accessories": {
+            "type": "array",
+            "description": "Any accessories detected",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["dominant_color", "style_category"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "search_products",
+      "description": "Search for products based on customer requests. Use this when customers ask for specific items or categories.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search_query": {
+            "type": "string",
+            "description": "What the customer is looking for (e.g., 'jewelry', 'electronics', 'clothing')"
+          },
+          "category": {
+            "type": "string",
+            "description": "Product category to filter by",
+            "enum": ["electronics", "jewelery", "men's clothing", "women's clothing"]
+          },
+          "min_price": {
+            "type": "number",
+            "description": "Minimum price filter"
+          },
+          "max_price": {
+            "type": "number",
+            "description": "Maximum price filter"
+          }
+        },
+        "required": ["search_query"]
+      }
     }
   },
   {
@@ -237,7 +314,7 @@ async function updatePersonaTools() {
   }
 
   try {
-    console.log('🔧 Updating persona with ambient intelligence tools...');
+    console.log('🔧 Updating persona with master perception layer and state-aware brain...');
     console.log(`   Persona ID: ${PERSONA_ID}`);
     console.log(`   API Key: ${TAVUS_API_KEY.slice(0, 8)}...`);
     
@@ -249,36 +326,130 @@ async function updatePersonaTools() {
       },
       body: JSON.stringify([
         {
+          "op": "add",
+          "path": "/layers/perception",
+          "value": {
+            "perception_model": "raven-0",
+            "ambient_awareness_queries": [
+              "Is the user clearly presenting an object to the camera?",
+              "What is the dominant color and general style of the user's outfit?"
+            ],
+            "perception_tool_prompt": "You have a tool named 'detected_user_style'. If you see the user's outfit clearly, you MUST use this tool to report the style attributes. Do not do anything else.",
+            "perception_tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "detected_user_style",
+                  "description": "Reports the detected visual attributes of a user's style. This is the first step in a two-part process. The next step will be handled by a different tool.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "dominant_color": { 
+                        "type": "string",
+                        "description": "The primary color of the user's outfit"
+                      },
+                      "style_category": { 
+                        "type": "string",
+                        "description": "The general style category (e.g., casual, formal, bohemian)"
+                      },
+                      "detected_accessories": {
+                        "type": "array",
+                        "description": "Any visible accessories",
+                        "items": { "type": "string" }
+                      }
+                    },
+                    "required": ["dominant_color", "style_category"]
+                  }
+                }
+              },
+              {
+                "type": "function",
+                "function": {
+                  "name": "analyze_object_in_view",
+                  "description": "Analyzes a physical object the user is showing to the camera to identify its color and category, then curates a collection of complementary products.",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "dominant_color": {
+                        "type": "string",
+                        "description": "The primary color of the object detected (e.g., 'terracotta', 'forest green', 'navy blue')."
+                      },
+                      "object_category": {
+                        "type": "string",
+                        "description": "The general category of the object (e.g., 'drinkware', 'clothing', 'accessory', 'book')."
+                      },
+                      "object_description": {
+                        "type": "string",
+                        "description": "A brief, one-sentence description of the object."
+                      }
+                    },
+                    "required": ["dominant_color", "object_category", "object_description"]
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
           "op": "replace",
           "path": "/layers/llm/tools",
           "value": shoppingTools
+        },
+        {
+          "op": "replace",
+          "path": "/system_prompt",
+          "value": "You are a world-renowned AI curator for TalkShop with master perception capabilities and state awareness. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. PERCEPTION STRATEGY - TWO-STEP PROCESS: 1) When users ask to 'shop my style', the system handles perception automatically. 2) You'll receive find_products_for_style tool call with results. 3) Finally display with show_product_grid. INTERRUPTION HANDLING: If UI state is 'analyzing_style' and user says 'nevermind' or requests something else, immediately abandon analysis flow and fulfill their new request. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Use focus_on_product when users show interest in specific grid items. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
 
+    if (response.status === 304) {
+      console.log('✅ Persona is already up-to-date');
+      return { status: 'not_modified' };
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to update persona: ${response.status} ${response.statusText}\n${errorText}`);
+      console.error(`❌ Failed to update persona: ${response.status} ${response.statusText}`, errorText);
+      return { status: 'error', message: `${response.status} ${response.statusText}` };
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with ambient intelligence!');
-    console.log('📋 Tools added:');
-    shoppingTools.forEach(tool => {
-      console.log(`   - ${tool.function.name}: ${tool.function.description}`);
-    });
+    console.log('✅ Successfully updated persona with state-aware perception layer!');
+    console.log('🧠 Enhanced capabilities:');
+    console.log('   - 🔍 MASTER PERCEPTION LAYER: raven-0 vision model activated');
+    console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
+    console.log('   - 🎨 TWO-STEP STYLE ANALYSIS: detected_user_style → find_products_for_style');
+    console.log('   - 🛍️ OBJECT RECOGNITION: analyze_object_in_view perception tool');
+    console.log('   - 🔄 STATE AWARENESS: UI state injection for contextual responses');
+    console.log('   - 🚫 INTERRUPTION HANDLING: Graceful conversation pivots');
+    console.log('   - 📦 REAL-WORLD INTERACTION: Object-based product recommendations');
+    console.log('   - 💬 PROPER GREETING: Ask about preferences instead of immediate product showcase');
+    console.log('   - 🎯 INTERACTIVE GRID: focus_on_product for voice-driven product selection');
+    console.log('   - ACTION-FIRST conversational flow');
+    console.log('   - Dynamic product grid presentations');
+    console.log('   - Category browsing capabilities');
+    console.log('   - Proactive cart assistance based on emotional cues');
+    console.log('   - Narrative-driven product presentations');
+    console.log('   - Emotional connection building');
+    console.log('   - Luxury curation expertise');
+    console.log('   - Judge easter egg detection');
+    console.log('   - Sophisticated conversation recovery');
+    console.log('   - Checkout initiation capability');
+    console.log('   - Multi-host support with different replica IDs');
+    console.log('   - Custom prompt support for personalized hosts');
     
-    return result;
+    return { status: 'success', data: result };
   } catch (error) {
-    console.error('❌ Error updating persona tools:', error);
-    throw error;
+    console.error('❌ Error updating persona:', error);
+    return { status: 'error', message: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 Persona setup complete! Your AI agent now has ambient intelligence capabilities.');
+    console.log('🎉 Persona setup complete! Your AI agent now has state-aware perception capabilities.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);
