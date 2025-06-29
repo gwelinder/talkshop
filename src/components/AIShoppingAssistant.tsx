@@ -407,11 +407,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   };
 
   return (
-    <div className="mb-16">
+    <div className="flex flex-col items-center space-y-12">
+      {/* Cinematic Introduction */}
       <div className="text-center mb-8">
         <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-4 flex items-center justify-center space-x-3">
           <Sparkles className="w-8 h-8 text-brand-500" />
-          <span>Meet Aria, Your AI Shopping Assistant</span>
+          <span>Meet Aria, Your AI Shopping Curator</span>
           <Sparkles className="w-8 h-8 text-brand-600" />
         </h2>
         <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
@@ -419,357 +420,352 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         </p>
       </div>
 
-      {/* Premium Layout - Vertical Video */}
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* AI Video Section - Vertical 9:16 */}
-          <div className="lg:col-span-1">
-            <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
-              <div 
-                ref={videoContainerRef}
-                className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16]"
-              >
-                {/* Remote participants video/audio */}
-                {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
-                  <div key={id} className="w-full h-full relative">
-                    <video
-                      id={`ai-video-${id}`}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full object-cover"
-                    />
-                    <audio 
-                      id={`ai-audio-${id}`} 
-                      autoPlay 
-                      playsInline 
-                    />
-                  </div>
-                ))}
-                
-                {/* Connection State Overlay - Fixed: Only show when not connected OR no participants */}
-                {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
-                    <div className="text-center px-4">
-                      {!conversationUrl ? (
-                        <>
-                          <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                            <MessageCircle className="w-8 h-8 text-white" />
-                          </div>
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Ready for a Curated Experience?</h3>
-                          <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                            Meet Aria, your personal curator who transforms shopping into an art form. 
-                            Discover products through sophisticated storytelling and expert guidance.
-                          </p>
-                          <button
-                            onClick={startConversation}
-                            disabled={isConnecting}
-                            className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            aria-label="Start AI shopping experience"
-                          >
-                            {isConnecting ? (
-                              <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Connecting to Aria...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Play className="w-4 h-4" />
-                                <span>Begin Curated Experience</span>
-                              </>
-                            )}
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">
-                            {callState === 'joining' ? 'Joining...' : 
-                             callState === 'joined' ? 'Waiting for Aria...' : 
-                             callState === 'error' ? 'Connection failed' :
-                             'Connecting...'}
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Status Indicators - Fixed: Only show when connected */}
-                {callState === 'joined' && (
-                  <>
-                    <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
-                      <div className={`w-2 h-2 rounded-full ${
-                        replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
-                        replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
-                      }`}></div>
-                      <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
-                        LIVE
-                      </span>
-                    </div>
-
-                    <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
-                      <div className="flex items-center space-x-2 text-white text-xs">
-                        <div className="flex items-center space-x-1">
-                          <Eye className="w-3 h-3" />
-                          <span>{viewerCount}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
+      {/* AI Video Section - Centered and Prominent */}
+      <div className="w-full max-w-md">
+        <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
+          <div 
+            ref={videoContainerRef}
+            className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16]"
+          >
+            {/* Remote participants video/audio */}
+            {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
+              <div key={id} className="w-full h-full relative">
+                <video
+                  id={`ai-video-${id}`}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+                <audio 
+                  id={`ai-audio-${id}`} 
+                  autoPlay 
+                  playsInline 
+                />
               </div>
-              
-              {/* Controls with Aria Status */}
-              {isConnected && (
-                <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
-                  {/* Aria Status Component */}
-                  <AriaStatus replicaState={replicaState} />
-                  
-                  {/* Control Buttons */}
-                  <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={toggleMute}
-                          className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                          aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
-                        >
-                          {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                        </button>
-                        <button
-                          onClick={toggleVideo}
-                          className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                          aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
-                        >
-                          {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                        </button>
-                        <button
-                          onClick={stopConversation}
-                          className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                          aria-label="End conversation"
-                        >
-                          <Pause className="w-3 h-3" />
-                        </button>
+            ))}
+            
+            {/* Connection State Overlay */}
+            {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
+                <div className="text-center px-4">
+                  {!conversationUrl ? (
+                    <>
+                      <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                        <MessageCircle className="w-8 h-8 text-white" />
                       </div>
-                      <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
-                        Curated by Aria
-                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Ready for a Curated Experience?</h3>
+                      <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
+                        Meet Aria, your personal curator who transforms shopping into an art form. 
+                        Discover products through sophisticated storytelling and expert guidance.
+                      </p>
+                      <button
+                        onClick={startConversation}
+                        disabled={isConnecting}
+                        className="bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        aria-label="Start AI shopping experience"
+                      >
+                        {isConnecting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>Connecting to Aria...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4" />
+                            <span>Begin Curated Experience</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {callState === 'joining' ? 'Joining...' : 
+                         callState === 'joined' ? 'Waiting for Aria...' : 
+                         callState === 'error' ? 'Connection failed' :
+                         'Connecting...'}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Status Indicators */}
+            {callState === 'joined' && (
+              <>
+                <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
+                  <div className={`w-2 h-2 rounded-full ${
+                    replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
+                    replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
+                    LIVE
+                  </span>
+                </div>
+
+                <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
+                  <div className="flex items-center space-x-2 text-white text-xs">
+                    <div className="flex items-center space-x-1">
+                      <Eye className="w-3 h-3" />
+                      <span>{viewerCount}</span>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
-
-          {/* Dynamic Product Showcase with Glow Effect */}
-          <div className="lg:col-span-2">
-            <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
-              showcaseGlow 
-                ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
-                : 'border-white/20 dark:border-gray-700/20'
-            }`}>
-              <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-brand-500" />
-                  <span>Live Product Showcase</span>
-                  {isSearching && (
-                    <div className="flex items-center space-x-2 text-brand-500">
-                      <Search className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Curating...</span>
-                    </div>
-                  )}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                  Aria curates and presents products with sophisticated storytelling and expert insights
-                </p>
-              </div>
+          
+          {/* Controls with Aria Status */}
+          {isConnected && (
+            <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
+              {/* Aria Status Component */}
+              <AriaStatus replicaState={replicaState} />
               
-              <div className="p-6 min-h-[500px] flex flex-col">
-                {spotlightProduct ? (
-                  <div className="animate-fade-in flex-1">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Product Image */}
-                      <div className="relative">
-                        {show360 === spotlightProduct.id ? (
-                          <div className="aspect-square bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-900/20 dark:to-blue-900/20 rounded-lg flex items-center justify-center border border-brand-200 dark:border-brand-700/50 relative overflow-hidden">
-                            <div 
-                              className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
-                              style={{ transform: `rotate(${rotation360}deg)` }}
-                            >
-                              <RotateCcw className="w-12 h-12 mx-auto mb-2 text-brand-500" />
-                              <p className="font-semibold">360° Interactive View</p>
-                            </div>
-                            {showDragHint && (
-                              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
-                                Drag to spin
-                              </div>
-                            )}
-                            <button 
-                              onClick={() => onShow360Change(false)}
-                              className="absolute top-4 right-4 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200 underline text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 rounded"
-                            >
-                              Exit 360° View
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="relative">
-                            <img 
-                              src={spotlightProduct.image || spotlightProduct.thumbnail} 
-                              alt={spotlightProduct.title || spotlightProduct.name}
-                              className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
-                            />
-                            <button
-                              onClick={() => onShow360Change(spotlightProduct.id)}
-                              className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                              aria-label="View in 360 degrees"
-                            >
-                              <Maximize className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-                        
-                        {activeOffer && activeOffer.productId === spotlightProduct.id && (
-                          <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
-                            {activeOffer.type === 'discount' && `${activeOffer.discount}% OFF!`}
-                            {activeOffer.type === 'limited_time' && 'LIMITED TIME!'}
-                            {activeOffer.type === 'exclusive' && 'EXCLUSIVE!'}
-                          </div>
-                        )}
-                      </div>
+              {/* Control Buttons */}
+              <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={toggleMute}
+                      className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                      aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                    >
+                      {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                    </button>
+                    <button
+                      onClick={toggleVideo}
+                      className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                      aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
+                    >
+                      {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                    </button>
+                    <button
+                      onClick={stopConversation}
+                      className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                      aria-label="End conversation"
+                    >
+                      <Pause className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
+                    Curated by Aria
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-                      {/* Product Details */}
-                      <div className="flex flex-col">
-                        <h4 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{spotlightProduct.title || spotlightProduct.name}</h4>
-                        <p className="text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
-                          ${spotlightProduct.price}
-                        </p>
-                        
-                        {/* Rating */}
-                        {spotlightProduct.rating && (
-                          <div className="flex items-center space-x-2 mb-4">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star 
-                                  key={i} 
-                                  className={`w-4 h-4 ${i < Math.floor(spotlightProduct.rating.rate) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`} 
-                                />
-                              ))}
-                            </div>
-                            <span className="text-gray-600 dark:text-gray-300 text-sm">
-                              {spotlightProduct.rating.rate}/5 ({spotlightProduct.rating.count} reviews)
-                            </span>
-                          </div>
-                        )}
-                        
-                        {spotlightProduct.highlightFeatures && (
-                          <div className="mb-6 flex-1">
-                            <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
-                            <div className="space-y-2">
-                              {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
-                                <div 
-                                  key={idx} 
-                                  className="flex items-center space-x-2 animate-fade-in" 
-                                  style={{animationDelay: `${idx * 0.1}s`}}
-                                >
-                                  <span className="text-brand-500">✨</span>
-                                  <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <button 
-                          onClick={() => addToCart(spotlightProduct.id, 1)}
-                          className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
-                            cartAnimation 
-                              ? 'bg-green-500 scale-105 animate-cart-success' 
-                              : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 hover:scale-105'
-                          } shadow-lg`}
-                          aria-label={`Add ${spotlightProduct.title || spotlightProduct.name} to cart`}
+      {/* Aria's Stage - Wide Product Showcase */}
+      <div className="w-full max-w-5xl">
+        <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
+          showcaseGlow 
+            ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
+            : 'border-white/20 dark:border-gray-700/20'
+        }`}>
+          <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+              <Zap className="w-5 h-5 text-brand-500" />
+              <span>Aria's Curated Showcase</span>
+              {isSearching && (
+                <div className="flex items-center space-x-2 text-brand-500">
+                  <Search className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Curating...</span>
+                </div>
+              )}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+              Aria curates and presents products with sophisticated storytelling and expert insights
+            </p>
+          </div>
+          
+          <div className="p-8 min-h-[600px] flex flex-col">
+            {spotlightProduct ? (
+              <div className="animate-fade-in flex-1">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Product Image */}
+                  <div className="relative">
+                    {show360 === spotlightProduct.id ? (
+                      <div className="aspect-square bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-900/20 dark:to-blue-900/20 rounded-lg flex items-center justify-center border border-brand-200 dark:border-brand-700/50 relative overflow-hidden">
+                        <div 
+                          className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
+                          style={{ transform: `rotate(${rotation360}deg)` }}
                         >
-                          {cartAnimation ? (
-                            <div className="flex items-center justify-center space-x-2">
-                              <span>✓</span>
-                              <span>Added to Cart!</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center space-x-2">
-                              <ShoppingCart className="w-5 h-5" />
-                              <span>Add to Cart</span>
-                            </div>
-                          )}
+                          <RotateCcw className="w-12 h-12 mx-auto mb-2 text-brand-500" />
+                          <p className="font-semibold">360° Interactive View</p>
+                        </div>
+                        {showDragHint && (
+                          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
+                            Drag to spin
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => onShow360Change(false)}
+                          className="absolute top-4 right-4 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200 underline text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 rounded"
+                        >
+                          Exit 360° View
                         </button>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="relative">
+                        <img 
+                          src={spotlightProduct.image || spotlightProduct.thumbnail} 
+                          alt={spotlightProduct.title || spotlightProduct.name}
+                          className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                        />
+                        <button
+                          onClick={() => onShow360Change(spotlightProduct.id)}
+                          className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          aria-label="View in 360 degrees"
+                        >
+                          <Maximize className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {activeOffer && activeOffer.productId === spotlightProduct.id && (
+                      <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
+                        {activeOffer.type === 'discount' && `${activeOffer.discount}% OFF!`}
+                        {activeOffer.type === 'limited_time' && 'LIMITED TIME!'}
+                        {activeOffer.type === 'exclusive' && 'EXCLUSIVE!'}
+                      </div>
+                    )}
                   </div>
-                ) : comparisonProducts.length > 0 ? (
-                  <div className="animate-fade-in flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Curated Comparison</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {comparisonProducts.map((item) => (
-                        <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                          <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
-                          <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
-                          <p className="text-brand-600 font-bold mb-3">${item.price}</p>
-                          <button 
-                            onClick={() => addToCart(item.id, 1)}
-                            className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            aria-label={`Add ${item.title || item.name} to cart`}
-                          >
-                            Add to Cart
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <div className="animate-fade-in flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Curated Selection</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {searchResults.map((item: any) => (
-                        <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                          <img src={item.image} alt={item.title} className="w-full h-32 object-cover rounded mb-3" />
-                          <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1 line-clamp-2">{item.title}</h5>
-                          <p className="text-brand-600 font-bold mb-2">${item.price}</p>
-                          <div className="flex items-center space-x-1 mb-2">
-                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                            <span className="text-xs text-gray-600 dark:text-gray-400">{item.rating.rate}/5</span>
-                          </div>
-                          <button 
-                            onClick={() => addToCart(item.id, 1)}
-                            className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            aria-label={`Add ${item.title} to cart`}
-                          >
-                            Add to Cart
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center text-gray-500 dark:text-gray-400">
-                      <div className="text-6xl mb-4">✨</div>
-                      <p className="text-lg mb-2">Begin your curated experience</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">Aria will guide you through our collection with sophisticated storytelling and expert insights</p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Live Transcript */}
-                {transcript && (
-                  <div className="mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
-                    <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
-                      {transcript.split('\n').slice(-3).map((line, idx) => (
-                        <p key={idx} className="mb-1">{line}</p>
-                      ))}
-                    </div>
+                  {/* Product Details */}
+                  <div className="flex flex-col">
+                    <h4 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{spotlightProduct.title || spotlightProduct.name}</h4>
+                    <p className="text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                      ${spotlightProduct.price}
+                    </p>
+                    
+                    {/* Rating */}
+                    {spotlightProduct.rating && (
+                      <div className="flex items-center space-x-2 mb-4">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-4 h-4 ${i < Math.floor(spotlightProduct.rating.rate) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-gray-600 dark:text-gray-300 text-sm">
+                          {spotlightProduct.rating.rate}/5 ({spotlightProduct.rating.count} reviews)
+                        </span>
+                      </div>
+                    )}
+                    
+                    {spotlightProduct.highlightFeatures && (
+                      <div className="mb-6 flex-1">
+                        <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
+                        <div className="space-y-2">
+                          {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
+                            <div 
+                              key={idx} 
+                              className="flex items-center space-x-2 animate-fade-in" 
+                              style={{animationDelay: `${idx * 0.1}s`}}
+                            >
+                              <span className="text-brand-500">✨</span>
+                              <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <button 
+                      onClick={() => addToCart(spotlightProduct.id, 1)}
+                      className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                        cartAnimation 
+                          ? 'bg-green-500 scale-105 animate-cart-success' 
+                          : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 hover:scale-105'
+                      } shadow-lg`}
+                      aria-label={`Add ${spotlightProduct.title || spotlightProduct.name} to cart`}
+                    >
+                      {cartAnimation ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <span>✓</span>
+                          <span>Added to Cart!</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center space-x-2">
+                          <ShoppingCart className="w-5 h-5" />
+                          <span>Add to Cart</span>
+                        </div>
+                      )}
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            ) : comparisonProducts.length > 0 ? (
+              <div className="animate-fade-in flex-1">
+                <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Curated Comparison</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {comparisonProducts.map((item) => (
+                    <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                      <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
+                      <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
+                      <p className="text-brand-600 font-bold mb-3">${item.price}</p>
+                      <button 
+                        onClick={() => addToCart(item.id, 1)}
+                        className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        aria-label={`Add ${item.title || item.name} to cart`}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="animate-fade-in flex-1">
+                <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Curated Selection</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {searchResults.map((item: any) => (
+                    <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                      <img src={item.image} alt={item.title} className="w-full h-32 object-cover rounded mb-3" />
+                      <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1 line-clamp-2">{item.title}</h5>
+                      <p className="text-brand-600 font-bold mb-2">${item.price}</p>
+                      <div className="flex items-center space-x-1 mb-2">
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <span className="text-xs text-gray-600 dark:text-gray-400">{item.rating.rate}/5</span>
+                      </div>
+                      <button 
+                        onClick={() => addToCart(item.id, 1)}
+                        className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        aria-label={`Add ${item.title} to cart`}
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-gray-500 dark:text-gray-400">
+                  <div className="text-6xl mb-4">✨</div>
+                  <p className="text-lg mb-2">Begin your curated experience</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">Aria will guide you through our collection with sophisticated storytelling and expert insights</p>
+                </div>
+              </div>
+            )}
+
+            {/* Live Transcript */}
+            {transcript && (
+              <div className="mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
+                <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
+                  {transcript.split('\n').slice(-3).map((line, idx) => (
+                    <p key={idx} className="mb-1">{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
