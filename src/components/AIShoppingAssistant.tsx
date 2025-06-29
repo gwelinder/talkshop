@@ -962,33 +962,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         </div>
 
-        {/* Dynamic Showcase (Flexible Width) - FIXED: Proper Background */}
+        {/* Dynamic Showcase (Flexible Width) - REMOVED UNNECESSARY HEADER DIV */}
         <div className="flex-1 min-w-0 order-1 xl:order-2">
           <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden h-full flex flex-col transition-all duration-1000 ${
             showcaseGlow 
               ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
               : 'border-white/20 dark:border-gray-700/20'
           }`}>
-            <div className="p-4 lg:p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
-              <h3 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
-                <Zap className="w-5 h-5 text-brand-500" />
-                <span>
-                  {showcaseContent.type === 'host-selection' 
-                    ? 'Host Selection' 
-                    : selectedHost 
-                      ? `${selectedHost.name}'s Dynamic Showcase`
-                      : 'Dynamic Showcase'
-                  }
-                </span>
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                {showcaseContent.type === 'host-selection' 
-                  ? 'Choose your AI curator and customize their personality'
-                  : 'Live product demonstrations and curated recommendations'
-                }
-              </p>
-            </div>
-            
             <div className="p-4 lg:p-6 flex-1 min-h-0 overflow-y-auto">
               {renderShowcase()}
 
