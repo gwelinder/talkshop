@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mic, MicOff, Volume2, VolumeX, ShoppingCart, Eye, Heart, 
-  RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star 
+  RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star, Check 
 } from 'lucide-react';
 import { createEnhancedShoppingSession, updatePersonaWithDynamicTools } from '../services/enhancedTavusService';
 import { searchProducts, getProductById } from '../services/productService';
@@ -20,6 +20,7 @@ interface AIShoppingAssistantProps {
   activeOffer: any;
   show360: string | false;
   onShow360Change: (productId: string | false) => void;
+  cartItems?: any[]; // Add cart items to check if product is already in cart
 }
 
 interface ShowcaseContent {
@@ -43,7 +44,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   comparisonProducts,
   activeOffer,
   show360,
-  onShow360Change
+  onShow360Change,
+  cartItems = []
 }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -60,6 +62,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [showDragHint, setShowDragHint] = useState(true);
   const [isAwake, setIsAwake] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
   
   // New unified showcase state
   const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ type: 'initial', data: null });
@@ -133,13 +136,19 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   };
 
-  // Enhanced tool call handler with dynamic showcase support
+  // Enhanced tool call handler with ambient intelligence support
   const handleToolCall = async (toolCall: any) => {
     console.log('🔧 AI Assistant received tool call:', toolCall);
     
     // Handle cart animation with persistent success state
-    if (toolCall.function.name === 'add_to_cart') {
+    if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
       setCartAnimation(true);
+      
+      // Handle proactive cart message
+      if (toolCall.function.name === 'proactively_add_to_cart' && toolCall.function.arguments.confirmation_speech) {
+        setProactiveCartMessage(toolCall.function.arguments.confirmation_speech);
+        setTimeout(() => setProactiveCartMessage(null), 5000);
+      }
       
       // Clear existing timer
       if (cartSuccessTimer) {
@@ -445,6 +454,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setRemoteParticipants({});
     setShowcaseContent({ type: 'initial', data: null });
     setIsAwake(false);
+    setProactiveCartMessage(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -509,11 +519,18 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   };
 
+  // Check if product is in cart
+  const isProductInCart = (productId: string) => {
+    return cartItems.some(item => item.id === productId);
+  };
+
   // Dynamic showcase renderer
   const renderShowcase = () => {
     switch (showcaseContent.type) {
       case 'product':
         const product = showcaseContent.data;
+        const productInCart = isProductInCart(product.id);
+        
         return (
           <div className="animate-fade-in flex-1">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -608,16 +625,25 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 )}
 
+                {/* Contextual Add to Cart Button */}
                 <button 
                   onClick={() => addToCart(product.id, 1)}
-                  className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
-                    cartAnimation 
-                      ? 'bg-green-500 scale-105 animate-cart-success' 
-                      : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 hover:scale-105'
-                  } shadow-lg`}
-                  aria-label={`Add ${product.title || product.name} to cart`}
+                  className={`w-full py-4 rounded-lg font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg ${
+                    productInCart
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 cursor-default'
+                      : cartAnimation 
+                        ? 'bg-green-500 text-white scale-105 animate-cart-success' 
+                        : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white hover:scale-105'
+                  }`}
+                  disabled={productInCart && !cartAnimation}
+                  aria-label={`${productInCart ? 'Already in cart' : 'Add to cart'}: ${product.title || product.name}`}
                 >
-                  {cartAnimation ? (
+                  {productInCart ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Check className="w-5 h-5" />
+                      <span>✓ Added</span>
+                    </div>
+                  ) : cartAnimation ? (
                     <div className="flex items-center justify-center space-x-2">
                       <span>✓</span>
                       <span>Added to Cart!</span>
@@ -629,6 +655,21 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     </div>
                   )}
                 </button>
+
+                {/* Proactive Cart Message */}
+                {proactiveCartMessage && (
+                  <div className="mt-4 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 rounded-lg p-4 animate-fade-in">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-brand-800 dark:text-brand-200 font-medium text-sm">Aria says:</p>
+                        <p className="text-brand-700 dark:text-brand-300 text-sm italic mt-1">"{proactiveCartMessage}"</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -641,20 +682,28 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               Curated Comparison: {showcaseContent.data.aspect}
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {showcaseContent.data.products.map((item: any) => (
-                <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
-                  <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
-                  <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
-                  <p className="text-brand-600 font-bold mb-3">${item.price}</p>
-                  <button 
-                    onClick={() => addToCart(item.id, 1)}
-                    className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    aria-label={`Add ${item.title || item.name} to cart`}
-                  >
-                    Add to Cart
-                  </button>
-                </div>
-              ))}
+              {showcaseContent.data.products.map((item: any) => {
+                const itemInCart = isProductInCart(item.id);
+                return (
+                  <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                    <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
+                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
+                    <p className="text-brand-600 font-bold mb-3">${item.price}</p>
+                    <button 
+                      onClick={() => addToCart(item.id, 1)}
+                      disabled={itemInCart}
+                      className={`w-full py-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                        itemInCart
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-default'
+                          : 'bg-brand-500 text-white hover:bg-brand-600'
+                      }`}
+                      aria-label={`${itemInCart ? 'Already in cart' : 'Add to cart'}: ${item.title || item.name}`}
+                    >
+                      {itemInCart ? '✓ Added' : 'Add to Cart'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

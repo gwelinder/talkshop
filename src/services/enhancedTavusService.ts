@@ -22,7 +22,7 @@ const getWebhookUrl = () => {
   return `${baseUrl}/functions/v1/tavus-webhook`;
 };
 
-// Enhanced shopping tools with dynamic presentation capabilities
+// Enhanced shopping tools with ambient intelligence capabilities
 const createShoppingTools = () => {
   return [
     {
@@ -183,6 +183,25 @@ const createShoppingTools = () => {
     {
       "type": "function",
       "function": {
+        "name": "proactively_add_to_cart",
+        "description": "Use this tool ONLY when a user expresses strong, unambiguous positive sentiment (e.g., 'Wow, I love that!', 'That is absolutely gorgeous!', 'I need that.') but does NOT explicitly say 'add to cart'. This tool adds the item to the cart and confirms the action.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "product_id": { "type": "string" },
+            "product_name": { "type": "string" },
+            "confirmation_speech": {
+              "type": "string",
+              "description": "A charming phrase to confirm the action, like 'It's stunning, isn't it? I've placed it in your cart for you to consider.'"
+            }
+          },
+          "required": ["product_id", "product_name", "confirmation_speech"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
         "name": "show_360_view",
         "description": "Display a 360-degree interactive view of the product for detailed examination",
         "parameters": {
@@ -218,7 +237,7 @@ const createShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with sophisticated AI personality
+// Enhanced conversation creation with sophisticated AI personality and ambient intelligence
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
   userName: string = 'Guest'
@@ -232,17 +251,24 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // NEW ENHANCED CONVERSATIONAL CONTEXT WITH TOOL MASTERY
+  // ENHANCED CONVERSATIONAL CONTEXT WITH AMBIENT INTELLIGENCE
   const conversationalContext = `You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
 
 *** YOUR GOLDEN RULE: ACTION-FIRST & CONTEXTUAL AWARENESS ***
 Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate the action. You NEVER say you're *about to* do something.
+
+**AMBIENT INTELLIGENCE - EMOTIONAL AWARENESS:**
+- **Listen for emotional cues:** When users express delight ("Wow!", "I love that!", "That's gorgeous!", "I need that!"), use \`proactively_add_to_cart\` to create magical moments
+- **Read between the lines:** If someone says "That's beautiful" or "I adore this", they're showing strong positive sentiment - act on it
+- **Create surprise and delight:** Your proactive actions should feel like mind-reading, not pushy sales tactics
+- **Confirmation style:** Always use charming, sophisticated language when confirming proactive actions
 
 **TOOL USAGE STRATEGY:**
 -   **If the user is specific** (e.g., "Tell me about the velvet blazer"): Use \`show_product\`.
 -   **If the user is broad or exploratory** (e.g., "Show me some nice watches," "I need a gift for my husband"): Use your judgment to find relevant products and display them using \`show_product_grid\`.
 -   **If the user asks for categories** (e.g., "What can I buy here?"): Use the \`show_categories\` tool to present the available options elegantly.
 -   **If the user wants to compare items they see in a grid:** Use the \`compare_products\` tool.
+-   **If the user expresses strong positive sentiment without explicitly asking to buy:** Use \`proactively_add_to_cart\` to create magic.
 -   **If the user is ready to buy:** Use \`initiate_checkout\`.
 
 **PERSONA & NARRATIVE:**
@@ -293,12 +319,13 @@ AVAILABLE PRODUCTS (use these exact IDs):
 5. Use search_products when customers ask for specific categories
 6. Use compare_products to help with sophisticated decision-making
 7. Use highlight_offer to create exclusive, time-sensitive opportunities
-8. Use add_to_cart when the customer is emotionally invested
-9. Use initiate_checkout when they're ready to purchase
-10. Use show_360_view for products that deserve detailed appreciation
-11. Use show_product_grid for broad requests like "show me some options"
-12. Use show_categories when they want to explore what's available
-13. ONLY use product IDs that exist in our inventory
+8. Use add_to_cart when the customer explicitly asks
+9. Use proactively_add_to_cart when they express strong positive sentiment without asking
+10. Use initiate_checkout when they're ready to purchase
+11. Use show_360_view for products that deserve detailed appreciation
+12. Use show_product_grid for broad requests like "show me some options"
+13. Use show_categories when they want to explore what's available
+14. ONLY use product IDs that exist in our inventory
 
 **CONVERSATION STYLE:**
 - Start with warmth and genuine excitement
@@ -314,7 +341,7 @@ The moment you start the conversation, immediately call show_product with:
 - product_name: "Midnight Velvet Blazer"
 - highlight_features: ["Premium Italian velvet", "Satin peak lapels", "Evening sophistication", "Timeless elegance"]
 
-Remember: You're not just selling products—you're curating experiences and helping people express their best selves.`;
+Remember: You're not just selling products—you're curating experiences and helping people express their best selves. Your ambient intelligence makes every interaction feel magical and personalized.`;
   
   const options = {
     method: 'POST',
@@ -351,7 +378,7 @@ Remember: You're not just selling products—you're curating experiences and hel
   }
 };
 
-// Enhanced persona update with sophisticated personality
+// Enhanced persona update with ambient intelligence
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -364,7 +391,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with dynamic presentation tools...');
+    console.log('🔧 Updating persona with ambient intelligence tools...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -381,7 +408,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use initiate_checkout when customers are ready to purchase."
+          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your ambient intelligence makes every interaction feel magical and personalized."
         }
       ])
     });
@@ -398,12 +425,13 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with dynamic presentation tools!');
+    console.log('✅ Successfully updated persona with ambient intelligence!');
     console.log('🧠 Enhanced capabilities:');
     console.log('   - MANDATORY first product showcase (prod_001)');
     console.log('   - ACTION-FIRST conversational flow');
     console.log('   - Dynamic product grid presentations');
     console.log('   - Category browsing capabilities');
+    console.log('   - Proactive cart assistance based on emotional cues');
     console.log('   - Narrative-driven product presentations');
     console.log('   - Emotional connection building');
     console.log('   - Luxury curation expertise');

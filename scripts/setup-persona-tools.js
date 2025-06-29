@@ -175,6 +175,25 @@ const shoppingTools = [
   {
     "type": "function",
     "function": {
+      "name": "proactively_add_to_cart",
+      "description": "Use this tool ONLY when a user expresses strong, unambiguous positive sentiment (e.g., 'Wow, I love that!', 'That is absolutely gorgeous!', 'I need that.') but does NOT explicitly say 'add to cart'. This tool adds the item to the cart and confirms the action.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "product_id": { "type": "string" },
+          "product_name": { "type": "string" },
+          "confirmation_speech": {
+            "type": "string",
+            "description": "A charming phrase to confirm the action, like 'It's stunning, isn't it? I've placed it in your cart for you to consider.'"
+          }
+        },
+        "required": ["product_id", "product_name", "confirmation_speech"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "show_360_view",
       "description": "Display a 360-degree interactive view of the product for detailed examination",
       "parameters": {
@@ -218,7 +237,7 @@ async function updatePersonaTools() {
   }
 
   try {
-    console.log('🔧 Updating persona with shopping tools...');
+    console.log('🔧 Updating persona with ambient intelligence tools...');
     console.log(`   Persona ID: ${PERSONA_ID}`);
     console.log(`   API Key: ${TAVUS_API_KEY.slice(0, 8)}...`);
     
@@ -243,7 +262,7 @@ async function updatePersonaTools() {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with shopping tools!');
+    console.log('✅ Successfully updated persona with ambient intelligence!');
     console.log('📋 Tools added:');
     shoppingTools.forEach(tool => {
       console.log(`   - ${tool.function.name}: ${tool.function.description}`);
@@ -259,7 +278,7 @@ async function updatePersonaTools() {
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 Persona setup complete! Your AI agent now has dynamic presentation tools.');
+    console.log('🎉 Persona setup complete! Your AI agent now has ambient intelligence capabilities.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);

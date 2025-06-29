@@ -53,7 +53,7 @@ function App() {
     }
   }, [products]);
 
-  // Optimized tool call handler
+  // Enhanced tool call handler with proactive cart support
   const handleToolCall = useCallback(async (toolCall) => {
     console.log('🔧 App handling tool call:', toolCall);
     
@@ -99,7 +99,11 @@ function App() {
         break;
         
       case 'add_to_cart':
-        addToCart(toolCall.function.arguments.product_id, toolCall.function.arguments.quantity || 1);
+      case 'proactively_add_to_cart':
+        // Handle both explicit and proactive cart additions
+        const productId = toolCall.function.arguments.product_id;
+        const quantity = toolCall.function.arguments.quantity || 1;
+        addToCart(productId, quantity);
         break;
         
       case 'show_360_view':
@@ -170,6 +174,7 @@ function App() {
                 activeOffer={activeOffer}
                 show360={show360}
                 onShow360Change={setShow360}
+                cartItems={cartItems}
               />
             </div>
           </div>
