@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { createEnhancedShoppingSession, updatePersonaWithDynamicTools } from '../services/enhancedTavusService';
 import { searchProducts, getProductById } from '../services/productService';
+import AriaStatus from './AriaStatus';
 import DailyIframe from '@daily-co/daily-js';
 
 interface AIShoppingAssistantProps {
@@ -47,6 +48,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [cartAnimation, setCartAnimation] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showcaseGlow, setShowcaseGlow] = useState(false);
   
   // Daily.js state
   const callRef = useRef<any>(null);
@@ -67,6 +69,15 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Trigger showcase glow effect when spotlight product changes
+  useEffect(() => {
+    if (spotlightProduct) {
+      setShowcaseGlow(true);
+      const timer = setTimeout(() => setShowcaseGlow(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [spotlightProduct]);
 
   // Enhanced tool call handler with API integration
   const handleToolCall = async (toolCall: any) => {
@@ -286,7 +297,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       console.log('🎬 Starting enhanced AI shopping conversation...');
       
       const session = await createEnhancedShoppingSession(
-        'general shopping',
+        'luxury shopping experience',
         'Guest'
       );
       
@@ -340,7 +351,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           <Sparkles className="w-8 h-8 text-purple-600" />
         </h2>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Start a conversation to explore our live inventory of {allProducts.length}+ products with personalized demonstrations
+          Experience luxury shopping with our world-renowned AI curator who transforms product discovery into an art form
         </p>
       </div>
 
@@ -377,34 +388,35 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     <div className="text-center px-4">
                       {!conversationUrl ? (
                         <>
-                          <div className="w-16 h-16 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                             <MessageCircle className="w-8 h-8 text-white" />
                           </div>
-                          <h3 className="text-lg font-bold text-gray-900 mb-3">Ready to Shop?</h3>
-                          <p className="text-gray-600 mb-6 text-sm">
-                            Start a conversation with Aria to explore our live inventory with AI-powered demonstrations
+                          <h3 className="text-lg font-bold text-gray-900 mb-3">Ready for a Curated Experience?</h3>
+                          <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                            Meet Aria, your personal curator who transforms shopping into an art form. 
+                            Discover products through sophisticated storytelling and expert guidance.
                           </p>
                           <button
                             onClick={startConversation}
                             disabled={isConnecting}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm"
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 flex items-center space-x-2 mx-auto shadow-lg text-sm transform hover:scale-105"
                           >
                             {isConnecting ? (
                               <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                <span>Connecting...</span>
+                                <span>Connecting to Aria...</span>
                               </>
                             ) : (
                               <>
                                 <Play className="w-4 h-4" />
-                                <span>Start Shopping</span>
+                                <span>Begin Curated Experience</span>
                               </>
                             )}
                           </button>
                         </>
                       ) : (
                         <>
-                          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                          <div className="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                           <p className="text-sm text-gray-700">
                             {callState === 'joining' ? 'Joining...' : 
                              callState === 'joined' ? 'Waiting for Aria...' : 
@@ -422,21 +434,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   <>
                     <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
                       <div className={`w-2 h-2 rounded-full ${
-                        replicaState === 'speaking' ? 'bg-green-500 animate-pulse' :
+                        replicaState === 'speaking' ? 'bg-purple-500 animate-pulse' :
                         replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
                       }`}></div>
                       <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
-                        {replicaState === 'speaking' ? 'Speaking' :
-                         replicaState === 'listening' ? 'Listening' : 'Connecting'}
+                        LIVE
                       </span>
                     </div>
 
                     <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
                       <div className="flex items-center space-x-2 text-white text-xs">
-                        <div className="flex items-center space-x-1">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                          <span>LIVE</span>
-                        </div>
                         <div className="flex items-center space-x-1">
                           <Eye className="w-3 h-3" />
                           <span>{viewerCount}</span>
@@ -447,32 +454,38 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 )}
               </div>
               
-              {/* Controls */}
+              {/* Controls with Aria Status */}
               {isConnected && (
-                <div className="p-3 bg-gray-50 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={toggleMute}
-                        className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600'} text-white hover:opacity-80 transition-all`}
-                      >
-                        {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                      </button>
-                      <button
-                        onClick={toggleVideo}
-                        className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600'} text-white hover:opacity-80 transition-all`}
-                      >
-                        {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                      </button>
-                      <button
-                        onClick={stopConversation}
-                        className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all"
-                      >
-                        <Pause className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="text-gray-700 text-xs font-medium">
-                      Shopping with Aria
+                <div className="bg-gray-50 border-t border-gray-200">
+                  {/* Aria Status Component */}
+                  <AriaStatus replicaState={replicaState} />
+                  
+                  {/* Control Buttons */}
+                  <div className="p-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={toggleMute}
+                          className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600'} text-white hover:opacity-80 transition-all`}
+                        >
+                          {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                        </button>
+                        <button
+                          onClick={toggleVideo}
+                          className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600'} text-white hover:opacity-80 transition-all`}
+                        >
+                          {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                        </button>
+                        <button
+                          onClick={stopConversation}
+                          className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all"
+                        >
+                          <Pause className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="text-gray-700 text-xs font-medium">
+                        Curated by Aria
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -480,22 +493,26 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             </div>
           </div>
 
-          {/* Dynamic Product Showcase - Takes up 2/3 of the space */}
+          {/* Dynamic Product Showcase with Glow Effect */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className={`bg-white rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
+              showcaseGlow 
+                ? 'border-purple-400 shadow-purple-200 shadow-2xl' 
+                : 'border-gray-200'
+            }`}>
               <div className="p-6 border-b border-gray-200 bg-gray-50">
                 <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-blue-600" />
+                  <Zap className="w-5 h-5 text-purple-600" />
                   <span>Live Product Showcase</span>
                   {isSearching && (
-                    <div className="flex items-center space-x-2 text-blue-600">
+                    <div className="flex items-center space-x-2 text-purple-600">
                       <Search className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Searching...</span>
+                      <span className="text-sm">Curating...</span>
                     </div>
                   )}
                 </h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  Products appear here as Aria demonstrates them from our live inventory
+                  Aria curates and presents products with sophisticated storytelling and expert insights
                 </p>
               </div>
               
@@ -506,13 +523,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       {/* Product Image */}
                       <div className="relative">
                         {show360 === spotlightProduct.id ? (
-                          <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center border border-gray-200">
+                          <div className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center border border-purple-200">
                             <div className="text-center text-gray-700">
-                              <RotateCcw className="w-12 h-12 mx-auto mb-2 animate-spin text-blue-600" />
+                              <RotateCcw className="w-12 h-12 mx-auto mb-2 animate-spin text-purple-600" />
                               <p className="font-semibold">360° Interactive View</p>
                               <button 
                                 onClick={() => onShow360Change(false)}
-                                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+                                className="mt-2 text-sm text-purple-600 hover:text-purple-800 underline"
                               >
                                 Exit 360° View
                               </button>
@@ -535,10 +552,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         )}
                         
                         {activeOffer && activeOffer.productId === spotlightProduct.id && (
-                          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
+                          <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
                             {activeOffer.type === 'discount' && `${activeOffer.discount}% OFF!`}
                             {activeOffer.type === 'limited_time' && 'LIMITED TIME!'}
-                            {activeOffer.type === 'exclusive' && 'EXCLUSIVE DEAL!'}
+                            {activeOffer.type === 'exclusive' && 'EXCLUSIVE!'}
                           </div>
                         )}
                       </div>
@@ -546,7 +563,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       {/* Product Details */}
                       <div className="flex flex-col">
                         <h4 className="text-3xl font-bold text-gray-900 mb-2">{spotlightProduct.title || spotlightProduct.name}</h4>
-                        <p className="text-4xl font-bold text-blue-600 mb-4">
+                        <p className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4">
                           ${spotlightProduct.price}
                         </p>
                         
@@ -569,7 +586,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         
                         {spotlightProduct.highlightFeatures && (
                           <div className="mb-6 flex-1">
-                            <h5 className="text-lg font-semibold text-gray-900 mb-3">Key Features:</h5>
+                            <h5 className="text-lg font-semibold text-gray-900 mb-3">Curated Features:</h5>
                             <div className="space-y-2">
                               {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
                                 <div 
@@ -577,7 +594,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                                   className="flex items-center space-x-2 animate-fadeIn" 
                                   style={{animationDelay: `${idx * 0.1}s`}}
                                 >
-                                  <span className="text-green-500">✓</span>
+                                  <span className="text-purple-500">✨</span>
                                   <span className="text-gray-700">{feature}</span>
                                 </div>
                               ))}
@@ -590,7 +607,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                           className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-300 ${
                             cartAnimation 
                               ? 'bg-green-500 scale-105' 
-                              : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                              : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 hover:scale-105'
                           } shadow-lg`}
                         >
                           {cartAnimation ? (
@@ -610,16 +627,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 ) : comparisonProducts.length > 0 ? (
                   <div className="animate-slideIn flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-6">Product Comparison</h4>
+                    <h4 className="text-xl font-bold text-gray-900 mb-6">Curated Comparison</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {comparisonProducts.map((item) => (
-                        <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
                           <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
                           <h5 className="text-gray-900 font-semibold text-sm mb-1">{item.title || item.name}</h5>
-                          <p className="text-blue-600 font-bold mb-3">${item.price}</p>
+                          <p className="text-purple-600 font-bold mb-3">${item.price}</p>
                           <button 
                             onClick={() => addToCart(item.id, 1)}
-                            className="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                            className="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700 transition-colors"
                           >
                             Add to Cart
                           </button>
@@ -629,20 +646,20 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="animate-slideIn flex-1">
-                    <h4 className="text-xl font-bold text-gray-900 mb-6">Search Results</h4>
+                    <h4 className="text-xl font-bold text-gray-900 mb-6">Curated Selection</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {searchResults.map((item: any) => (
                         <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
                           <img src={item.image} alt={item.title} className="w-full h-32 object-cover rounded mb-3" />
                           <h5 className="text-gray-900 font-semibold text-sm mb-1 line-clamp-2">{item.title}</h5>
-                          <p className="text-blue-600 font-bold mb-2">${item.price}</p>
+                          <p className="text-purple-600 font-bold mb-2">${item.price}</p>
                           <div className="flex items-center space-x-1 mb-2">
                             <Star className="w-3 h-3 text-yellow-400 fill-current" />
                             <span className="text-xs text-gray-600">{item.rating.rate}/5</span>
                           </div>
                           <button 
                             onClick={() => addToCart(item.id, 1)}
-                            className="w-full bg-blue-600 text-white py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+                            className="w-full bg-purple-600 text-white py-2 rounded text-sm hover:bg-purple-700 transition-colors"
                           >
                             Add to Cart
                           </button>
@@ -653,9 +670,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 ) : (
                   <div className="flex-1 flex items-center justify-center">
                     <div className="text-center text-gray-500">
-                      <div className="text-6xl mb-4">🛍️</div>
-                      <p className="text-lg mb-2">Start a conversation with Aria</p>
-                      <p className="text-sm text-gray-400">She'll search and demonstrate products from our live inventory of {allProducts.length}+ items</p>
+                      <div className="text-6xl mb-4">✨</div>
+                      <p className="text-lg mb-2">Begin your curated experience</p>
+                      <p className="text-sm text-gray-400">Aria will guide you through our collection with sophisticated storytelling and expert insights</p>
                     </div>
                   </div>
                 )}
@@ -663,7 +680,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 {/* Live Transcript */}
                 {transcript && (
                   <div className="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h5 className="text-gray-900 font-semibold text-sm mb-2">Live Transcript</h5>
+                    <h5 className="text-gray-900 font-semibold text-sm mb-2">Live Conversation</h5>
                     <div className="text-gray-700 text-xs max-h-24 overflow-y-auto">
                       {transcript.split('\n').slice(-3).map((line, idx) => (
                         <p key={idx} className="mb-1">{line}</p>

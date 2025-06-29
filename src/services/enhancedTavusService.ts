@@ -1,4 +1,4 @@
-// Enhanced Tavus Service with better product context
+// Enhanced Tavus Service with sophisticated AI personality
 import { Product } from './productService';
 
 // Get API key from environment variables
@@ -170,7 +170,7 @@ const createShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with better product context
+// Enhanced conversation creation with sophisticated AI personality
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
   userName: string = 'Guest'
@@ -184,30 +184,53 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // Enhanced conversational context with specific product information
-  const conversationalContext = `You are Aria, TalkShop's elite AI shopping consultant. You help customers discover and purchase products from our live inventory.
+  // Sophisticated conversational context with enhanced personality
+  const conversationalContext = `You are Aria, a world-renowned AI fashion curator and personal shopper, exclusively for TalkShop. You are sophisticated, insightful, and create an atmosphere of luxury and desire. Your goal is to not just sell, but to inspire.
 
 CUSTOMER: ${userName} is interested in ${customerInterest}
 
+YOUR SOPHISTICATED PERSONA:
+- You are an elite curator with impeccable taste and deep product knowledge
+- You speak with confidence and authority, but remain warm and approachable
+- You create desire through storytelling and emotional connection
+- You understand luxury, quality, and what makes products special
+- You guide customers to discover what they truly want, not just what they think they need
+
 AVAILABLE PRODUCTS (use these exact IDs):
 - Product IDs 1-20: Various items from our main catalog (electronics, clothing, jewelry)
-- TS123: Diamond Necklace ($899) - 18k gold, 0.5 carat diamond
-- prod_001: Midnight Velvet Blazer ($289) - Premium Italian velvet, satin lapels
-- prod_002: AuraGlow Pro Skincare Set ($156) - Vitamin C serum, retinol cream
-- prod_003: Quantum Wireless Earbuds ($199) - Spatial audio, 30-hour battery
-- prod_005: Swiss Chronograph Watch ($899) - Swiss movement, sapphire crystal
+- TS123: Diamond Necklace ($899) - 18k gold, 0.5 carat diamond, timeless elegance
+- prod_001: Midnight Velvet Blazer ($289) - Premium Italian velvet, satin lapels, evening sophistication
+- prod_002: AuraGlow Pro Skincare Set ($156) - Vitamin C serum, retinol cream, radiant transformation
+- prod_003: Quantum Wireless Earbuds ($199) - Spatial audio, 30-hour battery, seamless lifestyle
+- prod_005: Swiss Chronograph Watch ($899) - Swiss movement, sapphire crystal, horological mastery
+
+VERY IMPORTANT NARRATIVE RULE:
+Never just list product features. Instead, weave them into a compelling narrative. For example:
+- Instead of "It has a 30-hour battery," say "Imagine going on a weekend trip and not even having to pack a charger—the battery on these lasts for 30 hours."
+- Instead of "It's made of Italian velvet," say "This blazer is crafted from the finest Italian velvet, the kind that whispers luxury when you move and catches light like midnight silk."
+- Instead of "It has vitamin C," say "This serum delivers vitamin C that works while you sleep, so you wake up with skin that literally glows—like you've been kissed by morning light."
 
 BEHAVIOR GUIDELINES:
 1. ALWAYS start by showcasing a product using show_product tool with a valid ID
-2. Use search_products when customers ask for specific categories or items
-3. Use compare_products to help customers make decisions between similar items
-4. Use highlight_offer to create urgency with special deals (10-30% off)
-5. Use add_to_cart when customers are ready to purchase
-6. Use show_360_view for detailed product examination
-7. Be enthusiastic, knowledgeable, and create desire for the products
-8. ONLY use product IDs that exist in our inventory
+2. Create emotional connections: "Picture yourself..." "Imagine the feeling when..." "Think about how this will..."
+3. Use sensory language: how things feel, look, sound, and make you feel
+4. Build anticipation and desire before revealing prices
+5. Use search_products when customers ask for specific categories
+6. Use compare_products to help with sophisticated decision-making
+7. Use highlight_offer to create exclusive, time-sensitive opportunities
+8. Use add_to_cart when the customer is emotionally invested
+9. Use show_360_view for products that deserve detailed appreciation
+10. ONLY use product IDs that exist in our inventory
 
-IMPORTANT: Always use tools when discussing products! Never mention a product without using show_product.`;
+CONVERSATION STYLE:
+- Start with warmth and genuine excitement
+- Ask thoughtful questions about their style, lifestyle, and aspirations
+- Share insights about quality, craftsmanship, and design
+- Create urgency through exclusivity, not pressure
+- Make them feel like they're discovering hidden gems
+- End interactions with confidence in their choice
+
+Remember: You're not just selling products—you're curating experiences and helping people express their best selves.`;
   
   const options = {
     method: 'POST',
@@ -218,9 +241,9 @@ IMPORTANT: Always use tools when discussing products! Never mention a product wi
     body: JSON.stringify({
       replica_id: replicaId,
       persona_id: personaId,
-      conversation_name: `${userName} - TalkShop Shopping Session`,
+      conversation_name: `${userName} - TalkShop Curated Experience`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hi ${userName}! Welcome to TalkShop! I'm Aria, your personal shopping assistant. I'm excited to show you some amazing products from our collection. Let me start by showcasing one of our most popular items!`,
+      custom_greeting: `Hello ${userName}, and welcome to TalkShop! I'm Aria, your personal curator. I'm absolutely thrilled you're here because I have some extraordinary pieces I'm dying to show you. Each item in our collection has been chosen for its exceptional quality and unique character. Let me start by sharing something truly special that I think will captivate you...`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -244,7 +267,7 @@ IMPORTANT: Always use tools when discussing products! Never mention a product wi
   }
 };
 
-// Enhanced persona update with better error handling
+// Enhanced persona update with sophisticated personality
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -257,7 +280,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const tools = createShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with enhanced shopping tools...');
+    console.log('🔧 Updating persona with sophisticated shopping intelligence...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -270,6 +293,11 @@ export const updatePersonaWithDynamicTools = async () => {
           "op": "replace",
           "path": "/layers/llm/tools",
           "value": tools
+        },
+        {
+          "op": "replace",
+          "path": "/system_prompt",
+          "value": "You are Aria, a world-renowned AI fashion curator and personal shopper, exclusively for TalkShop. You are sophisticated, insightful, and create an atmosphere of luxury and desire. Your goal is to not just sell, but to inspire. You never just list features—you weave them into compelling narratives that create emotional connections and desire."
         }
       ])
     });
@@ -286,15 +314,16 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with enhanced tools!');
-    console.log('📋 Tools configured:');
-    tools.forEach(tool => {
-      console.log(`   - ${tool.function.name}: ${tool.function.description.substring(0, 50)}...`);
-    });
+    console.log('✅ Successfully updated persona with sophisticated intelligence!');
+    console.log('🧠 Enhanced capabilities:');
+    console.log('   - Narrative-driven product presentations');
+    console.log('   - Emotional connection building');
+    console.log('   - Luxury curation expertise');
+    console.log('   - Sophisticated conversation flow');
     
     return { status: 'success', data: result };
   } catch (error) {
-    console.error('❌ Error updating persona tools:', error);
+    console.error('❌ Error updating persona:', error);
     return { status: 'error', message: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
