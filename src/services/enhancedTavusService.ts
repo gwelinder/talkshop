@@ -179,7 +179,7 @@ export const createEnhancedShoppingSession = async (
   
   // Use the provided replica and persona IDs
   const replicaId = "rb54819da0d5";
-  const personaId = "pdf36f9d7a5a";
+  const personaId = "pb16b649a4c0";
   
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
