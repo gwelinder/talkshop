@@ -5,6 +5,7 @@ import ProductGrid from './components/ProductGrid';
 import AIShoppingAssistant from './components/AIShoppingAssistant';
 import EnvironmentSetup from './components/EnvironmentSetup';
 import Cart from './components/Cart';
+import FOMORibbon from './components/FOMORibbon';
 import { useProducts } from './hooks/useProducts';
 import { getProductById } from './services/productService';
 import { getApiConfig } from './services/tavusService';
@@ -21,7 +22,7 @@ function App() {
   const [featuredProducts, setFeaturedProducts] = useState([]);
 
   // Use the optimized products hook
-  const { products, categories, loading, error, getFeatured } = useProducts();
+  const { products, categories, loading, error, getFeatured, prefetchProduct } = useProducts();
 
   // Check API configuration on load
   useEffect(() => {
@@ -126,10 +127,10 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading TalkShop...</p>
+          <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading TalkShop...</p>
         </div>
       </div>
     );
@@ -137,12 +138,12 @@ function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
+          <p className="text-red-600 dark:text-red-400 mb-4">Error: {error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-brand-500 text-white px-4 py-2 rounded-lg hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
             Retry
           </button>
@@ -152,27 +153,30 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Header 
         cartItemCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
         onShowCart={() => setCurrentView('cart')}
         onShowSettings={() => setShowEnvSetup(true)}
       />
 
+      {/* FOMO Ribbon */}
+      <FOMORibbon />
+
       {currentView === 'home' && (
         <main>
-          {/* Hero Section */}
-          <div className="bg-white border-b border-gray-200">
-            <div className="container mx-auto px-4 py-16">
+          {/* Hero Section - Reduced padding */}
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50">
+            <div className="container mx-auto px-4 py-8">
               <div className="text-center max-w-4xl mx-auto">
-                <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-                  Shop with <span className="text-blue-600">AI</span>
+                <h1 className="text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-6">
+                  Shop with <span className="bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">AI</span>
                 </h1>
-                <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
                   Meet Aria, your personal shopping assistant. Get live product demonstrations, 
                   expert recommendations, and personalized styling advice.
                 </p>
-                <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
+                <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span>Live AI Assistant</span>
@@ -191,7 +195,7 @@ function App() {
           </div>
 
           {/* AI Shopping Assistant */}
-          <div className="bg-white">
+          <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl">
             <div className="container mx-auto px-4 py-16">
               <AIShoppingAssistant 
                 allProducts={products}
@@ -207,9 +211,9 @@ function App() {
           </div>
 
           {/* Categories */}
-          <div className="bg-gray-50 border-t border-gray-200">
+          <div className="bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="container mx-auto px-4 py-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Shop by Category</h2>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-12 text-center">Shop by Category</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {categories.map((category) => {
                   const categoryProducts = products.filter(p => p.category === category);
@@ -222,10 +226,10 @@ function App() {
                   
                   return (
                     <div key={category} className="group cursor-pointer">
-                      <div className="bg-white rounded-xl p-6 text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 border border-gray-200">
+                      <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl p-6 text-center hover:shadow-lg hover:shadow-brand-500/10 transition-all duration-300 transform hover:-translate-y-1 border border-white/20 dark:border-gray-700/20 hover:border-brand-300 dark:hover:border-brand-600">
                         <div className="text-4xl mb-3">{categoryIcons[category] || '🛍️'}</div>
-                        <h3 className="text-gray-900 font-semibold capitalize">{category}</h3>
-                        <p className="text-gray-500 text-sm mt-1">{categoryProducts.length} items</p>
+                        <h3 className="text-gray-900 dark:text-gray-100 font-semibold capitalize">{category}</h3>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">{categoryProducts.length} items</p>
                       </div>
                     </div>
                   );
@@ -236,36 +240,37 @@ function App() {
 
           {/* Featured Products */}
           {featuredProducts.length > 0 && (
-            <div className="bg-white">
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl">
               <div className="container mx-auto px-4 py-16">
                 <ProductGrid 
                   products={featuredProducts} 
                   onJoinRoom={() => {}}
                   title="Featured Products"
+                  onProductHover={prefetchProduct}
                 />
               </div>
             </div>
           )}
 
           {/* Trust Indicators */}
-          <div className="bg-gray-50 border-t border-gray-200">
+          <div className="bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50">
             <div className="container mx-auto px-4 py-16">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                 <div>
-                  <div className="text-4xl font-bold text-blue-600 mb-2">{products.length}+</div>
-                  <div className="text-gray-600">Products Available</div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent mb-2">{products.length}+</div>
+                  <div className="text-gray-600 dark:text-gray-300">Products Available</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-green-600 mb-2">15K+</div>
-                  <div className="text-gray-600">Happy Customers</div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent mb-2">15K+</div>
+                  <div className="text-gray-600 dark:text-gray-300">Happy Customers</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-purple-600 mb-2">98%</div>
-                  <div className="text-gray-600">Satisfaction Rate</div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent mb-2">98%</div>
+                  <div className="text-gray-600 dark:text-gray-300">Satisfaction Rate</div>
                 </div>
                 <div>
-                  <div className="text-4xl font-bold text-orange-600 mb-2">24/7</div>
-                  <div className="text-gray-600">AI Assistance</div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent mb-2">24/7</div>
+                  <div className="text-gray-600 dark:text-gray-300">AI Assistance</div>
                 </div>
               </div>
             </div>
