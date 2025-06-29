@@ -5,9 +5,13 @@ import AIShoppingAssistant from './components/AIShoppingAssistant';
 import EnvironmentSetup from './components/EnvironmentSetup';
 import Cart from './components/Cart';
 import Checkout from './components/Checkout';
+import SessionTypeSelector from './components/SessionTypeSelector';
+import SubscriptionModal from './components/SubscriptionModal';
 import { useProducts } from './hooks/useProducts';
 import { getProductById } from './services/productService';
 import { getApiConfig } from './services/tavusService';
+import { getCurrentUser, onAuthStateChange, AuthUser } from './services/authService';
+import { getUserProfile, UserProfile } from './services/supabaseService';
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -19,9 +23,58 @@ function App() {
   const [activeOffer, setActiveOffer] = useState(null);
   const [show360, setShow360] = useState(false);
   const [cartJiggle, setCartJiggle] = useState(false);
+  
+  // Auth and user state
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  // Session and subscription state
+  const [sessionType, setSessionType] = useState<'voice' | 'video' | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Use the optimized products hook
   const { products, categories, loading, error, getFeatured, prefetchProduct } = useProducts();
+
+  // Check auth state on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getCurrentUser();
+        setAuthUser(user);
+        
+        if (user) {
+          // Load user profile
+          const profile = await getUserProfile(user.id);
+          setUserProfile(profile);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = onAuthStateChange(async (user) => {
+      setAuthUser(user);
+      setAuthLoading(false);
+      
+      if (user) {
+        const profile = await getUserProfile(user.id);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+        setCurrentView('home'); // Reset to home when signed out
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   // Check API configuration on load - ONLY show setup in dev mode
   useEffect(() => {
@@ -144,6 +197,29 @@ function App() {
     }
   }, [products, addToCart]);
 
+  // Handle session type selection
+  const handleSessionSelect = (type: 'voice' | 'video') => {
+    setSessionType(type);
+    setCurrentView('shopping');
+  };
+
+  // Handle upgrade required
+  const handleUpgradeRequired = () => {
+    setShowSubscriptionModal(true);
+  };
+
+  // Handle subscription upgrade
+  const handleSubscriptionUpgrade = (tier: string) => {
+    // Update user profile with new tier
+    if (userProfile) {
+      setUserProfile({
+        ...userProfile,
+        subscription_tier: tier as any
+      });
+    }
+    setShowSubscriptionModal(false);
+  };
+
   // Show environment setup only in dev mode
   if (showEnvSetup) {
     return (
@@ -153,7 +229,7 @@ function App() {
     );
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -187,25 +263,57 @@ function App() {
         onShowCart={() => setCurrentView('cart')}
         onShowSettings={() => setShowEnvSetup(true)}
         cartJiggle={cartJiggle}
+        user={authUser}
       />
 
       {currentView === 'home' && (
         <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          {/* AI Shopping Assistant - Full Height Container */}
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <AIShoppingAssistant 
-              allProducts={products}
-              onToolCall={handleToolCall}
-              addToCart={addToCart}
-              spotlightProduct={spotlightProduct}
-              comparisonProducts={comparisonProducts}
-              activeOffer={activeOffer}
-              show360={show360}
-              onShow360Change={setShow360}
-              cartItems={cartItems}
-              onCartJiggle={handleCartJiggle}
+          {!authUser || !sessionType ? (
+            <SessionTypeSelector
+              userTier={userProfile?.subscription_tier || 'free'}
+              userId={authUser?.id || ''}
+              onSelectSession={handleSessionSelect}
+              onUpgradeRequired={handleUpgradeRequired}
             />
-          </div>
+          ) : (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+              <AIShoppingAssistant 
+                allProducts={products}
+                onToolCall={handleToolCall}
+                addToCart={addToCart}
+                spotlightProduct={spotlightProduct}
+                comparisonProducts={comparisonProducts}
+                activeOffer={activeOffer}
+                show360={show360}
+                onShow360Change={setShow360}
+                cartItems={cartItems}
+                onCartJiggle={handleCartJiggle}
+                sessionType={sessionType}
+                userTier={userProfile?.subscription_tier || 'free'}
+                userId={authUser.id}
+              />
+            </div>
+          )}
+        </main>
+      )}
+
+      {currentView === 'shopping' && authUser && sessionType && (
+        <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <AIShoppingAssistant 
+            allProducts={products}
+            onToolCall={handleToolCall}
+            addToCart={addToCart}
+            spotlightProduct={spotlightProduct}
+            comparisonProducts={comparisonProducts}
+            activeOffer={activeOffer}
+            show360={show360}
+            onShow360Change={setShow360}
+            cartItems={cartItems}
+            onCartJiggle={handleCartJiggle}
+            sessionType={sessionType}
+            userTier={userProfile?.subscription_tier || 'free'}
+            userId={authUser.id}
+          />
         </main>
       )}
 
@@ -221,7 +329,7 @@ function App() {
               ));
             }
           }}
-          onClose={() => setCurrentView('home')}
+          onClose={() => setCurrentView(sessionType ? 'shopping' : 'home')}
           onCheckout={() => setCurrentView('checkout')}
         />
       )}
@@ -229,9 +337,17 @@ function App() {
       {currentView === 'checkout' && (
         <Checkout 
           cartItems={cartItems}
-          onClose={() => setCurrentView('home')}
+          onClose={() => setCurrentView(sessionType ? 'shopping' : 'home')}
         />
       )}
+
+      {/* Subscription Modal */}
+      <SubscriptionModal
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        currentTier={userProfile?.subscription_tier || 'free'}
+        onUpgrade={handleSubscriptionUpgrade}
+      />
     </div>
   );
 }

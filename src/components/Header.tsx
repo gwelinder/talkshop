@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Settings, User, Moon, Sun } from 'lucide-react';
+import { ShoppingBag, Settings, User, Moon, Sun, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { AuthUser, signOut } from '../services/authService';
 
 interface HeaderProps {
   cartItemCount: number;
   onShowCart: () => void;
   onShowSettings: () => void;
   cartJiggle?: boolean;
+  user?: AuthUser | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettings, cartJiggle = false }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  cartItemCount, 
+  onShowCart, 
+  onShowSettings, 
+  cartJiggle = false,
+  user 
+}) => {
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-theme') === 'dark'
   );
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const toggleTheme = () => {
     const newTheme = isDark ? 'light' : 'dark';
@@ -26,6 +35,15 @@ const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettin
     }
     
     localStorage.setItem('theme', newTheme);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setShowUserMenu(false);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
 
   return (
@@ -62,13 +80,62 @@ const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettin
               <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
-            {/* Profile */}
-            <button 
-              className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
+            {/* User Menu */}
+            {user ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  aria-label="User menu"
+                >
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name || 'User'} 
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-full border border-gray-200 dark:border-gray-600"
+                    />
+                  ) : (
+                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                  )}
+                  <span className="hidden sm:inline text-sm font-medium truncate max-w-20">
+                    {user.name?.split(' ')[0] || 'User'}
+                  </span>
+                </button>
+
+                {/* User Dropdown */}
+                {showUserMenu && (
+                  <motion.div
+                    className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                  >
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {user.name || 'User'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              <button 
+                className="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors rounded-lg hover:bg-gray-100/50 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                aria-label="Profile"
+              >
+                <User className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
 
             {/* Magic Cart - Compact */}
             <motion.button 
@@ -121,6 +188,14 @@ const Header: React.FC<HeaderProps> = ({ cartItemCount, onShowCart, onShowSettin
           </div>
         </div>
       </div>
+
+      {/* Click outside to close user menu */}
+      {showUserMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowUserMenu(false)}
+        />
+      )}
     </header>
   );
 };
