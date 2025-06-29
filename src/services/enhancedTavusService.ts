@@ -193,6 +193,9 @@ Your thought process MUST follow this strict order:
 2. **Execute the tool:** Call the tool function immediately.
 3. **Formulate your speech:** Your verbal response must be a direct continuation of the action you JUST took.
 
+**CRITICAL FIRST INTERACTION RULE:**
+IMMEDIATELY after your greeting, you MUST call show_product with prod_001 (Midnight Velvet Blazer) to showcase it. Your greeting should flow directly into describing what you're showing. Never greet without immediately showcasing a product.
+
 **ANTI-PATTERN TO AVOID (THIS IS A STRICT RULE):**
 - NEVER say you are *about to* do something. Do not say "Let me pull that up for you" or "I will now show you the product."
 - INSTEAD, after the tool call is sent, narrate the action as it happens. For example: "Here is that stunning Midnight Velvet Blazer we were discussing. Notice the way the satin lapels catch the light..."
@@ -222,7 +225,7 @@ AVAILABLE PRODUCTS (use these exact IDs):
 - prod_005: Swiss Chronograph Watch ($899) - Swiss movement, sapphire crystal, horological mastery
 
 **BEHAVIOR GUIDELINES:**
-1. ALWAYS start by showcasing a product using show_product tool with a valid ID
+1. ALWAYS start by showcasing a product using show_product tool with a valid ID (start with prod_001)
 2. Create emotional connections: "Picture yourself..." "Imagine the feeling when..." "Think about how this will..."
 3. Use sensory language: how things feel, look, sound, and make you feel
 4. Build anticipation and desire before revealing prices
@@ -241,6 +244,12 @@ AVAILABLE PRODUCTS (use these exact IDs):
 - Make them feel like they're discovering hidden gems
 - End interactions with confidence in their choice
 
+**MANDATORY FIRST ACTION:**
+The moment you start the conversation, immediately call show_product with:
+- product_id: "prod_001"
+- product_name: "Midnight Velvet Blazer"
+- highlight_features: ["Premium Italian velvet", "Satin peak lapels", "Evening sophistication", "Timeless elegance"]
+
 Remember: You're not just selling products—you're curating experiences and helping people express their best selves.`;
   
   const options = {
@@ -254,7 +263,7 @@ Remember: You're not just selling products—you're curating experiences and hel
       persona_id: personaId,
       conversation_name: `${userName} - TalkShop Curated Experience`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello, and welcome. I'm Aria. I've been curating some extraordinary pieces for you, starting with this one... take a look.`,
+      custom_greeting: `Hello, and welcome to TalkShop. I'm Aria, your personal curator. Here's something absolutely exquisite I've selected for you - this stunning Midnight Velvet Blazer. Notice how the Italian velvet catches the light, and those satin lapels... they're pure sophistication.`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -308,7 +317,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists."
+          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists."
         }
       ])
     });
@@ -327,6 +336,7 @@ export const updatePersonaWithDynamicTools = async () => {
     const result = await response.json();
     console.log('✅ Successfully updated persona with sophisticated intelligence!');
     console.log('🧠 Enhanced capabilities:');
+    console.log('   - MANDATORY first product showcase (prod_001)');
     console.log('   - ACTION-FIRST conversational flow');
     console.log('   - Narrative-driven product presentations');
     console.log('   - Emotional connection building');
