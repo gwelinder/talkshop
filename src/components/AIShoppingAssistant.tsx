@@ -581,7 +581,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         
         return (
           <div className="animate-fade-in h-full flex flex-col">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 flex-1">
               {/* Product Image */}
               <div className="relative">
                 {show360 === product.id ? (
@@ -590,8 +590,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
                       style={{ transform: `rotate(${rotation360}deg)` }}
                     >
-                      <RotateCcw className="w-12 h-12 mx-auto mb-2 text-brand-500" />
-                      <p className="font-semibold">360° Interactive View</p>
+                      <RotateCcw className="w-8 h-8 lg:w-12 lg:h-12 mx-auto mb-2 text-brand-500" />
+                      <p className="font-semibold text-sm lg:text-base">360° Interactive View</p>
                     </div>
                     {showDragHint && (
                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
@@ -634,8 +634,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
               {/* Product Details */}
               <div className="flex flex-col">
-                <h4 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{product.title || product.name}</h4>
-                <p className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                <h4 className="text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{product.title || product.name}</h4>
+                <p className="text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
                   ${product.price}
                 </p>
                 
@@ -658,7 +658,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 
                 {product.highlightFeatures && (
                   <div className="mb-6 flex-1">
-                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
+                    <h5 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
                     <div className="space-y-2">
                       {product.highlightFeatures.map((feature: string, idx: number) => (
                         <motion.div 
@@ -669,20 +669,20 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                           transition={{ delay: idx * 0.1 }}
                         >
                           <span className="text-brand-500">✨</span>
-                          <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                          <span className="text-gray-700 dark:text-gray-300 text-sm lg:text-base">{feature}</span>
                         </motion.div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Magic Add to Cart Button */}
+                {/* Magic Add to Cart Button - Responsive */}
                 <motion.button 
                   onClick={(e) => {
                     const sourceElement = e.currentTarget;
                     handleMagicAddToCart(product.id, 1, sourceElement);
                   }}
-                  className={`w-full py-4 rounded-lg font-bold text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg ${
+                  className={`w-full py-3 lg:py-4 rounded-lg font-bold text-base lg:text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg ${
                     productInCart
                       ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 cursor-default'
                       : cartAnimation 
@@ -696,7 +696,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 >
                   {productInCart ? (
                     <div className="flex items-center justify-center space-x-2">
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4 lg:w-5 lg:h-5" />
                       <span>✓ Added</span>
                     </div>
                   ) : cartAnimation ? (
@@ -706,7 +706,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     </div>
                   ) : (
                     <div className="flex items-center justify-center space-x-2">
-                      <ShoppingCart className="w-5 h-5" />
+                      <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5" />
                       <span>Add to Cart</span>
                     </div>
                   )}
@@ -739,17 +739,17 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       case 'comparison':
         return (
           <div className="animate-fade-in h-full flex flex-col">
-            <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+            <h4 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 lg:mb-6">
               Curated Comparison: {showcaseContent.data.aspect}
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4 flex-1">
               {showcaseContent.data.products.map((item: any) => {
                 const itemInCart = isProductInCart(item.id);
                 return (
-                  <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow h-fit">
-                    <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
-                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
-                    <p className="text-brand-600 font-bold mb-3">${item.price}</p>
+                  <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow h-fit">
+                    <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-24 lg:h-32 object-cover rounded mb-3" />
+                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-xs lg:text-sm mb-1">{item.title || item.name}</h5>
+                    <p className="text-brand-600 font-bold mb-3 text-sm lg:text-base">${item.price}</p>
                     <motion.button 
                       onClick={(e) => {
                         if (!itemInCart) {
@@ -757,7 +757,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         }
                       }}
                       disabled={itemInCart}
-                      className={`w-full py-2 rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                      className={`w-full py-2 rounded text-xs lg:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
                         itemInCart
                           ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-default'
                           : 'bg-brand-500 text-white hover:bg-brand-600'
@@ -804,8 +804,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         return (
           <div className="h-full flex items-center justify-center">
             <div className="text-center text-gray-500 dark:text-gray-400">
-              <div className="text-6xl mb-4">✨</div>
-              <p className="text-lg mb-2">Welcome to your personal shopping experience</p>
+              <div className="text-4xl lg:text-6xl mb-4">✨</div>
+              <p className="text-base lg:text-lg mb-2">Welcome to your personal shopping experience</p>
               <p className="text-sm text-gray-400 dark:text-gray-500">
                 {selectedHost ? `${selectedHost.name} is ready to assist you` : 'Select a host to begin your curated journey'}
               </p>
@@ -816,7 +816,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
       {/* Magic Cart Animation Overlay */}
       <MagicCartAnimation
         isActive={animationState.isActive}
@@ -827,14 +827,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         onComplete={completeMagicCart}
       />
 
-      {/* Main Content - Optimized Layout for All Devices */}
-      <div className="flex-1 flex flex-col xl:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-0">
+      {/* Main Content - FIXED: Responsive Layout with Proper Background */}
+      <div className="flex-1 flex flex-col xl:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-0 bg-gray-50 dark:bg-gray-900">
         {/* AI Video Section - Responsive Width */}
         <div className="w-full xl:w-96 flex-shrink-0 order-2 xl:order-1">
           <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden h-full flex flex-col">
             <div 
               ref={videoContainerRef}
-              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300 aspect-[9/16] xl:aspect-auto"
+              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300 aspect-[16/9] xl:aspect-auto"
             >
               {/* Remote participants video/audio */}
               {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
@@ -859,7 +859,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   <div className="text-center px-4">
                     {!conversationUrl ? (
                       <>
-                        <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                        <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                           {selectedHost ? (
                             <img 
                               src={selectedHost.image} 
@@ -867,10 +867,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                               className="w-full h-full object-cover rounded-full"
                             />
                           ) : (
-                            <MessageCircle className="w-8 h-8 text-white" />
+                            <MessageCircle className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
                           )}
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
+                        <h3 className="text-base lg:text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
                           {selectedHost ? `Meet ${selectedHost.name}` : 'Choose Your Host'}
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
@@ -882,7 +882,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       </>
                     ) : (
                       <>
-                        <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                        <div className="w-10 h-10 lg:w-12 lg:h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                           {callState === 'joining' ? 'Joining call...' : 
                            callState === 'joined' ? `Connecting to ${selectedHost?.name}...` : 
@@ -962,7 +962,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         </div>
 
-        {/* Dynamic Showcase (Flexible Width) */}
+        {/* Dynamic Showcase (Flexible Width) - FIXED: Proper Background */}
         <div className="flex-1 min-w-0 order-1 xl:order-2">
           <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden h-full flex flex-col transition-all duration-1000 ${
             showcaseGlow 
