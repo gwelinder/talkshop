@@ -1,29 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Mic, MicOff, Volume2, VolumeX, ShoppingCart, Eye, Heart, 
-  RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star, Check, Camera 
+  RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star,
+  User, Wand2, ArrowRight, ShoppingBag, Lightbulb
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { createEnhancedShoppingSession, updatePersonaWithDynamicTools } from '../services/enhancedTavusService';
 import { searchProducts, getProductById } from '../services/productService';
 import AriaStatus from './AriaStatus';
-import CategoryGridDisplay from './CategoryGridDisplay';
-import ProductGrid from './ProductGrid';
-import MagicCartAnimation from './MagicCartAnimation';
 import HostSelector from './HostSelector';
+import ProductGrid from './ProductGrid';
+import CategoryGridDisplay from './CategoryGridDisplay';
+import UserInput from './UserInput';
+import MagicCartAnimation from './MagicCartAnimation';
 import { useMagicCart } from '../hooks/useMagicCart';
 import DailyIframe from '@daily-co/daily-js';
-
-interface Host {
-  id: string;
-  name: string;
-  replicaId: string;
-  description: string;
-  specialty: string;
-  personality: string;
-  image: string;
-  customPrompt?: string;
-}
 
 interface AIShoppingAssistantProps {
   allProducts: any[];
@@ -34,13 +25,8 @@ interface AIShoppingAssistantProps {
   activeOffer: any;
   show360: string | false;
   onShow360Change: (productId: string | false) => void;
-  cartItems?: any[];
-  onCartJiggle?: () => void;
-}
-
-interface ShowcaseContent {
-  type: 'initial' | 'product' | 'comparison' | 'grid' | 'categories' | 'host-selection' | 'style-analysis' | 'object-analysis';
-  data: any;
+  cartItems: any[];
+  onCartJiggle: () => void;
 }
 
 // Singleton call object as recommended by Tavus
@@ -60,37 +46,37 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   activeOffer,
   show360,
   onShow360Change,
-  cartItems = [],
+  cartItems,
   onCartJiggle
 }) => {
+  // Connection and conversation state
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [conversationUrl, setConversationUrl] = useState<string | null>(null);
+  const [selectedHost, setSelectedHost] = useState<any>(null);
+  const [showHostSelector, setShowHostSelector] = useState(true);
+  
+  // AI state
   const [replicaState, setReplicaState] = useState<'connecting' | 'listening' | 'speaking'>('connecting');
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [transcript, setTranscript] = useState<string>('');
+  
+  // UI state
   const [viewerCount, setViewerCount] = useState(Math.floor(Math.random() * 50) + 10);
   const [cartAnimation, setCartAnimation] = useState(false);
   const [cartSuccessTimer, setCartSuccessTimer] = useState<NodeJS.Timeout | null>(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [showcaseGlow, setShowcaseGlow] = useState(false);
   const [rotation360, setRotation360] = useState(0);
   const [showDragHint, setShowDragHint] = useState(true);
-  const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
-  const [selectedHost, setSelectedHost] = useState<Host | null>(null);
-  const [styleAnalysisResult, setStyleAnalysisResult] = useState<any>(null);
-  const [objectAnalysisResult, setObjectAnalysisResult] = useState<any>(null);
-  const [isAnalyzingStyle, setIsAnalyzingStyle] = useState(false);
-  const [isAnalyzingObject, setIsAnalyzingObject] = useState(false);
   
-  // Magic Cart Animation
-  const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
-  
-  // New unified showcase state - starts with host selection
-  const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ 
-    type: 'host-selection', 
-    data: null 
-  });
+  // Product display state
+  const [productGridData, setProductGridData] = useState<{products: any[], title: string} | null>(null);
+  const [showCategories, setShowCategories] = useState(false);
+  const [styleAnalysisData, setStyleAnalysisData] = useState<any>(null);
+  const [objectAnalysisData, setObjectAnalysisData] = useState<any>(null);
   
   // Daily.js state
   const callRef = useRef<any>(null);
@@ -99,6 +85,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const rotation360Ref = useRef<NodeJS.Timeout | null>(null);
+
+  // Magic cart animation
+  const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
 
   // Update persona tools on component mount
   useEffect(() => {
@@ -113,14 +102,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Trigger showcase glow effect when content changes
+  // Trigger showcase glow effect when spotlight product changes
   useEffect(() => {
-    if (showcaseContent.type !== 'initial' && showcaseContent.type !== 'host-selection') {
+    if (spotlightProduct) {
       setShowcaseGlow(true);
       const timer = setTimeout(() => setShowcaseGlow(false), 2000);
       return () => clearTimeout(timer);
     }
-  }, [showcaseContent]);
+  }, [spotlightProduct]);
 
   // Auto-rotate 360 view
   useEffect(() => {
@@ -129,7 +118,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         setRotation360(prev => (prev + 5) % 360);
       }, 100);
       
-      // Hide drag hint after 3 seconds
       const hintTimer = setTimeout(() => setShowDragHint(false), 3000);
       
       return () => {
@@ -144,59 +132,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   }, [show360]);
 
-  // Easter egg detection
-  const checkForEasterEggs = (message: string) => {
-    const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes('greg')) {
-      handleToolCall({
-        function: {
-          name: 'show_product',
-          arguments: {
-            product_id: 'prod_003',
-            product_name: 'Greg-grade Quantum Earbuds',
-            highlight_features: ['Greg-approved quality', 'Spatial audio mastery', 'Founder-worthy sound']
-          }
-        }
-      });
-    }
-  };
-
-  // Enhanced magic cart handler
-  const handleMagicAddToCart = (productId: string, quantity: number, sourceElement?: HTMLElement) => {
-    // Find the product for the animation
-    const product = allProducts.find(p => p.id === productId) || showcaseContent.data;
-    
-    if (product && sourceElement) {
-      // Trigger magic cart animation
-      triggerMagicCart(
-        product.image || product.thumbnail,
-        product.title || product.name,
-        sourceElement
-      );
-      
-      // Trigger cart jiggle in header
-      if (onCartJiggle) {
-        setTimeout(() => onCartJiggle(), 800); // Delay to sync with animation
-      }
-    }
-    
-    // Add to cart
-    addToCart(productId, quantity);
-  };
-
-  // Enhanced tool call handler with perception support
-  const handleToolCall = async (toolCall: any) => {
+  // Enhanced tool call handler with proper parsing
+  const handleToolCall = useCallback(async (toolCall: any) => {
     console.log('🔧 AI Assistant received tool call:', toolCall);
     
     // Handle cart animation with persistent success state
     if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
       setCartAnimation(true);
-      
-      // Handle proactive cart message
-      if (toolCall.function.name === 'proactively_add_to_cart' && toolCall.function.arguments.confirmation_speech) {
-        setProactiveCartMessage(toolCall.function.arguments.confirmation_speech);
-        setTimeout(() => setProactiveCartMessage(null), 5000);
-      }
+      onCartJiggle();
       
       // Clear existing timer
       if (cartSuccessTimer) {
@@ -210,209 +153,122 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       }, 1200);
       
       setCartSuccessTimer(timer);
+
+      // Trigger magic cart animation if we have a product
+      if (spotlightProduct) {
+        const productElement = document.querySelector('[data-product-showcase]') as HTMLElement;
+        if (productElement) {
+          triggerMagicCart(
+            spotlightProduct.image || spotlightProduct.thumbnail,
+            spotlightProduct.title || spotlightProduct.name,
+            productElement
+          );
+        }
+      }
     }
     
-    // Handle perception tool calls
+    // Handle search products tool
+    if (toolCall.function.name === 'search_products') {
+      setIsSearching(true);
+      try {
+        const searchParams = {
+          search: toolCall.function.arguments.search_query,
+          category: toolCall.function.arguments.category,
+          minPrice: toolCall.function.arguments.min_price,
+          maxPrice: toolCall.function.arguments.max_price,
+          limit: 8
+        };
+        
+        const results = await searchProducts(searchParams);
+        setSearchResults(results);
+        console.log('🔍 Search results:', results);
+        
+        // Display results in product grid
+        if (results.length > 0) {
+          setProductGridData({
+            products: results,
+            title: `Found ${results.length} products matching "${searchParams.search}"`
+          });
+          setShowCategories(false);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+      return; // Don't forward search tool calls to parent
+    }
+
+    // Handle product grid display
+    if (toolCall.function.name === 'show_product_grid') {
+      const { products, title } = toolCall.function.arguments;
+      setProductGridData({ products, title });
+      setShowCategories(false);
+      return; // Don't forward to parent
+    }
+
+    // Handle category display
+    if (toolCall.function.name === 'show_categories') {
+      setShowCategories(true);
+      setProductGridData(null);
+      return; // Don't forward to parent
+    }
+
+    // Handle style analysis (perception tool)
     if (toolCall.function.name === 'analyze_user_style') {
       console.log('🎨 Processing style analysis:', toolCall.function.arguments);
-      setIsAnalyzingStyle(true);
+      setStyleAnalysisData(toolCall.function.arguments);
       
-      // Store the style analysis result
-      const styleResult = {
-        dominant_color: toolCall.function.arguments.dominant_color,
-        style_category: toolCall.function.arguments.style_category,
-        detected_accessories: toolCall.function.arguments.detected_accessories || []
-      };
-      
-      setStyleAnalysisResult(styleResult);
-      
-      // Show style analysis in showcase
-      setShowcaseContent({
-        type: 'style-analysis',
-        data: styleResult
-      });
-      
-      // Automatically search for matching products after a brief display
-      setTimeout(async () => {
-        try {
-          // Create search query based on style analysis
-          const searchQuery = `${styleResult.style_category} ${styleResult.dominant_color}`;
-          const searchParams = {
-            search: searchQuery,
-            limit: 8
-          };
-          
-          const results = await searchProducts(searchParams);
-          
-          // Display curated results
-          setShowcaseContent({
-            type: 'grid',
-            data: {
-              products: results,
-              title: `Based on your ${styleResult.dominant_color} ${styleResult.style_category} style, here are pieces I think you'll adore`
-            }
+      // Auto-search based on style analysis
+      if (toolCall.function.arguments.dominant_color && toolCall.function.arguments.style_category) {
+        const searchQuery = `${toolCall.function.arguments.style_category} ${toolCall.function.arguments.dominant_color}`;
+        const results = await searchProducts({ search: searchQuery, limit: 6 });
+        
+        if (results.length > 0) {
+          setProductGridData({
+            products: results,
+            title: `Based on your ${toolCall.function.arguments.style_category} ${toolCall.function.arguments.dominant_color} style, here are pieces I think you'll adore`
           });
-          
-          setIsAnalyzingStyle(false);
-        } catch (error) {
-          console.error('Style-based search error:', error);
-          setIsAnalyzingStyle(false);
         }
-      }, 3000); // Show analysis for 3 seconds before showing results
-      
-      return; // Don't forward perception tool calls to parent
+      }
+      return; // Don't forward to parent
     }
 
-    // Handle object analysis perception tool calls
+    // Handle object analysis (perception tool)
     if (toolCall.function.name === 'analyze_object_in_view') {
       console.log('🔍 Processing object analysis:', toolCall.function.arguments);
-      setIsAnalyzingObject(true);
+      setObjectAnalysisData(toolCall.function.arguments);
       
-      // Store the object analysis result
-      const objectResult = {
-        dominant_color: toolCall.function.arguments.dominant_color,
-        object_category: toolCall.function.arguments.object_category,
-        object_description: toolCall.function.arguments.object_description
-      };
-      
-      setObjectAnalysisResult(objectResult);
-      
-      // Show object analysis in showcase
-      setShowcaseContent({
-        type: 'object-analysis',
-        data: objectResult
-      });
-      
-      // Automatically search for complementary products after a brief display
-      setTimeout(async () => {
-        try {
-          // Create search query based on object analysis
-          const searchQuery = `${objectResult.dominant_color} ${objectResult.object_category}`;
-          const searchParams = {
-            search: searchQuery,
-            limit: 8
-          };
-          
-          const results = await searchProducts(searchParams);
-          
-          // Display curated results
-          setShowcaseContent({
-            type: 'grid',
-            data: {
-              products: results,
-              title: `Perfect complements to your ${objectResult.dominant_color} ${objectResult.object_category}`
-            }
+      // Auto-search for complementary products
+      if (toolCall.function.arguments.dominant_color && toolCall.function.arguments.object_category) {
+        const searchQuery = `${toolCall.function.arguments.object_category} ${toolCall.function.arguments.dominant_color}`;
+        const results = await searchProducts({ search: searchQuery, limit: 6 });
+        
+        if (results.length > 0) {
+          setProductGridData({
+            products: results,
+            title: `Products that complement your ${toolCall.function.arguments.object_description}`
           });
-          
-          setIsAnalyzingObject(false);
-        } catch (error) {
-          console.error('Object-based search error:', error);
-          setIsAnalyzingObject(false);
         }
-      }, 3000); // Show analysis for 3 seconds before showing results
-      
-      return; // Don't forward perception tool calls to parent
+      }
+      return; // Don't forward to parent
     }
     
-    // Handle new dynamic presentation tools
-    switch (toolCall.function.name) {
-      case 'show_product':
-        let foundProduct = allProducts.find(p => p.id === toolCall.function.arguments.product_id);
-        
-        if (!foundProduct) {
-          foundProduct = await getProductById(toolCall.function.arguments.product_id);
-        }
-        
-        if (foundProduct) {
-          setShowcaseContent({
-            type: 'product',
-            data: {
-              ...foundProduct,
-              highlightFeatures: toolCall.function.arguments.highlight_features
-            }
-          });
-        }
-        break;
-        
-      case 'show_product_grid':
-        const gridProducts = toolCall.function.arguments.products;
-        setShowcaseContent({
-          type: 'grid',
-          data: {
-            products: gridProducts,
-            title: toolCall.function.arguments.title
-          }
-        });
-        break;
-        
-      case 'show_categories':
-        setShowcaseContent({
-          type: 'categories',
-          data: null
-        });
-        break;
-        
-      case 'compare_products':
-        const compareItems = await Promise.all(
-          toolCall.function.arguments.product_ids.map(async (id: string) => {
-            let product = allProducts.find(p => p.id === id);
-            if (!product) {
-              product = await getProductById(id);
-            }
-            return product;
-          })
-        );
-        setShowcaseContent({
-          type: 'comparison',
-          data: {
-            products: compareItems.filter(Boolean),
-            aspect: toolCall.function.arguments.comparison_aspect
-          }
-        });
-        break;
-        
-      case 'search_products':
-        try {
-          const searchParams = {
-            search: toolCall.function.arguments.search_query,
-            category: toolCall.function.arguments.category,
-            minPrice: toolCall.function.arguments.min_price,
-            maxPrice: toolCall.function.arguments.max_price,
-            limit: 8
-          };
-          
-          const results = await searchProducts(searchParams);
-          setShowcaseContent({
-            type: 'grid',
-            data: {
-              products: results,
-              title: `Search Results: ${toolCall.function.arguments.search_query}`
-            }
-          });
-        } catch (error) {
-          console.error('Search error:', error);
-        }
-        return; // Don't forward search tool calls to parent
-        
-      default:
-        // Forward other tool calls to parent component
-        onToolCall(toolCall);
-        return;
-    }
-    
-    // Forward tool calls to parent for other handling (like cart updates)
+    // Forward other tool calls to parent component
     onToolCall(toolCall);
-  };
+  }, [onToolCall, cartSuccessTimer, onCartJiggle, spotlightProduct, triggerMagicCart]);
 
-  // Parse tool call from Tavus format
-  const parseToolCall = (data: any) => {
+  // Enhanced tool call parsing with better error handling
+  const parseToolCall = useCallback((data: any) => {
     try {
-      // Handle both direct tool calls and conversation tool calls
+      console.log('🔧 Parsing tool call data:', data);
+      
+      // Handle conversation tool calls (from app messages)
       if (data.type === 'conversation-toolcall' && data.tool_call) {
         return data.tool_call;
       }
       
-      // Handle tool calls from app messages
+      // Handle tool calls from webhook events
       if (data.event_type === 'conversation.tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
         
@@ -435,7 +291,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
       }
 
-      // Handle perception tool calls specifically
+      // Handle perception tool calls
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
         
@@ -452,10 +308,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       console.error('Error parsing tool call:', error);
       return null;
     }
-  };
+  }, []);
 
   // Update remote participants
-  const updateRemoteParticipants = () => {
+  const updateRemoteParticipants = useCallback(() => {
     if (!callRef.current) return;
     
     const participants = callRef.current.participants();
@@ -469,7 +325,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     
     console.log('👥 Remote participants updated:', Object.keys(remotes));
     setRemoteParticipants(remotes);
-  };
+  }, []);
 
   // Attach video and audio tracks
   useEffect(() => {
@@ -505,6 +361,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         console.log('✅ AI Assistant joined Daily call');
         setCallState('joined');
         setIsConnected(true);
+        setShowHostSelector(false); // Hide host selector when connected
       })
       .catch((error: any) => {
         console.error('❌ AI Assistant failed to join:', error);
@@ -532,16 +389,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     call.on('track-started', updateRemoteParticipants);
     call.on('track-stopped', updateRemoteParticipants);
 
-    // Handle app messages for tool calls - REDUCED LOGGING
+    // Handle app messages for tool calls
     call.on('app-message', (event: any) => {
+      console.log('📨 AI app message received:', event);
       const { data } = event;
-      
-      // Only log important messages, not every single one
-      if (data.event_type === 'conversation.tool_call' || 
-          data.event_type === 'conversation.perception_tool_call' || 
-          data.type === 'conversation-toolcall') {
-        console.log('📨 AI tool call received:', data);
-      }
       
       // Parse the tool call properly
       const toolCall = parseToolCall(data);
@@ -555,7 +406,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         case 'conversation-utterance':
           if (data.utterance && data.utterance.text) {
             setTranscript(prev => prev + '\n' + data.utterance.text);
-            checkForEasterEggs(data.utterance.text);
           }
           break;
           
@@ -573,6 +423,24 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         case 'conversation.replica.started_speaking':
           setReplicaState('speaking');
           break;
+
+        case 'conversation.tool_call':
+          console.log('📨 AI tool call received:', data);
+          const webhookToolCall = parseToolCall(data);
+          if (webhookToolCall) {
+            console.log('🔧 Parsed tool call:', webhookToolCall);
+            handleToolCall(webhookToolCall);
+          }
+          break;
+
+        case 'conversation.perception_tool_call':
+          console.log('👁️ AI perception tool call received:', data);
+          const perceptionToolCall = parseToolCall(data);
+          if (perceptionToolCall) {
+            console.log('🔧 Parsed perception tool call:', perceptionToolCall);
+            handleToolCall(perceptionToolCall);
+          }
+          break;
       }
     });
 
@@ -582,26 +450,21 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       if (cartSuccessTimer) {
         clearTimeout(cartSuccessTimer);
       }
-      // Don't leave the call here since it's a singleton
     };
-  }, [conversationUrl]);
+  }, [conversationUrl, updateRemoteParticipants, parseToolCall, handleToolCall, cartSuccessTimer]);
 
   const startConversation = async () => {
-    if (!selectedHost) {
-      console.error('No host selected');
-      return;
-    }
-
+    if (!selectedHost) return;
+    
     setIsConnecting(true);
     try {
       console.log('🎬 Starting enhanced AI shopping conversation with host:', selectedHost.name);
       
-      // Use custom prompt if available
       const session = await createEnhancedShoppingSession(
         'luxury shopping experience',
         'Guest',
         selectedHost.replicaId,
-        selectedHost.customPrompt // Pass custom prompt if available
+        selectedHost.customPrompt
       );
       
       console.log('✅ Enhanced AI session created:', session);
@@ -628,13 +491,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setCallState('idle');
     setReplicaState('connecting');
     setRemoteParticipants({});
-    setShowcaseContent({ type: 'host-selection', data: null });
-    setProactiveCartMessage(null);
-    setSelectedHost(null);
-    setStyleAnalysisResult(null);
-    setObjectAnalysisResult(null);
-    setIsAnalyzingStyle(false);
-    setIsAnalyzingObject(false);
+    setSearchResults([]);
+    setShowHostSelector(true); // Show host selector again
+    setProductGridData(null);
+    setShowCategories(false);
+    setStyleAnalysisData(null);
+    setObjectAnalysisData(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -657,462 +519,52 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   };
 
   const handleCategorySelect = async (category: string) => {
-    // Trigger a search for the selected category
-    const searchParams = {
-      category: category,
-      limit: 8
-    };
-    
-    try {
-      const results = await searchProducts(searchParams);
-      setShowcaseContent({
-        type: 'grid',
-        data: {
-          products: results,
-          title: `${category.charAt(0).toUpperCase() + category.slice(1)} Collection`
-        }
+    const results = await searchProducts({ category, limit: 8 });
+    setProductGridData({
+      products: results,
+      title: `${category.charAt(0).toUpperCase() + category.slice(1)} Collection`
+    });
+    setShowCategories(false);
+  };
+
+  const handleUserMessage = (message: string) => {
+    // This would send the message to the AI
+    console.log('User message:', message);
+    // In a real implementation, this would use Daily's sendAppMessage
+    if (callRef.current) {
+      callRef.current.sendAppMessage({
+        type: 'user-message',
+        message: message
       });
-    } catch (error) {
-      console.error('Category search error:', error);
     }
   };
 
-  // Handle host selection
-  const handleHostSelect = (host: Host) => {
-    setSelectedHost(host);
-    // Keep showing host selector until they start conversation
-  };
-
-  // Check if product is in cart
-  const isProductInCart = (productId: string) => {
-    return cartItems.some(item => item.id === productId);
-  };
-
-  // Dynamic showcase renderer
-  const renderShowcase = () => {
-    switch (showcaseContent.type) {
-      case 'host-selection':
-        return (
-          <div className="h-full flex flex-col justify-center">
-            <HostSelector 
-              onHostSelect={handleHostSelect}
-              selectedHost={selectedHost}
-              onStartConversation={startConversation}
-              isConnecting={isConnecting}
-            />
-          </div>
-        );
-
-      case 'style-analysis':
-        const analysis = showcaseContent.data;
-        return (
-          <div className="animate-fade-in h-full flex flex-col justify-center">
-            <div className="text-center">
-              <motion.div
-                className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto mb-6 flex items-center justify-center"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 180, 360]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Camera className="w-10 h-10 text-white" />
-              </motion.div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Analyzing Your Style...
-              </h3>
-              
-              <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl p-6 max-w-md mx-auto border border-white/20 dark:border-gray-700/20">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Dominant Color:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                      {analysis.dominant_color}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Style Category:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                      {analysis.style_category}
-                    </span>
-                  </div>
-                  
-                  {analysis.detected_accessories && analysis.detected_accessories.length > 0 && (
-                    <div>
-                      <span className="text-gray-600 dark:text-gray-300 block mb-2">Accessories:</span>
-                      <div className="flex flex-wrap gap-2">
-                        {analysis.detected_accessories.map((accessory: string, idx: number) => (
-                          <span 
-                            key={idx}
-                            className="bg-brand-100 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 px-3 py-1 rounded-full text-sm"
-                          >
-                            {accessory}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <p className="text-gray-500 dark:text-gray-400 mt-6">
-                Curating personalized recommendations...
-              </p>
-            </div>
-          </div>
-        );
-
-      case 'object-analysis':
-        const objectData = showcaseContent.data;
-        return (
-          <div className="animate-fade-in h-full flex flex-col justify-center">
-            <div className="text-center">
-              <motion.div
-                className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mx-auto mb-6 flex items-center justify-center"
-                animate={{
-                  scale: [1, 1.1, 1],
-                  rotate: [0, 180, 360]
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <Search className="w-10 h-10 text-white" />
-              </motion.div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Analyzing Your Object...
-              </h3>
-              
-              <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl p-6 max-w-md mx-auto border border-white/20 dark:border-gray-700/20">
-                <div className="space-y-4">
-                  <div className="text-center mb-4">
-                    <p className="text-gray-700 dark:text-gray-300 italic">
-                      "{objectData.object_description}"
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Color:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                      {objectData.dominant_color}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-300">Category:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                      {objectData.object_category}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <p className="text-gray-500 dark:text-gray-400 mt-6">
-                Finding perfect complements...
-              </p>
-            </div>
-          </div>
-        );
-
-      case 'product':
-        const product = showcaseContent.data;
-        const productInCart = isProductInCart(product.id);
-        
-        return (
-          <div className="animate-fade-in h-full flex flex-col">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 flex-1">
-              {/* Product Image */}
-              <div className="relative">
-                {show360 === product.id ? (
-                  <div className="aspect-square bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-900/20 dark:to-blue-900/20 rounded-lg flex items-center justify-center border border-brand-200 dark:border-brand-700/50 relative overflow-hidden">
-                    <div 
-                      className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
-                      style={{ transform: `rotate(${rotation360}deg)` }}
-                    >
-                      <RotateCcw className="w-8 h-8 lg:w-12 lg:h-12 mx-auto mb-2 text-brand-500" />
-                      <p className="font-semibold text-sm lg:text-base">360° Interactive View</p>
-                    </div>
-                    {showDragHint && (
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
-                        Drag to spin
-                      </div>
-                    )}
-                    <button 
-                      onClick={() => onShow360Change(false)}
-                      className="absolute top-4 right-4 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200 underline text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 rounded"
-                    >
-                      Exit 360° View
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <img 
-                      src={product.image || product.thumbnail} 
-                      alt={product.title || product.name}
-                      className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
-                      id="showcase-product-image"
-                    />
-                    <button
-                      onClick={() => onShow360Change(product.id)}
-                      className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      aria-label="View in 360 degrees"
-                    >
-                      <Maximize className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                
-                {activeOffer && activeOffer.productId === product.id && (
-                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
-                    {activeOffer.type === 'discount' && `${activeOffer.discount}% OFF!`}
-                    {activeOffer.type === 'limited_time' && 'LIMITED TIME!'}
-                    {activeOffer.type === 'exclusive' && 'EXCLUSIVE!'}
-                  </div>
-                )}
-              </div>
-
-              {/* Product Details */}
-              <div className="flex flex-col">
-                <h4 className="text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{product.title || product.name}</h4>
-                <p className="text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
-                  ${product.price}
-                </p>
-                
-                {/* Rating */}
-                {product.rating && (
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`w-4 h-4 ${i < Math.floor(product.rating.rate) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`} 
-                        />
-                      ))}
-                    </div>
-                    <span className="text-gray-600 dark:text-gray-300 text-sm">
-                      {product.rating.rate}/5 ({product.rating.count} reviews)
-                    </span>
-                  </div>
-                )}
-                
-                {product.highlightFeatures && (
-                  <div className="mb-6 flex-1">
-                    <h5 className="text-base lg:text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
-                    <div className="space-y-2">
-                      {product.highlightFeatures.map((feature: string, idx: number) => (
-                        <motion.div 
-                          key={idx} 
-                          className="flex items-center space-x-2" 
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                        >
-                          <span className="text-brand-500">✨</span>
-                          <span className="text-gray-700 dark:text-gray-300 text-sm lg:text-base">{feature}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Style Match Indicator */}
-                {styleAnalysisResult && (
-                  <div className="mb-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <Camera className="w-4 h-4 text-purple-600" />
-                      <span className="text-purple-800 dark:text-purple-200 font-medium text-sm">
-                        Matches your {styleAnalysisResult.style_category} {styleAnalysisResult.dominant_color} style
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Object Match Indicator */}
-                {objectAnalysisResult && (
-                  <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
-                    <div className="flex items-center space-x-2">
-                      <Search className="w-4 h-4 text-blue-600" />
-                      <span className="text-blue-800 dark:text-blue-200 font-medium text-sm">
-                        Complements your {objectAnalysisResult.dominant_color} {objectAnalysisResult.object_category}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Magic Add to Cart Button - Responsive */}
-                <motion.button 
-                  onClick={(e) => {
-                    const sourceElement = e.currentTarget;
-                    handleMagicAddToCart(product.id, 1, sourceElement);
-                  }}
-                  className={`w-full py-3 lg:py-4 rounded-lg font-bold text-base lg:text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-lg ${
-                    productInCart
-                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 cursor-default'
-                      : cartAnimation 
-                        ? 'bg-green-500 text-white scale-105 animate-cart-success' 
-                        : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white hover:scale-105'
-                  }`}
-                  disabled={productInCart && !cartAnimation}
-                  aria-label={`${productInCart ? 'Already in cart' : 'Add to cart'}: ${product.title || product.name}`}
-                  whileHover={!productInCart ? { scale: 1.02 } : {}}
-                  whileTap={!productInCart ? { scale: 0.98 } : {}}
-                >
-                  {productInCart ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Check className="w-4 h-4 lg:w-5 lg:h-5" />
-                      <span>✓ Added</span>
-                    </div>
-                  ) : cartAnimation ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <span>✓</span>
-                      <span>Added to Cart!</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center space-x-2">
-                      <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5" />
-                      <span>Add to Cart</span>
-                    </div>
-                  )}
-                </motion.button>
-
-                {/* Proactive Cart Message */}
-                {proactiveCartMessage && (
-                  <motion.div 
-                    className="mt-4 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-700 rounded-lg p-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-brand-800 dark:text-brand-200 font-medium text-sm">{selectedHost?.name} says:</p>
-                        <p className="text-brand-700 dark:text-brand-300 text-sm italic mt-1">"{proactiveCartMessage}"</p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'comparison':
-        return (
-          <div className="animate-fade-in h-full flex flex-col">
-            <h4 className="text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 lg:mb-6">
-              Curated Comparison: {showcaseContent.data.aspect}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 lg:gap-4 flex-1">
-              {showcaseContent.data.products.map((item: any) => {
-                const itemInCart = isProductInCart(item.id);
-                return (
-                  <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-3 lg:p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow h-fit">
-                    <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-24 lg:h-32 object-cover rounded mb-3" />
-                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-xs lg:text-sm mb-1">{item.title || item.name}</h5>
-                    <p className="text-brand-600 font-bold mb-3 text-sm lg:text-base">${item.price}</p>
-                    <motion.button 
-                      onClick={(e) => {
-                        if (!itemInCart) {
-                          handleMagicAddToCart(item.id, 1, e.currentTarget);
-                        }
-                      }}
-                      disabled={itemInCart}
-                      className={`w-full py-2 rounded text-xs lg:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
-                        itemInCart
-                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-default'
-                          : 'bg-brand-500 text-white hover:bg-brand-600'
-                      }`}
-                      aria-label={`${itemInCart ? 'Already in cart' : 'Add to cart'}: ${item.title || item.name}`}
-                      whileHover={!itemInCart ? { scale: 1.02 } : {}}
-                      whileTap={!itemInCart ? { scale: 0.98 } : {}}
-                    >
-                      {itemInCart ? '✓ Added' : 'Add to Cart'}
-                    </motion.button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-
-      case 'grid':
-        return (
-          <div className="animate-fade-in h-full flex flex-col">
-            <ProductGrid 
-              products={showcaseContent.data.products}
-              title={showcaseContent.data.title}
-              onJoinRoom={(product) => {
-                // Handle quick add with magic animation
-                const productElement = document.querySelector(`[data-product-id="${product.id}"]`) as HTMLElement;
-                if (productElement) {
-                  handleMagicAddToCart(product.id, 1, productElement);
-                }
-              }}
-              onProductHover={() => {}}
-            />
-          </div>
-        );
-
-      case 'categories':
-        return (
-          <div className="h-full flex flex-col">
-            <CategoryGridDisplay onCategorySelect={handleCategorySelect} />
-          </div>
-        );
-
-      default:
-        return (
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <div className="text-4xl lg:text-6xl mb-4">✨</div>
-              <p className="text-base lg:text-lg mb-2">Welcome to your personal shopping experience</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
-                {selectedHost ? `${selectedHost.name} is ready to assist you` : 'Select a host to begin your curated journey'}
-              </p>
-              {isConnected && (
-                <div className="mt-4 space-y-3">
-                  <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4 max-w-md mx-auto">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <Camera className="w-5 h-5 text-purple-600" />
-                      <span className="text-purple-800 dark:text-purple-200 font-semibold">Shop My Style</span>
-                    </div>
-                    <p className="text-purple-700 dark:text-purple-300 text-sm">
-                      Say "shop my style" and I'll analyze what you're wearing to find perfect matches!
-                    </p>
-                  </div>
-                  
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4 max-w-md mx-auto">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <Search className="w-5 h-5 text-blue-600" />
-                      <span className="text-blue-800 dark:text-blue-200 font-semibold">Object Recognition</span>
-                    </div>
-                    <p className="text-blue-700 dark:text-blue-300 text-sm">
-                      Hold up any object to the camera and I'll find products that complement it perfectly!
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        );
+  const handleInputFocus = () => {
+    // Show some helpful suggestions when user focuses on input
+    if (!productGridData && !showCategories) {
+      setShowCategories(true);
     }
   };
+
+  // Show host selector if not connected
+  if (showHostSelector) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="w-full h-full">
+          <HostSelector
+            onHostSelect={setSelectedHost}
+            selectedHost={selectedHost}
+            onStartConversation={startConversation}
+            isConnecting={isConnecting}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Magic Cart Animation Overlay */}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Magic Cart Animation */}
       <MagicCartAnimation
         isActive={animationState.isActive}
         productImage={animationState.productImage}
@@ -1122,168 +574,418 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         onComplete={completeMagicCart}
       />
 
-      {/* Main Content - FIXED: Responsive Layout with Proper Background */}
-      <div className="flex-1 flex flex-col xl:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-0 bg-gray-50 dark:bg-gray-900">
-        {/* AI Video Section - Responsive Width */}
-        <div className="w-full xl:w-96 flex-shrink-0 order-2 xl:order-1">
-          <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden h-full flex flex-col">
-            <div 
-              ref={videoContainerRef}
-              className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center flex-1 transition-all duration-300 aspect-[16/9] xl:aspect-auto"
-            >
-              {/* Remote participants video/audio */}
-              {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
-                <div key={id} className="w-full h-full relative">
-                  <video
-                    id={`ai-video-${id}`}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
-                  <audio 
-                    id={`ai-audio-${id}`} 
-                    autoPlay 
-                    playsInline 
-                  />
-                </div>
-              ))}
-              
-              {/* Connection State Overlay */}
-              {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
-                  <div className="text-center px-4">
-                    {!conversationUrl ? (
-                      <>
-                        <div className="w-12 h-12 lg:w-16 lg:h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                          {selectedHost ? (
-                            <img 
-                              src={selectedHost.image} 
-                              alt={selectedHost.name}
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <MessageCircle className="w-6 h-6 lg:w-8 lg:h-8 text-white" />
-                          )}
-                        </div>
-                        <h3 className="text-base lg:text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
-                          {selectedHost ? `Meet ${selectedHost.name}` : 'Choose Your Host'}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                          {selectedHost 
-                            ? `${selectedHost.description}. Ready for your FaceTime AI call with perception capabilities.`
-                            : 'Select your personal shopping curator for a live video conversation.'
-                          }
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 lg:w-12 lg:h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {callState === 'joining' ? 'Joining call...' : 
-                           callState === 'joined' ? `Connecting to ${selectedHost?.name}...` : 
-                           callState === 'error' ? 'Connection failed' :
-                           'Starting video call...'}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {/* Status Indicators */}
-              {callState === 'joined' && (
-                <>
-                  <div className="absolute top-3 left-3 flex items-center space-x-1 z-20">
-                    <div className={`w-2 h-2 rounded-full ${
-                      replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
-                      replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
-                    }`}></div>
-                    <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
-                      LIVE
-                    </span>
-                  </div>
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
+        {/* Compact Header */}
+        <div className="text-center mb-4 sm:mb-6 lg:mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-2 sm:mb-3 leading-tight">
+              Shopping with {selectedHost?.name}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
+              Your personal {selectedHost?.description}
+            </p>
+          </motion.div>
+        </div>
 
-                  <div className="absolute top-3 right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
-                    <div className="flex items-center space-x-2 text-white text-xs">
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-3 h-3" />
-                        <span>{viewerCount}</span>
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          {/* AI Video Section - Compact */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl lg:rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
+              <div 
+                ref={videoContainerRef}
+                className="relative bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center aspect-[9/16] sm:aspect-[3/4] lg:aspect-[9/16]"
+              >
+                {/* Remote participants video/audio */}
+                {Object.entries(remoteParticipants).map(([id, p]: [string, any]) => (
+                  <div key={id} className="w-full h-full relative">
+                    <video
+                      id={`ai-video-${id}`}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                    <audio 
+                      id={`ai-audio-${id}`} 
+                      autoPlay 
+                      playsInline 
+                    />
+                  </div>
+                ))}
+                
+                {/* Connection State Overlay */}
+                {(!isConnected || Object.keys(remoteParticipants).length === 0) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-50/90 to-gray-100/90 dark:from-gray-800/90 dark:to-gray-900/90 backdrop-blur-sm z-10">
+                    <div className="text-center px-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-3 sm:mb-4 flex items-center justify-center shadow-lg">
+                        <User className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 sm:mb-3">
+                        Connecting to {selectedHost?.name}...
+                      </h3>
+                      <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-2 sm:mb-3"></div>
+                      <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">
+                        {callState === 'joining' ? 'Joining...' : 
+                         callState === 'joined' ? `Waiting for ${selectedHost?.name}...` : 
+                         callState === 'error' ? 'Connection failed' :
+                         'Connecting...'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Status Indicators */}
+                {callState === 'joined' && (
+                  <>
+                    <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex items-center space-x-1 z-20">
+                      <div className={`w-2 h-2 rounded-full ${
+                        replicaState === 'speaking' ? 'bg-brand-500 animate-pulse' :
+                        replicaState === 'listening' ? 'bg-blue-500' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-white text-xs font-medium bg-black/70 px-2 py-1 rounded-full">
+                        LIVE
+                      </span>
+                    </div>
+
+                    <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-black/70 rounded-lg p-1 backdrop-blur-sm z-20">
+                      <div className="flex items-center space-x-2 text-white text-xs">
+                        <div className="flex items-center space-x-1">
+                          <Eye className="w-3 h-3" />
+                          <span>{viewerCount}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Controls with Aria Status */}
+              {isConnected && (
+                <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50">
+                  {/* Aria Status Component */}
+                  <AriaStatus replicaState={replicaState} hostName={selectedHost?.name} />
+                  
+                  {/* Control Buttons */}
+                  <div className="p-2 sm:p-3 border-t border-gray-200/50 dark:border-gray-700/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={toggleMute}
+                          className={`p-1.5 sm:p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                          aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
+                        >
+                          {isMuted ? <MicOff className="w-3 h-3 sm:w-4 sm:h-4" /> : <Mic className="w-3 h-3 sm:w-4 sm:h-4" />}
+                        </button>
+                        <button
+                          onClick={toggleVideo}
+                          className={`p-1.5 sm:p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                          aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
+                        >
+                          {!isVideoEnabled ? <VolumeX className="w-3 h-3 sm:w-4 sm:h-4" /> : <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />}
+                        </button>
+                        <button
+                          onClick={stopConversation}
+                          className="p-1.5 sm:p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                          aria-label="End conversation"
+                        >
+                          <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                      <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
+                        {selectedHost?.name}
                       </div>
                     </div>
                   </div>
-
-                  {/* Perception Indicator */}
-                  <div className="absolute bottom-3 left-3 bg-purple-500/90 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1 z-20">
-                    <Camera className="w-3 h-3" />
-                    <span>AI Vision</span>
-                  </div>
-                </>
+                </div>
               )}
             </div>
-            
-            {/* Controls with Aria Status */}
-            {isConnected && (
-              <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
-                {/* Aria Status Component */}
-                <AriaStatus replicaState={replicaState} hostName={selectedHost?.name} />
-                
-                {/* Control Buttons */}
-                <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={toggleMute}
-                        className={`p-2 rounded-full ${isMuted ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                        aria-label={isMuted ? 'Unmute microphone' : 'Mute microphone'}
-                      >
-                        {isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                      </button>
-                      <button
-                        onClick={toggleVideo}
-                        className={`p-2 rounded-full ${!isVideoEnabled ? 'bg-red-500' : 'bg-gray-600 dark:bg-gray-700'} text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500`}
-                        aria-label={!isVideoEnabled ? 'Enable audio' : 'Disable audio'}
-                      >
-                        {!isVideoEnabled ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
-                      </button>
-                      <button
-                        onClick={stopConversation}
-                        className="p-2 rounded-full bg-red-600 text-white hover:opacity-80 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                        aria-label="End conversation"
-                      >
-                        <Pause className="w-3 h-3" />
-                      </button>
-                    </div>
-                    <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
-                      Video Call with {selectedHost?.name || 'AI'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* Dynamic Showcase (Flexible Width) */}
-        <div className="flex-1 min-w-0 order-1 xl:order-2">
-          <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden h-full flex flex-col transition-all duration-1000 ${
-            showcaseGlow 
-              ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
-              : 'border-white/20 dark:border-gray-700/20'
-          }`}>
-            <div className="p-4 lg:p-6 flex-1 min-h-0 overflow-y-auto">
-              {renderShowcase()}
+          {/* Dynamic Product Showcase */}
+          <div className="lg:col-span-2">
+            <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-xl lg:rounded-2xl shadow-lg border overflow-hidden transition-all duration-1000 ${
+              showcaseGlow 
+                ? 'border-brand-400 shadow-brand-200 dark:shadow-brand-500/20 shadow-2xl animate-pulse-glow' 
+                : 'border-white/20 dark:border-gray-700/20'
+            }`}>
+              <div className="p-3 sm:p-4 lg:p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
+                  <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-brand-500" />
+                  <span>Live Product Showcase</span>
+                  {isSearching && (
+                    <div className="flex items-center space-x-2 text-brand-500">
+                      <Search className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                      <span className="text-xs sm:text-sm">Curating...</span>
+                    </div>
+                  )}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mt-1">
+                  {selectedHost?.name} curates and presents products with sophisticated storytelling
+                </p>
+              </div>
+              
+              <div className="p-3 sm:p-4 lg:p-6 min-h-[400px] sm:min-h-[500px] flex flex-col">
+                {/* Style Analysis Display */}
+                {styleAnalysisData && (
+                  <motion.div 
+                    className="mb-4 sm:mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 sm:p-4 border border-purple-200 dark:border-purple-700"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <h4 className="text-sm sm:text-base font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center space-x-2">
+                      <Wand2 className="w-4 h-4" />
+                      <span>Style Analysis Complete</span>
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
+                      <div>
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">Color:</span>
+                        <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.dominant_color || 'Not detected'}</p>
+                      </div>
+                      <div>
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">Style:</span>
+                        <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.style_category || 'Not detected'}</p>
+                      </div>
+                      {styleAnalysisData.detected_accessories && styleAnalysisData.detected_accessories.length > 0 && (
+                        <div>
+                          <span className="text-purple-700 dark:text-purple-300 font-medium">Accessories:</span>
+                          <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.detected_accessories.join(', ')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
 
-              {/* Live Transcript */}
-              {transcript && (
-                <div className="mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 flex-shrink-0">
-                  <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
-                  <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
-                    {transcript.split('\n').slice(-3).map((line, idx) => (
-                      <p key={idx} className="mb-1">{line}</p>
-                    ))}
+                {/* Object Analysis Display */}
+                {objectAnalysisData && (
+                  <motion.div 
+                    className="mb-4 sm:mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 sm:p-4 border border-blue-200 dark:border-blue-700"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <h4 className="text-sm sm:text-base font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center space-x-2">
+                      <Eye className="w-4 h-4" />
+                      <span>Object Detected</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300 font-medium">Description:</span>
+                        <p className="text-blue-900 dark:text-blue-100">{objectAnalysisData.object_description}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300 font-medium">Color:</span>
+                        <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.dominant_color}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-300 font-medium">Category:</span>
+                        <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.object_category}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Product Grid Display */}
+                {productGridData ? (
+                  <div className="animate-fade-in flex-1">
+                    <ProductGrid
+                      products={productGridData.products}
+                      title={productGridData.title}
+                      onJoinRoom={(product) => addToCart(product.id, 1)}
+                    />
                   </div>
-                </div>
-              )}
+                ) : showCategories ? (
+                  <div className="animate-fade-in flex-1">
+                    <CategoryGridDisplay onCategorySelect={handleCategorySelect} />
+                  </div>
+                ) : spotlightProduct ? (
+                  <div className="animate-fade-in flex-1" data-product-showcase>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                      {/* Product Image */}
+                      <div className="relative">
+                        {show360 === spotlightProduct.id ? (
+                          <div className="aspect-square bg-gradient-to-br from-brand-100 to-blue-100 dark:from-brand-900/20 dark:to-blue-900/20 rounded-lg flex items-center justify-center border border-brand-200 dark:border-brand-700/50 relative overflow-hidden">
+                            <div 
+                              className="text-center text-gray-700 dark:text-gray-300 transform transition-transform duration-100"
+                              style={{ transform: `rotate(${rotation360}deg)` }}
+                            >
+                              <RotateCcw className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 text-brand-500" />
+                              <p className="font-semibold text-sm sm:text-base">360° Interactive View</p>
+                            </div>
+                            {showDragHint && (
+                              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-sm animate-fade-in">
+                                Drag to spin
+                              </div>
+                            )}
+                            <button 
+                              onClick={() => onShow360Change(false)}
+                              className="absolute top-4 right-4 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-200 underline text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 rounded"
+                            >
+                              Exit 360° View
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <img 
+                              src={spotlightProduct.image || spotlightProduct.thumbnail} 
+                              alt={spotlightProduct.title || spotlightProduct.name}
+                              className="w-full aspect-square object-cover rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                            />
+                            <button
+                              onClick={() => onShow360Change(spotlightProduct.id)}
+                              className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-300 p-2 rounded-full hover:bg-white dark:hover:bg-gray-800 transition-colors shadow-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                              aria-label="View in 360 degrees"
+                            >
+                              <Maximize className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {activeOffer && activeOffer.productId === spotlightProduct.id && (
+                          <div className="absolute top-4 right-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full animate-bounce shadow-lg text-sm font-bold">
+                            {activeOffer.type === 'discount' && `${activeOffer.discount}% OFF!`}
+                            {activeOffer.type === 'limited_time' && 'LIMITED TIME!'}
+                            {activeOffer.type === 'exclusive' && 'EXCLUSIVE!'}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Details */}
+                      <div className="flex flex-col">
+                        <h4 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{spotlightProduct.title || spotlightProduct.name}</h4>
+                        <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                          ${spotlightProduct.price}
+                        </p>
+                        
+                        {/* Rating */}
+                        {spotlightProduct.rating && (
+                          <div className="flex items-center space-x-2 mb-4">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star 
+                                  key={i} 
+                                  className={`w-4 h-4 ${i < Math.floor(spotlightProduct.rating.rate) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`} 
+                                />
+                              ))}
+                            </div>
+                            <span className="text-gray-600 dark:text-gray-300 text-sm">
+                              {spotlightProduct.rating.rate}/5 ({spotlightProduct.rating.count} reviews)
+                            </span>
+                          </div>
+                        )}
+                        
+                        {spotlightProduct.highlightFeatures && (
+                          <div className="mb-6 flex-1">
+                            <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Curated Features:</h5>
+                            <div className="space-y-2">
+                              {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
+                                <div 
+                                  key={idx} 
+                                  className="flex items-center space-x-2 animate-fade-in" 
+                                  style={{animationDelay: `${idx * 0.1}s`}}
+                                >
+                                  <span className="text-brand-500">✨</span>
+                                  <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <button 
+                          onClick={() => addToCart(spotlightProduct.id, 1)}
+                          className={`w-full py-3 sm:py-4 rounded-lg text-white font-bold text-base sm:text-lg transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                            cartAnimation 
+                              ? 'bg-green-500 scale-105 animate-cart-success' 
+                              : 'bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 hover:scale-105'
+                          } shadow-lg`}
+                          aria-label={`Add ${spotlightProduct.title || spotlightProduct.name} to cart`}
+                        >
+                          {cartAnimation ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <span>✓</span>
+                              <span>Added to Cart!</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center space-x-2">
+                              <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span>Add to Cart</span>
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : comparisonProducts.length > 0 ? (
+                  <div className="animate-fade-in flex-1">
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Curated Comparison</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {comparisonProducts.map((item) => (
+                        <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                          <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
+                          <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
+                          <p className="text-brand-600 font-bold mb-3">${item.price}</p>
+                          <button 
+                            onClick={() => addToCart(item.id, 1)}
+                            className="w-full bg-brand-500 text-white py-2 rounded text-sm hover:bg-brand-600 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
+                            aria-label={`Add ${item.title || item.name} to cart`}
+                          >
+                            Add to Cart
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center">
+                    <div className="text-gray-500 dark:text-gray-400 mb-6">
+                      <div className="text-4xl sm:text-6xl mb-4">✨</div>
+                      <h4 className="text-lg sm:text-xl font-semibold mb-2">Ready to discover amazing products?</h4>
+                      <p className="text-sm sm:text-base text-gray-400 dark:text-gray-500 mb-6">
+                        {selectedHost?.name} will guide you through our collection with expert insights
+                      </p>
+                    </div>
+
+                    {/* Helpful Tips */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 sm:p-6 border border-blue-200 dark:border-blue-700 max-w-md">
+                      <h5 className="text-blue-900 dark:text-blue-100 font-semibold mb-3 flex items-center space-x-2">
+                        <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Try asking:</span>
+                      </h5>
+                      <div className="space-y-2 text-blue-800 dark:text-blue-200 text-sm sm:text-base">
+                        <p>• "Shop my style" - for personalized recommendations</p>
+                        <p>• "Show me some electronics" - to browse categories</p>
+                        <p>• "I need a gift for my partner" - for gift ideas</p>
+                        <p>• Hold up an item to find matching products</p>
+                      </div>
+                    </div>
+
+                    {/* User Input */}
+                    <div className="mt-6 w-full max-w-2xl">
+                      <UserInput
+                        onMessageSend={handleUserMessage}
+                        onFocus={handleInputFocus}
+                        disabled={!isConnected}
+                        placeholder={`Ask ${selectedHost?.name} about products, styles, or anything...`}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Live Transcript */}
+                {transcript && (
+                  <div className="mt-4 sm:mt-6 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-3 sm:p-4 border border-gray-200 dark:border-gray-700">
+                    <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-2">Live Conversation</h5>
+                    <div className="text-gray-700 dark:text-gray-300 text-xs max-h-24 overflow-y-auto">
+                      {transcript.split('\n').slice(-3).map((line, idx) => (
+                        <p key={idx} className="mb-1">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
