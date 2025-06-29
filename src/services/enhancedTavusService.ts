@@ -240,19 +240,19 @@ const createShoppingTools = () => {
 // Enhanced conversation creation with sophisticated AI personality and ambient intelligence
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'general shopping',
-  userName: string = 'Guest'
+  userName: string = 'Guest',
+  replicaId: string = "rb54819da0d5" // Default replica, can be overridden
 ) => {
   const apiKey = getTavusApiKey();
   
-  // Use the provided replica and persona IDs
-  const replicaId = "rb54819da0d5";
+  // Use the provided persona ID (constant across all hosts)
   const personaId = "pb16b649a4c0";
   
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
   // ENHANCED CONVERSATIONAL CONTEXT WITH AMBIENT INTELLIGENCE
-  const conversationalContext = `You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
+  const conversationalContext = `You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. The entire interface is your canvas.
 
 *** YOUR GOLDEN RULE: ACTION-FIRST & CONTEXTUAL AWARENESS ***
 Your thought process is always: 1. Decide action. 2. Execute tool. 3. Narrate the action. You NEVER say you're *about to* do something.
@@ -350,11 +350,11 @@ Remember: You're not just selling products—you're curating experiences and hel
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      replica_id: replicaId,
+      replica_id: replicaId, // Use the provided replica ID
       persona_id: personaId,
       conversation_name: `${userName} - TalkShop Curated Experience`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello, and welcome to TalkShop. I'm Aria, your personal curator. Here's something absolutely exquisite I've selected for you - this stunning Midnight Velvet Blazer. Notice how the Italian velvet catches the light, and those satin lapels... they're pure sophistication.`,
+      custom_greeting: `Hello, and welcome to TalkShop. I'm your personal curator. Here's something absolutely exquisite I've selected for you - this stunning Midnight Velvet Blazer. Notice how the Italian velvet catches the light, and those satin lapels... they're pure sophistication.`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -408,7 +408,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are Aria, a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your ambient intelligence makes every interaction feel magical and personalized."
+          "value": "You are a world-renowned AI curator for TalkShop. Your persona is the epitome of sophistication and insight. You don't sell; you inspire. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL: Immediately after greeting, call show_product with prod_001. Never announce what you're about to do—instead, describe what you're showing as it appears. Create desire through compelling narratives, not feature lists. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your ambient intelligence makes every interaction feel magical and personalized."
         }
       ])
     });
@@ -438,6 +438,7 @@ export const updatePersonaWithDynamicTools = async () => {
     console.log('   - Judge easter egg detection');
     console.log('   - Sophisticated conversation recovery');
     console.log('   - Checkout initiation capability');
+    console.log('   - Multi-host support with different replica IDs');
     
     return { status: 'success', data: result };
   } catch (error) {

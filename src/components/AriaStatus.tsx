@@ -3,9 +3,10 @@ import { Loader2 } from 'lucide-react';
 
 interface AriaStatusProps {
   replicaState: 'connecting' | 'listening' | 'speaking';
+  hostName?: string;
 }
 
-const AriaStatus: React.FC<AriaStatusProps> = ({ replicaState }) => {
+const AriaStatus: React.FC<AriaStatusProps> = ({ replicaState, hostName = 'Aria' }) => {
   return (
     <div className="flex items-center justify-center space-x-3 py-2">
       {/* Status Indicator */}
@@ -60,13 +61,13 @@ const AriaStatus: React.FC<AriaStatusProps> = ({ replicaState }) => {
       {/* Status Text */}
       <span className="text-sm font-medium text-gray-700">
         {replicaState === 'speaking' && (
-          <span className="text-purple-600 font-semibold">Aria is speaking</span>
+          <span className="text-purple-600 font-semibold">{hostName} is speaking</span>
         )}
         {replicaState === 'listening' && (
-          <span className="text-blue-600 font-semibold">Aria is listening</span>
+          <span className="text-blue-600 font-semibold">{hostName} is listening</span>
         )}
         {replicaState === 'connecting' && (
-          <span className="text-gray-500">Connecting to Aria...</span>
+          <span className="text-gray-500">Connecting to {hostName}...</span>
         )}
       </span>
     </div>

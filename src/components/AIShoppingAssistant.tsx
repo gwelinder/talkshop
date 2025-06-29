@@ -11,8 +11,19 @@ import CategoryGridDisplay from './CategoryGridDisplay';
 import ProductGrid from './ProductGrid';
 import UserInput from './UserInput';
 import MagicCartAnimation from './MagicCartAnimation';
+import HostSelector from './HostSelector';
 import { useMagicCart } from '../hooks/useMagicCart';
 import DailyIframe from '@daily-co/daily-js';
+
+interface Host {
+  id: string;
+  name: string;
+  replicaId: string;
+  description: string;
+  specialty: string;
+  personality: string;
+  image: string;
+}
 
 interface AIShoppingAssistantProps {
   allProducts: any[];
@@ -28,7 +39,7 @@ interface AIShoppingAssistantProps {
 }
 
 interface ShowcaseContent {
-  type: 'initial' | 'product' | 'comparison' | 'grid' | 'categories';
+  type: 'initial' | 'product' | 'comparison' | 'grid' | 'categories' | 'host-selection';
   data: any;
 }
 
@@ -68,12 +79,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const [isAwake, setIsAwake] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const [proactiveCartMessage, setProactiveCartMessage] = useState<string | null>(null);
+  const [selectedHost, setSelectedHost] = useState<Host | null>(null);
   
   // Magic Cart Animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
   
   // New unified showcase state
-  const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ type: 'initial', data: null });
+  const [showcaseContent, setShowcaseContent] = useState<ShowcaseContent>({ 
+    type: 'host-selection', 
+    data: null 
+  });
   
   // Daily.js state
   const callRef = useRef<any>(null);
@@ -98,7 +113,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
   // Trigger showcase glow effect when content changes
   useEffect(() => {
-    if (showcaseContent.type !== 'initial') {
+    if (showcaseContent.type !== 'initial' && showcaseContent.type !== 'host-selection') {
       setShowcaseGlow(true);
       const timer = setTimeout(() => setShowcaseGlow(false), 2000);
       return () => clearTimeout(timer);
@@ -450,13 +465,19 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   }, [conversationUrl]);
 
   const startConversation = async (initialMessage?: string) => {
+    if (!selectedHost) {
+      console.error('No host selected');
+      return;
+    }
+
     setIsConnecting(true);
     try {
-      console.log('🎬 Starting enhanced AI shopping conversation...');
+      console.log('🎬 Starting enhanced AI shopping conversation with host:', selectedHost.name);
       
       const session = await createEnhancedShoppingSession(
         initialMessage || 'luxury shopping experience',
-        'Guest'
+        'Guest',
+        selectedHost.replicaId // Pass the selected host's replica ID
       );
       
       console.log('✅ Enhanced AI session created:', session);
@@ -483,9 +504,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setCallState('idle');
     setReplicaState('connecting');
     setRemoteParticipants({});
-    setShowcaseContent({ type: 'initial', data: null });
+    setShowcaseContent({ type: 'host-selection', data: null });
     setIsAwake(false);
     setProactiveCartMessage(null);
+    setSelectedHost(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -528,6 +550,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   };
 
+  // Handle host selection
+  const handleHostSelect = (host: Host) => {
+    setSelectedHost(host);
+    setShowcaseContent({ type: 'initial', data: null });
+  };
+
   // Handle wake up sequence
   const handleWakeUp = () => {
     setIsAwake(true);
@@ -535,6 +563,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
   // Handle user message
   const handleUserMessage = (message: string) => {
+    if (!selectedHost) {
+      alert('Please select a host first');
+      return;
+    }
+
     if (!isConnected) {
       // Start conversation with the user's message
       setPendingMessage(message);
@@ -558,6 +591,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Dynamic showcase renderer
   const renderShowcase = () => {
     switch (showcaseContent.type) {
+      case 'host-selection':
+        return (
+          <div className="h-full flex flex-col justify-center">
+            <HostSelector 
+              onHostSelect={handleHostSelect}
+              selectedHost={selectedHost}
+            />
+          </div>
+        );
+
       case 'product':
         const product = showcaseContent.data;
         const productInCart = isProductInCart(product.id);
@@ -708,7 +751,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         <Sparkles className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <p className="text-brand-800 dark:text-brand-200 font-medium text-sm">Aria says:</p>
+                        <p className="text-brand-800 dark:text-brand-200 font-medium text-sm">{selectedHost?.name} says:</p>
                         <p className="text-brand-700 dark:text-brand-300 text-sm italic mt-1">"{proactiveCartMessage}"</p>
                       </div>
                     </div>
@@ -789,7 +832,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <div className="text-center text-gray-500 dark:text-gray-400">
               <div className="text-6xl mb-4">✨</div>
               <p className="text-lg mb-2">Welcome to your personal shopping experience</p>
-              <p className="text-sm text-gray-400 dark:text-gray-500">Start a conversation below to begin your curated journey with Aria</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                {selectedHost ? `${selectedHost.name} is ready to assist you` : 'Select a host to begin your curated journey'}
+              </p>
             </div>
           </div>
         );
@@ -843,12 +888,24 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                     {!conversationUrl ? (
                       <>
                         <div className="w-16 h-16 bg-gradient-to-r from-brand-500 to-brand-600 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-                          <MessageCircle className="w-8 h-8 text-white" />
+                          {selectedHost ? (
+                            <img 
+                              src={selectedHost.image} 
+                              alt={selectedHost.name}
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            <MessageCircle className="w-8 h-8 text-white" />
+                          )}
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">Meet Aria</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
+                          {selectedHost ? `Meet ${selectedHost.name}` : 'Choose Your Host'}
+                        </h3>
                         <p className="text-gray-600 dark:text-gray-300 mb-6 text-sm leading-relaxed">
-                          Your personal shopping curator is ready to transform your shopping experience. 
-                          Start a conversation below to begin.
+                          {selectedHost 
+                            ? `${selectedHost.description}. Start a conversation below to begin.`
+                            : 'Select your personal shopping curator to transform your shopping experience.'
+                          }
                         </p>
                       </>
                     ) : (
@@ -856,7 +913,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                         <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                           {callState === 'joining' ? 'Joining...' : 
-                           callState === 'joined' ? 'Waiting for Aria...' : 
+                           callState === 'joined' ? `Waiting for ${selectedHost?.name}...` : 
                            callState === 'error' ? 'Connection failed' :
                            'Connecting...'}
                         </p>
@@ -895,7 +952,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             {isConnected && (
               <div className="bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm border-t border-gray-200/50 dark:border-gray-700/50 flex-shrink-0">
                 {/* Aria Status Component */}
-                <AriaStatus replicaState={replicaState} />
+                <AriaStatus replicaState={replicaState} hostName={selectedHost?.name} />
                 
                 {/* Control Buttons */}
                 <div className="p-3 border-t border-gray-200/50 dark:border-gray-700/50">
@@ -924,7 +981,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                       </button>
                     </div>
                     <div className="text-gray-700 dark:text-gray-300 text-xs font-medium">
-                      Curated by Aria
+                      Curated by {selectedHost?.name || 'AI'}
                     </div>
                   </div>
                 </div>
@@ -933,7 +990,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         </div>
 
-        {/* Aria's Stage - Dynamic Showcase (Flexible Width) */}
+        {/* Dynamic Showcase (Flexible Width) */}
         <div className="flex-1 min-w-0">
           <div className={`bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl shadow-lg border overflow-hidden h-full flex flex-col transition-all duration-1000 ${
             showcaseGlow 
@@ -943,10 +1000,22 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
                 <Zap className="w-5 h-5 text-brand-500" />
-                <span>Aria's Dynamic Showcase</span>
+                <span>
+                  {showcaseContent.type === 'host-selection' 
+                    ? 'Host Selection' 
+                    : selectedHost 
+                      ? `${selectedHost.name}'s Dynamic Showcase`
+                      : 'Dynamic Showcase'
+                  }
+                </span>
               </h3>
               <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                Aria curates and presents products with sophisticated storytelling and expert insights
+                {showcaseContent.type === 'host-selection'
+                  ? 'Choose your personal shopping curator to begin your luxury experience'
+                  : selectedHost
+                    ? `${selectedHost.name} curates and presents products with sophisticated storytelling and expert insights`
+                    : 'AI curates and presents products with sophisticated storytelling and expert insights'
+                }
               </p>
             </div>
             
@@ -974,8 +1043,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         <UserInput 
           onMessageSend={handleUserMessage}
           onFocus={handleWakeUp}
-          disabled={isConnecting}
-          placeholder="Describe a style, a mood, or an occasion..."
+          disabled={isConnecting || !selectedHost}
+          placeholder={
+            !selectedHost 
+              ? "Please select a host above to begin..." 
+              : selectedHost 
+                ? `Tell ${selectedHost.name} what you're looking for...`
+                : "Describe a style, a mood, or an occasion..."
+          }
         />
       </div>
     </div>
