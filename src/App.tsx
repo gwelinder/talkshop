@@ -157,8 +157,7 @@ function App() {
         onShowSettings={() => setShowEnvSetup(true)}
       />
 
-      {/* FOMO Ribbon */}
-      <FOMORibbon />
+
 
       {currentView === 'home' && (
         <main>
