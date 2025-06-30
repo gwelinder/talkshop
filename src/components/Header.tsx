@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Settings, User, Moon, Sun, LogOut } from 'lucide-react';
+import { ShoppingBag, Settings, User, Moon, Sun, LogOut, FileText, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AuthUser, signOut } from '../services/authService';
 
@@ -9,6 +9,8 @@ interface HeaderProps {
   onShowSettings: () => void;
   cartJiggle?: boolean;
   user?: AuthUser | null;
+  onShowPrivacy?: () => void;
+  onShowTerms?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -16,7 +18,9 @@ const Header: React.FC<HeaderProps> = ({
   onShowCart, 
   onShowSettings, 
   cartJiggle = false,
-  user 
+  user,
+  onShowPrivacy,
+  onShowTerms
 }) => {
   const [isDark, setIsDark] = useState(
     document.documentElement.getAttribute('data-theme') === 'dark'
@@ -118,13 +122,43 @@ const Header: React.FC<HeaderProps> = ({
                         {user.email}
                       </p>
                     </div>
-                    <button
-                      onClick={handleSignOut}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
+                    
+                    {/* Legal Links */}
+                    {onShowPrivacy && (
+                      <button
+                        onClick={() => {
+                          onShowPrivacy();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                      >
+                        <Shield className="w-4 h-4" />
+                        <span>Privacy Policy</span>
+                      </button>
+                    )}
+                    
+                    {onShowTerms && (
+                      <button
+                        onClick={() => {
+                          onShowTerms();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Terms of Service</span>
+                      </button>
+                    )}
+                    
+                    <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </div>

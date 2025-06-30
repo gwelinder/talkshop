@@ -7,6 +7,8 @@ import Cart from './components/Cart';
 import Checkout from './components/Checkout';
 import SessionTypeSelector from './components/SessionTypeSelector';
 import SubscriptionModal from './components/SubscriptionModal';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import { useProducts } from './hooks/useProducts';
 import { getProductById } from './services/productService';
 import { getApiConfig } from './services/tavusService';
@@ -256,6 +258,16 @@ function App() {
     );
   }
 
+  // Show Privacy Policy
+  if (currentView === 'privacy') {
+    return <PrivacyPolicy onBack={() => setCurrentView('home')} />;
+  }
+
+  // Show Terms of Service
+  if (currentView === 'terms') {
+    return <TermsOfService onBack={() => setCurrentView('home')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Header 
@@ -264,6 +276,8 @@ function App() {
         onShowSettings={() => setShowEnvSetup(true)}
         cartJiggle={cartJiggle}
         user={authUser}
+        onShowPrivacy={() => setCurrentView('privacy')}
+        onShowTerms={() => setCurrentView('terms')}
       />
 
       {currentView === 'home' && (
