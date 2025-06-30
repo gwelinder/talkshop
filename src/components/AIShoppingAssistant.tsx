@@ -89,9 +89,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Magic cart animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
 
-  // Perception throttling
+  // Perception throttling with better tracking
   const lastPerceptionTime = useRef<number>(0);
-  const PERCEPTION_THROTTLE_MS = 5000; // 5 seconds between perception calls
+  const processedToolCalls = useRef<Set<string>>(new Set());
+  const PERCEPTION_THROTTLE_MS = 3000; // Reduced to 3 seconds for better responsiveness
 
   // Update persona tools on component mount
   useEffect(() => {
@@ -115,9 +116,24 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   }, [comparisonProducts]);
 
-  // Enhanced tool call handler with optimized cart experience
+  // Enhanced tool call handler with better deduplication and error handling
   const handleToolCall = useCallback(async (toolCall: any) => {
-    console.log('🔧 AI Assistant received tool call:', toolCall);
+    // Create a unique identifier for this tool call
+    const toolCallId = `${toolCall.function.name}_${JSON.stringify(toolCall.function.arguments)}_${Date.now()}`;
+    
+    // Check if we've already processed this exact tool call recently
+    if (processedToolCalls.current.has(toolCallId)) {
+      console.log('🚫 Duplicate tool call detected, skipping:', toolCall.function.name);
+      return;
+    }
+    
+    // Add to processed set and clean up old entries
+    processedToolCalls.current.add(toolCallId);
+    setTimeout(() => {
+      processedToolCalls.current.delete(toolCallId);
+    }, 5000);
+
+    console.log('🔧 AI Assistant processing tool call:', toolCall.function.name, toolCall.function.arguments);
     
     // Handle cart animation with enhanced experience
     if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
@@ -133,7 +149,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       const timer = setTimeout(() => {
         setCartAnimation(false);
         setCartSuccessTimer(null);
-      }, 2000); // Longer for better UX
+      }, 2000);
       
       setCartSuccessTimer(timer);
 
@@ -187,6 +203,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     // Handle product grid display
     if (toolCall.function.name === 'show_product_grid') {
       const { products, title } = toolCall.function.arguments;
+      console.log('📋 Displaying product grid:', title, products?.length || 0, 'products');
       setShowcaseContent({ 
         type: 'product_grid', 
         data: { products, title } 
@@ -196,6 +213,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
     // Handle category display
     if (toolCall.function.name === 'show_categories') {
+      console.log('📂 Displaying categories');
       setShowcaseContent({ type: 'categories' });
       return; // Don't forward to parent
     }
@@ -211,21 +229,59 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         style_category
       });
       
-      // Auto-search based on style analysis
-      if (dominant_color && style_category) {
-        const searchQuery = `${style_category} ${dominant_color}`;
-        const results = await searchProducts({ search: searchQuery, limit: 6 });
+      // Enhanced search with multiple strategies
+      try {
+        let results = [];
         
-        if (results.length > 0) {
+        // Strategy 1: Search by style category
+        if (style_category) {
+          const categoryResults = await searchProducts({ 
+            search: style_category, 
+            limit: 4 
+          });
+          results = [...results, ...categoryResults];
+        }
+        
+        // Strategy 2: Search by color if we have fewer than 4 results
+        if (results.length < 4 && dominant_color) {
+          const colorResults = await searchProducts({ 
+            search: dominant_color, 
+            limit: 4 - results.length 
+          });
+          results = [...results, ...colorResults];
+        }
+        
+        // Strategy 3: Get featured products if still not enough
+        if (results.length < 4) {
+          const featuredResults = allProducts.slice(0, 6 - results.length);
+          results = [...results, ...featuredResults];
+        }
+        
+        // Remove duplicates
+        const uniqueResults = results.filter((product, index, self) => 
+          index === self.findIndex(p => p.id === product.id)
+        );
+        
+        console.log('🎨 Style search results:', uniqueResults.length, 'products found');
+        
+        if (uniqueResults.length > 0) {
           setShowcaseContent({
             type: 'product_grid',
             data: {
-              products: results,
+              products: uniqueResults,
               title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
             }
           });
+        } else {
+          // Fallback to categories if no products found
+          setShowcaseContent({ type: 'categories' });
         }
+      } catch (error) {
+        console.error('Error in style matching:', error);
+        // Fallback to categories on error
+        setShowcaseContent({ type: 'categories' });
       }
+      
       return; // Don't forward to parent
     }
 
@@ -235,20 +291,52 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       setObjectAnalysisData(toolCall.function.arguments);
       
       // Auto-search for complementary products
-      if (toolCall.function.arguments.dominant_color && toolCall.function.arguments.object_category) {
-        const searchQuery = `${toolCall.function.arguments.object_category} ${toolCall.function.arguments.dominant_color}`;
-        const results = await searchProducts({ search: searchQuery, limit: 6 });
+      try {
+        const { dominant_color, object_category, object_description } = toolCall.function.arguments;
         
-        if (results.length > 0) {
+        let results = [];
+        
+        // Search by object category first
+        if (object_category && object_category !== 'toy') {
+          const categoryResults = await searchProducts({ 
+            search: object_category, 
+            limit: 4 
+          });
+          results = [...results, ...categoryResults];
+        }
+        
+        // Search by color if needed
+        if (results.length < 4 && dominant_color) {
+          const colorResults = await searchProducts({ 
+            search: dominant_color, 
+            limit: 4 - results.length 
+          });
+          results = [...results, ...colorResults];
+        }
+        
+        // Fallback to featured products
+        if (results.length < 4) {
+          const featuredResults = allProducts.slice(0, 6 - results.length);
+          results = [...results, ...featuredResults];
+        }
+        
+        const uniqueResults = results.filter((product, index, self) => 
+          index === self.findIndex(p => p.id === product.id)
+        );
+        
+        if (uniqueResults.length > 0) {
           setShowcaseContent({
             type: 'product_grid',
             data: {
-              products: results,
-              title: `Products that complement your ${toolCall.function.arguments.object_description}`
+              products: uniqueResults,
+              title: `Products that complement your ${object_description}`
             }
           });
         }
+      } catch (error) {
+        console.error('Error in object analysis:', error);
       }
+      
       return; // Don't forward to parent
     }
 
@@ -266,9 +354,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     
     // Forward other tool calls to parent component
     onToolCall(toolCall);
-  }, [onToolCall, cartSuccessTimer, onCartJiggle, spotlightProduct, triggerMagicCart]);
+  }, [onToolCall, cartSuccessTimer, onCartJiggle, spotlightProduct, triggerMagicCart, allProducts]);
 
-  // Enhanced tool call parsing with perception throttling
+  // Enhanced tool call parsing with better deduplication
   const parseToolCall = useCallback((data: any) => {
     try {
       console.log('🔧 Parsing tool call data:', data);
@@ -301,7 +389,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
       }
 
-      // Handle perception tool calls with throttling
+      // Handle perception tool calls with improved throttling
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
         
@@ -312,30 +400,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           return null;
         }
         
-        // For style detection, we need to trigger the resolver tool
-        if (name === 'detected_user_style') {
-          console.log('🎨 Step 1: Style detection completed:', args);
-          lastPerceptionTime.current = now;
-          
-          // Trigger the RESOLVER TOOL after a brief delay
-          setTimeout(() => {
-            const resolverToolCall = {
-              function: {
-                name: 'find_and_display_style_matches',
-                arguments: {
-                  dominant_color: args.dominant_color,
-                  style_category: args.style_category,
-                  curation_title: `Inspired by your ${args.style_category} ${args.dominant_color} style`
-                }
-              }
-            };
-            handleToolCall(resolverToolCall);
-          }, 1000);
-          
-          return null; // Don't process as regular tool call
-        }
-        
         lastPerceptionTime.current = now;
+        
         return {
           function: {
             name: name,
@@ -349,7 +415,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       console.error('Error parsing tool call:', error);
       return null;
     }
-  }, [handleToolCall]);
+  }, []);
 
   // Update remote participants
   const updateRemoteParticipants = useCallback(() => {
@@ -387,7 +453,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     });
   }, [remoteParticipants]);
 
-  // Daily.js setup
+  // Daily.js setup with improved event handling
   useEffect(() => {
     if (!conversationUrl) return;
 
@@ -430,7 +496,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     call.on('track-started', updateRemoteParticipants);
     call.on('track-stopped', updateRemoteParticipants);
 
-    // Handle app messages for tool calls
+    // Enhanced app message handling
     call.on('app-message', (event: any) => {
       console.log('📨 AI app message received:', event);
       const { data } = event;
@@ -455,7 +521,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           break;
       }
       
-      // Handle event types from webhook
+      // Handle event types from webhook with improved processing
       switch (data.event_type) {
         case 'conversation.replica.stopped_speaking':
           setReplicaState('listening');
