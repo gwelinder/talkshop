@@ -13,11 +13,13 @@ export interface UserProfile {
   username?: string;
   subscription_tier: 'free' | 'plus' | 'vip';
   ai_minutes_used_today: number;
+  gender?: string; // Added gender field
   preferences: {
     preferred_hosts: string[];
     style_preferences: string[];
     budget_range: string;
     favorite_categories: string[];
+    gender_preference?: string; // Added gender preference
   };
   created_at: string;
   updated_at: string;
@@ -33,11 +35,13 @@ export const createUserProfile = async (userId: string, email: string) => {
         email,
         subscription_tier: 'free',
         ai_minutes_used_today: 0,
+        gender: null, // Default to null
         preferences: {
           preferred_hosts: [],
           style_preferences: [],
           budget_range: 'any',
-          favorite_categories: []
+          favorite_categories: [],
+          gender_preference: null // Default to null
         }
       })
       .select()
@@ -80,6 +84,32 @@ export const updateUserProfile = async (userId: string, updates: Partial<UserPro
     return data;
   } catch (error) {
     console.error('Error updating user profile:', error);
+    return null;
+  }
+};
+
+// Update user gender
+export const updateUserGender = async (userId: string, gender: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({ 
+        gender,
+        preferences: supabase.rpc('jsonb_set', {
+          target: 'preferences',
+          path: '{gender_preference}',
+          value: gender
+        }),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating user gender:', error);
     return null;
   }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Settings, Crown, Clock, TrendingUp, Heart } from 'lucide-react';
+import { User, Settings, Crown, Clock, TrendingUp, Heart, Shirt } from 'lucide-react';
 import { getUserProfile, updateUserProfile, UserProfile } from '../services/supabaseService';
 import { subscriptionTiers } from '../services/revenuecatService';
 
@@ -18,11 +18,13 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
+    gender: '',
     preferences: {
       preferred_hosts: [] as string[],
       style_preferences: [] as string[],
       budget_range: 'any',
-      favorite_categories: [] as string[]
+      favorite_categories: [] as string[],
+      gender_preference: ''
     }
   });
 
@@ -37,6 +39,7 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
         setProfile(userProfile);
         setFormData({
           username: userProfile.username || '',
+          gender: userProfile.gender || '',
           preferences: userProfile.preferences
         });
       }
@@ -53,7 +56,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
     try {
       const updates = {
         username: formData.username,
-        preferences: formData.preferences
+        gender: formData.gender,
+        preferences: {
+          ...profile.preferences,
+          ...formData.preferences,
+          gender_preference: formData.gender
+        }
       };
       
       const updatedProfile = await updateUserProfile(userId, updates);
@@ -100,7 +108,7 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                {profile.username || 'Shopping Profile'}
+                {profile.username || 'Style Profile'}
               </h2>
               <div className="flex items-center space-x-2">
                 <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${
@@ -147,12 +155,12 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
           </div>
           
           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-6 text-center">
-            <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
+            <Shirt className="w-8 h-8 text-purple-500 mx-auto mb-2" />
             <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              {profile.preferences.preferred_hosts.length}
+              {profile.gender || "Not set"}
             </div>
             <div className="text-gray-600 dark:text-gray-400 text-sm">
-              Preferred hosts
+              Fashion preference
             </div>
           </div>
         </div>
@@ -175,6 +183,29 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
                 className="w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300/50 dark:border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="Enter your username"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Fashion Preference
+              </label>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  gender: e.target.value,
+                  preferences: { 
+                    ...prev.preferences, 
+                    gender_preference: e.target.value 
+                  }
+                }))}
+                className="w-full px-4 py-3 bg-white/50 dark:bg-gray-800/50 border border-gray-300/50 dark:border-gray-600/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">Select fashion preference</option>
+                <option value="men">Men's Fashion</option>
+                <option value="women">Women's Fashion</option>
+                <option value="unisex">Gender-Neutral Fashion</option>
+              </select>
             </div>
 
             <div>
@@ -217,9 +248,15 @@ const UserProfileManager: React.FC<UserProfileManagerProps> = ({
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Shopping Preferences
+                Style Preferences
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Fashion Preference:</span>
+                  <p className="text-gray-900 dark:text-gray-100 capitalize">
+                    {profile.gender ? profile.gender : 'Not set'}
+                  </p>
+                </div>
                 <div>
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Budget Range:</span>
                   <p className="text-gray-900 dark:text-gray-100 capitalize">
