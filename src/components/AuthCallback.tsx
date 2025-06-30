@@ -51,11 +51,11 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({
   const getIcon = () => {
     switch (status) {
       case 'loading':
-        return <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />;
+        return <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto" />;
       case 'success':
-        return <CheckCircle className="w-16 h-16 text-green-500" />;
+        return <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />;
       case 'error':
-        return <AlertCircle className="w-16 h-16 text-red-500" />;
+        return <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />;
     }
   };
 
@@ -68,7 +68,7 @@ const AuthCallback: React.FC<AuthCallbackProps> = ({
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <motion.div
-          className="mb-6"
+          className="mb-6 flex justify-center"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 400, damping: 25 }}
