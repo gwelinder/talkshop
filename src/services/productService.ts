@@ -1,4 +1,4 @@
-// Optimized Product API Service with better error handling and fallback products
+// Enhanced Product API Service for Fashion-Only Dynamic Product Generation
 export interface Product {
   id: string;
   title: string;
@@ -10,7 +10,7 @@ export interface Product {
     rate: number;
     count: number;
   };
-  // Enhanced fields for better AI demonstrations
+  // Enhanced fashion-specific fields
   features?: string[];
   brand?: string;
   inStock?: boolean;
@@ -18,6 +18,14 @@ export interface Product {
   tags?: string[];
   thumbnail?: string;
   viewers?: number;
+  // New fashion-specific properties
+  material?: string;
+  color_options?: string[];
+  size_options?: string[];
+  occasion?: string[];
+  style_tags?: string[];
+  fit?: string;
+  care_instructions?: string;
 }
 
 export interface ProductSearchParams {
@@ -26,7 +34,20 @@ export interface ProductSearchParams {
   maxPrice?: number;
   search?: string;
   limit?: number;
+  style?: string;
+  occasion?: string;
+  color?: string;
 }
+
+// Fashion-only categories
+const FASHION_CATEGORIES = [
+  "men's clothing",
+  "women's clothing", 
+  "accessories",
+  "footwear",
+  "bags",
+  "jewelry"
+];
 
 // Enhanced cache with longer duration and better management
 const productCache = new Map<string, { data: any; timestamp: number }>();
@@ -34,99 +55,101 @@ const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 let isLoading = false;
 let loadingPromise: Promise<Product[]> | null = null;
 
-// Pre-generated enhanced data to avoid runtime computation
-const brandMap = new Map([
-  ["men's clothing", ["StyleCraft", "UrbanEdge", "ClassicFit", "ModernMan"]],
-  ["women's clothing", ["ElegantStyle", "ChicBoutique", "FashionForward", "GracefulWear"]],
-  ["jewelery", ["LuxeGems", "BrilliantCraft", "PreciousDesigns", "EliteJewels"]],
-  ["electronics", ["TechPro", "InnovateTech", "DigitalEdge", "SmartChoice"]]
+// Fashion-specific brand mapping
+const fashionBrandMap = new Map([
+  ["men's clothing", ["StyleCraft", "UrbanEdge", "ClassicFit", "ModernMan", "Dapper & Co", "Gentleman's Choice"]],
+  ["women's clothing", ["ElegantStyle", "ChicBoutique", "FashionForward", "GracefulWear", "Bella Couture", "Luxe Femme"]],
+  ["accessories", ["AccessoryLux", "StyleAccents", "ChicDetails", "Refined Touch", "Statement Pieces"]],
+  ["footwear", ["StepStyle", "WalkElegant", "FootFashion", "Stride & Style", "Sole Couture"]],
+  ["bags", ["CarryChic", "BagCouture", "HandheldLux", "Tote & Style", "Clutch Craft"]],
+  ["jewelry", ["LuxeGems", "BrilliantCraft", "PreciousDesigns", "EliteJewels", "Sparkle & Shine"]]
 ]);
 
-const featureMap = new Map([
-  ["men's clothing", ["Premium fabric", "Comfortable fit", "Durable construction", "Easy care"]],
-  ["women's clothing", ["Flattering silhouette", "High-quality materials", "Comfortable wear", "Trendy design"]],
-  ["jewelery", ["Hypoallergenic materials", "Elegant design", "Durable finish", "Gift-ready packaging"]],
-  ["electronics", ["Latest technology", "Energy efficient", "User-friendly interface", "Reliable performance"]]
+// Fashion-specific feature mapping
+const fashionFeatureMap = new Map([
+  ["men's clothing", ["Premium fabric", "Tailored fit", "Wrinkle-resistant", "Breathable material", "Classic design", "Modern cut"]],
+  ["women's clothing", ["Flattering silhouette", "Luxurious fabric", "Comfortable wear", "Trendy design", "Versatile styling", "Figure-enhancing"]],
+  ["accessories", ["Handcrafted details", "Premium materials", "Timeless design", "Versatile styling", "Statement piece"]],
+  ["footwear", ["Comfortable sole", "Premium leather", "All-day comfort", "Stylish design", "Durable construction"]],
+  ["bags", ["Spacious interior", "Premium hardware", "Multiple compartments", "Durable construction", "Elegant design"]],
+  ["jewelry", ["Hypoallergenic materials", "Elegant design", "Durable finish", "Gift-ready packaging", "Timeless appeal"]]
 ]);
 
-// Fallback products for AI demonstrations when requested products don't exist
-const fallbackProductsMap = new Map([
-  ["TS123", {
-    id: "TS123",
-    title: "Diamond Necklace",
-    price: 899,
-    description: "Stunning diamond necklace with 18k gold chain",
-    category: "jewelery",
-    image: "https://images.pexels.com/photos/1721558/pexels-photo-1721558.jpeg?w=400",
-    rating: { rate: 4.9, count: 156 },
-    features: ["18k Gold", "0.5 Carat Diamond", "Elegant design", "Gift box included"],
-    brand: "LuxeGems",
-    inStock: true,
-    tags: ["luxury", "jewelry"],
-    viewers: 89
-  }],
-  ["prod_001", {
-    id: "prod_001",
-    title: "Midnight Velvet Blazer",
-    price: 289,
-    description: "Luxurious velvet blazer with satin lapels, perfect for evening occasions",
-    category: "men's clothing",
-    image: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
-    rating: { rate: 4.8, count: 142 },
-    features: ["Premium Italian velvet", "Satin peak lapels", "Fully lined", "Two button closure"],
-    brand: "StyleCraft",
-    inStock: true,
-    tags: ["formal", "luxury"],
-    viewers: 42
-  }],
-  ["prod_002", {
-    id: "prod_002",
-    title: "AuraGlow Pro Skincare Set",
-    price: 156,
-    description: "Complete skincare routine with vitamin C serum and retinol cream",
-    category: "women's clothing",
-    image: "https://images.pexels.com/photos/7625046/pexels-photo-7625046.jpeg?w=400",
-    rating: { rate: 4.9, count: 238 },
-    features: ["Vitamin C serum 30ml", "Hyaluronic acid moisturizer", "Retinol night cream", "SPF 50 day cream"],
-    brand: "GlowBeauty",
-    inStock: true,
-    tags: ["skincare", "beauty"],
-    viewers: 38
-  }],
-  ["prod_003", {
-    id: "prod_003",
-    title: "Quantum Wireless Earbuds",
-    price: 199,
-    description: "Next-gen wireless earbuds with spatial audio and 30-hour battery",
-    category: "electronics",
-    image: "https://images.pexels.com/photos/3780681/pexels-photo-3780681.jpeg?w=400",
-    rating: { rate: 4.7, count: 455 },
-    features: ["Spatial audio technology", "30-hour battery life", "Active noise cancellation", "IPX7 water resistance"],
-    brand: "TechPro",
-    inStock: true,
-    tags: ["wireless", "audio"],
-    viewers: 55
-  }],
-  ["prod_005", {
-    id: "prod_005",
-    title: "Swiss Chronograph Watch",
-    price: 899,
-    description: "Precision Swiss movement with sapphire crystal and titanium case",
-    category: "jewelery",
-    image: "https://images.pexels.com/photos/1697214/pexels-photo-1697214.jpeg?w=400",
-    rating: { rate: 4.9, count: 267 },
-    features: ["Swiss automatic movement", "Sapphire crystal glass", "Titanium case", "50m water resistance"],
-    brand: "SwissTime",
-    inStock: true,
-    tags: ["luxury", "watches"],
-    viewers: 67
-  }]
+// Material options for fashion items
+const materialOptions = {
+  "men's clothing": ["Cotton", "Wool", "Linen", "Silk", "Cashmere", "Denim", "Leather"],
+  "women's clothing": ["Silk", "Cotton", "Chiffon", "Satin", "Wool", "Cashmere", "Lace", "Velvet"],
+  "accessories": ["Leather", "Metal", "Fabric", "Silk", "Cotton", "Wool"],
+  "footwear": ["Leather", "Suede", "Canvas", "Synthetic", "Rubber"],
+  "bags": ["Leather", "Canvas", "Nylon", "Suede", "Synthetic"],
+  "jewelry": ["Gold", "Silver", "Platinum", "Stainless Steel", "Titanium", "Gemstone"]
+};
+
+// Color options
+const colorOptions = ["Black", "White", "Navy", "Gray", "Brown", "Beige", "Red", "Blue", "Green", "Pink", "Purple", "Yellow", "Orange"];
+
+// Size options
+const sizeOptions = {
+  clothing: ["XS", "S", "M", "L", "XL", "XXL"],
+  footwear: ["6", "7", "8", "9", "10", "11", "12"],
+  accessories: ["One Size", "S", "M", "L"]
+};
+
+// Occasion tags
+const occasionTags = ["Casual", "Business", "Formal", "Evening", "Weekend", "Date Night", "Work", "Party", "Travel", "Vacation"];
+
+// Style tags
+const styleTags = ["Classic", "Modern", "Trendy", "Vintage", "Minimalist", "Bohemian", "Edgy", "Romantic", "Sporty", "Elegant"];
+
+// Pexels image search mapping for fashion items
+const pexelsImageMap = new Map([
+  // Men's clothing
+  ["shirt", "https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?w=400"],
+  ["blazer", "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400"],
+  ["jacket", "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?w=400"],
+  ["pants", "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?w=400"],
+  ["jeans", "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?w=400"],
+  ["suit", "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?w=400"],
+  
+  // Women's clothing
+  ["dress", "https://images.pexels.com/photos/1721558/pexels-photo-1721558.jpeg?w=400"],
+  ["blouse", "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400"],
+  ["skirt", "https://images.pexels.com/photos/1631181/pexels-photo-1631181.jpeg?w=400"],
+  ["cardigan", "https://images.pexels.com/photos/1536620/pexels-photo-1536620.jpeg?w=400"],
+  ["top", "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400"],
+  
+  // Accessories
+  ["handbag", "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?w=400"],
+  ["purse", "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?w=400"],
+  ["bag", "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?w=400"],
+  ["scarf", "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400"],
+  ["belt", "https://images.pexels.com/photos/1598505/pexels-photo-1598505.jpeg?w=400"],
+  ["hat", "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400"],
+  
+  // Footwear
+  ["shoes", "https://images.pexels.com/photos/1598508/pexels-photo-1598508.jpeg?w=400"],
+  ["boots", "https://images.pexels.com/photos/1598509/pexels-photo-1598509.jpeg?w=400"],
+  ["sneakers", "https://images.pexels.com/photos/1598510/pexels-photo-1598510.jpeg?w=400"],
+  ["heels", "https://images.pexels.com/photos/1598511/pexels-photo-1598511.jpeg?w=400"],
+  
+  // Jewelry
+  ["necklace", "https://images.pexels.com/photos/1721558/pexels-photo-1721558.jpeg?w=400"],
+  ["earrings", "https://images.pexels.com/photos/1721559/pexels-photo-1721559.jpeg?w=400"],
+  ["bracelet", "https://images.pexels.com/photos/1721560/pexels-photo-1721560.jpeg?w=400"],
+  ["ring", "https://images.pexels.com/photos/1721561/pexels-photo-1721561.jpeg?w=400"],
+  ["watch", "https://images.pexels.com/photos/1697214/pexels-photo-1697214.jpeg?w=400"]
 ]);
 
-// Optimized product enhancement with memoization
+// Enhanced product enhancement with fashion-specific data
 const enhanceProduct = (product: any): Product => {
-  const categoryBrands = brandMap.get(product.category) || ["Premium"];
-  const categoryFeatures = featureMap.get(product.category) || ["High quality"];
+  // Only process fashion categories
+  if (!FASHION_CATEGORIES.includes(product.category)) {
+    return null;
+  }
+  
+  const categoryBrands = fashionBrandMap.get(product.category) || ["Premium Fashion"];
+  const categoryFeatures = fashionFeatureMap.get(product.category) || ["High quality", "Stylish design"];
+  const materials = materialOptions[product.category] || ["Premium material"];
   
   return {
     id: product.id.toString(),
@@ -142,7 +165,17 @@ const enhanceProduct = (product: any): Product => {
     features: categoryFeatures.slice(0, 3),
     tags: [product.category],
     viewers: Math.floor(Math.random() * 50) + 10,
-    discount: product.id % 5 === 0 ? Math.floor(Math.random() * 20) + 10 : undefined
+    discount: product.id % 5 === 0 ? Math.floor(Math.random() * 20) + 10 : undefined,
+    // Fashion-specific enhancements
+    material: materials[Math.floor(Math.random() * materials.length)],
+    color_options: colorOptions.slice(0, Math.floor(Math.random() * 4) + 2),
+    size_options: product.category.includes('clothing') ? sizeOptions.clothing : 
+                  product.category === 'footwear' ? sizeOptions.footwear : 
+                  sizeOptions.accessories,
+    occasion: occasionTags.slice(0, Math.floor(Math.random() * 3) + 1),
+    style_tags: styleTags.slice(0, Math.floor(Math.random() * 3) + 1),
+    fit: product.category.includes('clothing') ? ['Regular', 'Slim', 'Relaxed'][Math.floor(Math.random() * 3)] : undefined,
+    care_instructions: product.category.includes('clothing') ? "Machine wash cold, tumble dry low" : "Spot clean only"
   };
 };
 
@@ -152,9 +185,9 @@ const isCacheValid = (cacheKey: string): boolean => {
   return cached ? (Date.now() - cached.timestamp) < CACHE_DURATION : false;
 };
 
-// Optimized fetch with singleton pattern to prevent multiple requests
+// Optimized fetch with fashion-only filtering
 export const fetchAllProducts = async (): Promise<Product[]> => {
-  const cacheKey = 'all_products';
+  const cacheKey = 'fashion_products';
   
   // Return cached data if valid
   if (isCacheValid(cacheKey)) {
@@ -170,7 +203,7 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
   isLoading = true;
   loadingPromise = (async () => {
     try {
-      console.log('🔄 Fetching products from API...');
+      console.log('🔄 Fetching fashion products from API...');
       const response = await fetch('https://fakestoreapi.com/products');
       
       if (!response.ok) {
@@ -178,11 +211,16 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
       }
       
       const products = await response.json();
-      const enhancedProducts = products.map(enhanceProduct);
       
-      // Add fallback products to the mix
-      const fallbackProducts = Array.from(fallbackProductsMap.values());
-      const allProducts = [...enhancedProducts, ...fallbackProducts];
+      // Filter and enhance only fashion products
+      const fashionProducts = products
+        .filter(product => FASHION_CATEGORIES.includes(product.category))
+        .map(enhanceProduct)
+        .filter(Boolean); // Remove null values
+      
+      // Add curated fashion fallback products
+      const fallbackProducts = getFashionFallbackProducts();
+      const allProducts = [...fashionProducts, ...fallbackProducts];
       
       // Cache the results
       productCache.set(cacheKey, {
@@ -190,11 +228,11 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
         timestamp: Date.now()
       });
       
-      console.log('✅ Fetched and cached', allProducts.length, 'products');
+      console.log('✅ Fetched and cached', allProducts.length, 'fashion products');
       return allProducts;
     } catch (error) {
       console.error('❌ Error fetching products:', error);
-      return getFallbackProducts();
+      return getFashionFallbackProducts();
     } finally {
       isLoading = false;
       loadingPromise = null;
@@ -204,42 +242,142 @@ export const fetchAllProducts = async (): Promise<Product[]> => {
   return loadingPromise;
 };
 
-// Optimized category fetch
+// Fashion-only category fetch
 export const fetchCategories = async (): Promise<string[]> => {
-  const cacheKey = 'categories';
+  const cacheKey = 'fashion_categories';
   
   if (isCacheValid(cacheKey)) {
     return productCache.get(cacheKey)!.data;
   }
 
   try {
-    const response = await fetch('https://fakestoreapi.com/products/categories');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const categories = await response.json();
+    // Return our curated fashion categories
+    const fashionCategories = FASHION_CATEGORIES;
     
     productCache.set(cacheKey, {
-      data: categories,
+      data: fashionCategories,
       timestamp: Date.now()
     });
     
-    return categories;
+    return fashionCategories;
   } catch (error) {
     console.error('❌ Error fetching categories:', error);
-    const fallbackCategories = ['electronics', 'jewelery', "men's clothing", "women's clothing"];
-    
-    productCache.set(cacheKey, {
-      data: fallbackCategories,
-      timestamp: Date.now()
-    });
-    
-    return fallbackCategories;
+    return FASHION_CATEGORIES;
   }
 };
 
-// Optimized search with client-side filtering
+// Enhanced dynamic product creation - the core of our unlimited catalog
+export const createDynamicFashionProduct = (description: string, additionalParams: any = {}): Product => {
+  console.log('🎭 Creating dynamic fashion product for:', description);
+  
+  // Parse the description to extract key information
+  const lowerDesc = description.toLowerCase();
+  
+  // Determine category based on description
+  let category = "women's clothing"; // default
+  if (lowerDesc.includes('men') || lowerDesc.includes('guy') || lowerDesc.includes('masculine')) {
+    category = "men's clothing";
+  } else if (lowerDesc.includes('bag') || lowerDesc.includes('purse') || lowerDesc.includes('handbag')) {
+    category = "bags";
+  } else if (lowerDesc.includes('shoe') || lowerDesc.includes('boot') || lowerDesc.includes('sneaker') || lowerDesc.includes('heel')) {
+    category = "footwear";
+  } else if (lowerDesc.includes('necklace') || lowerDesc.includes('earring') || lowerDesc.includes('bracelet') || lowerDesc.includes('ring') || lowerDesc.includes('watch')) {
+    category = "jewelry";
+  } else if (lowerDesc.includes('scarf') || lowerDesc.includes('belt') || lowerDesc.includes('hat') || lowerDesc.includes('accessory')) {
+    category = "accessories";
+  }
+  
+  // Extract color from description
+  const detectedColor = colorOptions.find(color => 
+    lowerDesc.includes(color.toLowerCase())
+  ) || colorOptions[Math.floor(Math.random() * colorOptions.length)];
+  
+  // Extract style from description
+  const detectedStyle = styleTags.find(style => 
+    lowerDesc.includes(style.toLowerCase())
+  ) || styleTags[Math.floor(Math.random() * styleTags.length)];
+  
+  // Extract occasion from description
+  const detectedOccasion = occasionTags.find(occasion => 
+    lowerDesc.includes(occasion.toLowerCase())
+  ) || occasionTags[Math.floor(Math.random() * occasionTags.length)];
+  
+  // Generate appropriate image based on item type
+  const getImageForItem = (desc: string): string => {
+    for (const [keyword, imageUrl] of pexelsImageMap.entries()) {
+      if (desc.toLowerCase().includes(keyword)) {
+        return imageUrl;
+      }
+    }
+    // Default fashion image
+    return "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400";
+  };
+  
+  // Generate realistic price based on category and style
+  const generatePrice = (): number => {
+    const basePrices = {
+      "men's clothing": [45, 120],
+      "women's clothing": [35, 150],
+      "accessories": [25, 80],
+      "footwear": [60, 200],
+      "bags": [40, 180],
+      "jewelry": [30, 300]
+    };
+    
+    const [min, max] = basePrices[category] || [30, 100];
+    let price = Math.floor(Math.random() * (max - min) + min);
+    
+    // Premium styles cost more
+    if (detectedStyle === 'Elegant' || detectedStyle === 'Classic') {
+      price *= 1.3;
+    }
+    
+    return Math.round(price);
+  };
+  
+  const brands = fashionBrandMap.get(category) || ["StyleCraft"];
+  const features = fashionFeatureMap.get(category) || ["High quality", "Stylish design"];
+  const materials = materialOptions[category] || ["Premium material"];
+  
+  // Generate unique ID
+  const id = `dynamic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Create the product title from description
+  const title = description.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  return {
+    id,
+    title,
+    price: additionalParams.price || generatePrice(),
+    description: additionalParams.description || `Beautiful ${description.toLowerCase()} perfect for any ${detectedOccasion.toLowerCase()} occasion`,
+    category,
+    image: getImageForItem(description),
+    thumbnail: getImageForItem(description),
+    rating: { 
+      rate: Math.round((Math.random() * 1.5 + 3.5) * 10) / 10, // 3.5-5.0 rating
+      count: Math.floor(Math.random() * 200) + 50 
+    },
+    features: features.slice(0, 3),
+    brand: brands[Math.floor(Math.random() * brands.length)],
+    inStock: true,
+    tags: [category, detectedStyle, detectedOccasion],
+    viewers: Math.floor(Math.random() * 50) + 10,
+    // Fashion-specific properties
+    material: materials[Math.floor(Math.random() * materials.length)],
+    color_options: [detectedColor, ...colorOptions.filter(c => c !== detectedColor).slice(0, 2)],
+    size_options: category.includes('clothing') ? sizeOptions.clothing : 
+                  category === 'footwear' ? sizeOptions.footwear : 
+                  sizeOptions.accessories,
+    occasion: [detectedOccasion],
+    style_tags: [detectedStyle],
+    fit: category.includes('clothing') ? ['Regular', 'Slim', 'Relaxed'][Math.floor(Math.random() * 3)] : undefined,
+    care_instructions: category.includes('clothing') ? "Machine wash cold, tumble dry low" : "Spot clean only"
+  };
+};
+
+// Enhanced search with dynamic product generation
 export const searchProducts = async (params: ProductSearchParams): Promise<Product[]> => {
   const allProducts = await fetchAllProducts();
   
@@ -261,13 +399,64 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
     filtered = filtered.filter(p => p.price <= params.maxPrice!);
   }
   
-  // Search in title and description
+  // Enhanced search in title, description, and fashion-specific fields
   if (params.search) {
     const searchTerm = params.search.toLowerCase();
     filtered = filtered.filter(p => 
       p.title.toLowerCase().includes(searchTerm) ||
       p.description.toLowerCase().includes(searchTerm) ||
-      (p.features && p.features.some(f => f.toLowerCase().includes(searchTerm)))
+      (p.features && p.features.some(f => f.toLowerCase().includes(searchTerm))) ||
+      (p.style_tags && p.style_tags.some(s => s.toLowerCase().includes(searchTerm))) ||
+      (p.occasion && p.occasion.some(o => o.toLowerCase().includes(searchTerm))) ||
+      (p.material && p.material.toLowerCase().includes(searchTerm)) ||
+      (p.color_options && p.color_options.some(c => c.toLowerCase().includes(searchTerm)))
+    );
+    
+    // If no matches found, create dynamic products based on search term
+    if (filtered.length === 0 && params.search) {
+      console.log('🎨 No existing products found, creating dynamic products for:', params.search);
+      
+      // Generate 3-5 dynamic products based on the search term
+      const dynamicProducts = [];
+      const variations = [
+        `${params.search}`,
+        `${params.search} top`,
+        `${params.search} dress`,
+        `${params.search} jacket`,
+        `${params.search} accessory`
+      ];
+      
+      for (let i = 0; i < Math.min(4, variations.length); i++) {
+        try {
+          const dynamicProduct = createDynamicFashionProduct(variations[i]);
+          dynamicProducts.push(dynamicProduct);
+        } catch (error) {
+          console.error('Error creating dynamic product:', error);
+        }
+      }
+      
+      filtered = dynamicProducts;
+    }
+  }
+  
+  // Filter by style
+  if (params.style) {
+    filtered = filtered.filter(p => 
+      p.style_tags && p.style_tags.some(s => s.toLowerCase().includes(params.style!.toLowerCase()))
+    );
+  }
+  
+  // Filter by occasion
+  if (params.occasion) {
+    filtered = filtered.filter(p => 
+      p.occasion && p.occasion.some(o => o.toLowerCase().includes(params.occasion!.toLowerCase()))
+    );
+  }
+  
+  // Filter by color
+  if (params.color) {
+    filtered = filtered.filter(p => 
+      p.color_options && p.color_options.some(c => c.toLowerCase().includes(params.color!.toLowerCase()))
     );
   }
   
@@ -279,18 +468,12 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
   return filtered;
 };
 
-// Enhanced product by ID fetch with fallback support
+// Enhanced product by ID fetch with dynamic generation
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    console.log('🔍 Looking for product ID:', id);
+    console.log('🔍 Looking for fashion product ID:', id);
     
-    // First check fallback products for AI-requested items
-    if (fallbackProductsMap.has(id)) {
-      console.log('✅ Found fallback product for ID:', id);
-      return fallbackProductsMap.get(id)!;
-    }
-    
-    // Then try to get from cached products
+    // First try to get from cached products
     const allProducts = await fetchAllProducts();
     const product = allProducts.find(p => p.id === id);
     if (product) {
@@ -303,110 +486,120 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     const response = await fetch(`https://fakestoreapi.com/products/${id}`);
     
     if (!response.ok) {
-      console.warn(`⚠️  API returned ${response.status} for product ID: ${id}`);
-      return createDynamicFallbackProduct(id);
+      console.warn(`⚠️  API returned ${response.status} for product ID: ${id}, creating dynamic product`);
+      return createDynamicFashionProduct(`Product ${id}`);
     }
     
     const text = await response.text();
     if (!text.trim()) {
-      console.warn(`⚠️  Empty response for product ID: ${id}`);
-      return createDynamicFallbackProduct(id);
+      console.warn(`⚠️  Empty response for product ID: ${id}, creating dynamic product`);
+      return createDynamicFashionProduct(`Product ${id}`);
     }
     
     const productData = JSON.parse(text);
+    
+    // Only return if it's a fashion product
+    if (!FASHION_CATEGORIES.includes(productData.category)) {
+      console.log('🚫 Non-fashion product, creating dynamic fashion alternative');
+      return createDynamicFashionProduct(`Stylish ${productData.title}`);
+    }
+    
     const enhancedProduct = enhanceProduct(productData);
-    console.log('✅ Successfully fetched and enhanced product:', enhancedProduct.title);
+    console.log('✅ Successfully fetched and enhanced fashion product:', enhancedProduct.title);
     return enhancedProduct;
     
   } catch (error) {
     console.error('❌ Error fetching product by ID:', error);
-    return createDynamicFallbackProduct(id);
+    return createDynamicFashionProduct(`Fashion Item ${id}`);
   }
-};
-
-// Create a dynamic fallback product when AI requests non-existent products
-const createDynamicFallbackProduct = (id: string): Product => {
-  console.log('🎭 Creating dynamic fallback product for ID:', id);
-  
-  // Generate product based on ID pattern
-  const categories = ['electronics', 'jewelery', "men's clothing", "women's clothing"];
-  const category = categories[id.length % categories.length];
-  
-  const productNames = {
-    'electronics': ['Smart Watch', 'Wireless Speaker', 'Gaming Headset', 'Tablet'],
-    'jewelery': ['Diamond Ring', 'Gold Bracelet', 'Pearl Earrings', 'Silver Necklace'],
-    "men's clothing": ['Casual Shirt', 'Dress Pants', 'Leather Jacket', 'Polo Shirt'],
-    "women's clothing": ['Summer Dress', 'Blouse', 'Cardigan', 'Skirt']
-  };
-  
-  const names = productNames[category as keyof typeof productNames];
-  const name = names[id.charCodeAt(0) % names.length];
-  
-  return {
-    id: id,
-    title: name,
-    price: Math.floor(Math.random() * 200) + 50,
-    description: `High-quality ${name.toLowerCase()} perfect for any occasion`,
-    category: category,
-    image: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
-    thumbnail: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
-    rating: { rate: 4.5, count: Math.floor(Math.random() * 200) + 50 },
-    features: ["High quality", "Great value", "Customer favorite"],
-    brand: "TalkShop",
-    inStock: true,
-    tags: [category],
-    viewers: Math.floor(Math.random() * 50) + 10
-  };
 };
 
 // Optimized featured products
 export const getFeaturedProducts = async (limit: number = 8): Promise<Product[]> => {
   const allProducts = await fetchAllProducts();
   
-  // Simple sort by rating and return top products
+  // Sort by rating and return top products
   return allProducts
     .sort((a, b) => b.rating.rate - a.rating.rate)
     .slice(0, limit);
 };
 
-// Enhanced fallback products
-const getFallbackProducts = (): Product[] => {
-  return Array.from(fallbackProductsMap.values()).concat([
+// Curated fashion fallback products
+const getFashionFallbackProducts = (): Product[] => {
+  return [
     {
-      id: "fallback_1",
-      title: "Premium Cotton T-Shirt",
-      price: 29.99,
-      description: "Comfortable cotton t-shirt",
-      category: "men's clothing",
-      image: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
-      thumbnail: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
-      rating: { rate: 4.5, count: 120 },
-      features: ["100% cotton", "Comfortable fit", "Machine washable"],
-      brand: "StyleCraft",
+      id: "fashion_001",
+      title: "Classic White Button-Down Shirt",
+      price: 89,
+      description: "Timeless white button-down shirt in premium cotton",
+      category: "women's clothing",
+      image: "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400",
+      thumbnail: "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400",
+      rating: { rate: 4.8, count: 156 },
+      features: ["Premium cotton", "Classic fit", "Wrinkle-resistant"],
+      brand: "ElegantStyle",
       inStock: true,
-      tags: ["casual"],
-      viewers: 25
+      tags: ["classic", "versatile"],
+      viewers: 42,
+      material: "Cotton",
+      color_options: ["White", "Light Blue", "Pink"],
+      size_options: ["XS", "S", "M", "L", "XL"],
+      occasion: ["Business", "Casual"],
+      style_tags: ["Classic", "Minimalist"],
+      fit: "Regular",
+      care_instructions: "Machine wash cold, tumble dry low"
     },
     {
-      id: "fallback_2",
-      title: "Wireless Headphones",
-      price: 79.99,
-      description: "High-quality wireless headphones",
-      category: "electronics",
-      image: "https://images.pexels.com/photos/3780681/pexels-photo-3780681.jpeg?w=400",
-      thumbnail: "https://images.pexels.com/photos/3780681/pexels-photo-3780681.jpeg?w=400",
-      rating: { rate: 4.8, count: 89 },
-      features: ["Wireless", "Noise cancellation", "20-hour battery"],
-      brand: "TechPro",
+      id: "fashion_002",
+      title: "Midnight Black Blazer",
+      price: 189,
+      description: "Sophisticated black blazer perfect for any occasion",
+      category: "women's clothing",
+      image: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
+      thumbnail: "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400",
+      rating: { rate: 4.9, count: 203 },
+      features: ["Tailored fit", "Premium fabric", "Versatile styling"],
+      brand: "ChicBoutique",
       inStock: true,
-      tags: ["wireless"],
-      viewers: 42
+      tags: ["formal", "elegant"],
+      viewers: 67,
+      material: "Wool blend",
+      color_options: ["Black", "Navy", "Gray"],
+      size_options: ["XS", "S", "M", "L", "XL"],
+      occasion: ["Business", "Formal", "Evening"],
+      style_tags: ["Classic", "Elegant"],
+      fit: "Tailored",
+      care_instructions: "Dry clean only"
+    },
+    {
+      id: "fashion_003",
+      title: "Leather Crossbody Bag",
+      price: 129,
+      description: "Elegant leather crossbody bag with adjustable strap",
+      category: "bags",
+      image: "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?w=400",
+      thumbnail: "https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?w=400",
+      rating: { rate: 4.7, count: 89 },
+      features: ["Genuine leather", "Adjustable strap", "Multiple compartments"],
+      brand: "CarryChic",
+      inStock: true,
+      tags: ["leather", "crossbody"],
+      viewers: 34,
+      material: "Leather",
+      color_options: ["Black", "Brown", "Tan"],
+      size_options: ["One Size"],
+      occasion: ["Casual", "Work", "Travel"],
+      style_tags: ["Classic", "Modern"],
+      care_instructions: "Spot clean only"
     }
-  ]);
+  ];
 };
 
 // Clear cache function for debugging
 export const clearProductCache = () => {
   productCache.clear();
-  console.log('🗑️ Product cache cleared');
+  console.log('🗑️ Fashion product cache cleared');
 };
+
+// Export the dynamic product creation function for AI use
+export { createDynamicFashionProduct };

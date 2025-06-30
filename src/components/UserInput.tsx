@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Send, Sparkles } from 'lucide-react';
+import { Mic, Send, Sparkles, Shirt } from 'lucide-react';
 
 interface UserInputProps {
   onMessageSend: (message: string) => void;
@@ -12,7 +12,7 @@ const UserInput: React.FC<UserInputProps> = ({
   onMessageSend, 
   onFocus, 
   disabled = false,
-  placeholder = "Describe a style, a mood, or an occasion..."
+  placeholder = "Ask about styles, fashion advice, or describe what you're looking for..."
 }) => {
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -44,7 +44,7 @@ const UserInput: React.FC<UserInputProps> = ({
     <div className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative bg-white/10 dark:bg-gray-800/10 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-gray-700/20 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:border-brand-400 dark:focus-within:border-brand-500 focus-within:shadow-brand-500/20">
-          {/* Elegant Input Field */}
+          {/* Fashion-focused Input Field */}
           <input
             ref={inputRef}
             type="text"
@@ -85,10 +85,10 @@ const UserInput: React.FC<UserInputProps> = ({
           </div>
         </div>
         
-        {/* Subtle Helper Text */}
+        {/* Fashion Helper Text */}
         <div className="flex items-center justify-center mt-3 text-xs text-gray-500 dark:text-gray-400 space-x-2">
-          <Sparkles className="w-3 h-3" />
-          <span>Ask about products, styles, or let Aria surprise you</span>
+          <Shirt className="w-3 h-3" />
+          <span>Ask about styles, outfit ideas, or fashion advice</span>
           <Sparkles className="w-3 h-3" />
         </div>
       </form>

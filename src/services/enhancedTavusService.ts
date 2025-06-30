@@ -1,4 +1,4 @@
-// Enhanced Tavus Service with viral features and advanced tools
+// Enhanced Tavus Service with Fashion-Only Focus and Dynamic Product Generation
 import { Product } from './productService';
 
 // Get API key from environment variables
@@ -22,20 +22,50 @@ const getWebhookUrl = () => {
   return `${baseUrl}/functions/v1/tavus-webhook`;
 };
 
-// Enhanced shopping tools with viral and monetization features
-const createShoppingTools = () => {
+// Enhanced fashion-focused shopping tools with dynamic product generation
+const createFashionShoppingTools = () => {
   return [
     {
       "type": "function",
       "function": {
+        "name": "create_dynamic_product",
+        "description": "Create and display a dynamic fashion product based on style analysis or user preferences. Use this when you want to suggest a specific item that complements the user's style.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "product_description": {
+              "type": "string",
+              "description": "Detailed description of the fashion item (e.g., 'denim cowboy jacket', 'floral summer dress', 'leather ankle boots')"
+            },
+            "style_reasoning": {
+              "type": "string",
+              "description": "Explanation of why this item complements the user's style"
+            },
+            "occasion": {
+              "type": "string",
+              "description": "Suggested occasion for wearing this item"
+            },
+            "price_range": {
+              "type": "string",
+              "enum": ["budget", "mid-range", "premium", "luxury"],
+              "description": "Price category for the item"
+            }
+          },
+          "required": ["product_description", "style_reasoning"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
         "name": "show_product",
-        "description": "Display a specific product when discussing it. Use ONLY these valid product IDs: 1-20 (from API), TS123 (Diamond Necklace), prod_001 (Velvet Blazer), prod_002 (Skincare Set), prod_003 (Wireless Earbuds), prod_005 (Swiss Watch).",
+        "description": "Display a specific product when discussing it. Use this for existing products or after creating dynamic products.",
         "parameters": {
           "type": "object",
           "properties": {
             "product_id": {
               "type": "string",
-              "description": "The product ID to display - must be a valid ID from the available inventory"
+              "description": "The product ID to display"
             },
             "product_name": {
               "type": "string", 
@@ -43,7 +73,12 @@ const createShoppingTools = () => {
             },
             "highlight_features": {
               "type": "array",
-              "description": "Key features to highlight visually",
+              "description": "Key fashion features to highlight (e.g., 'Premium fabric', 'Flattering fit', 'Versatile styling')",
+              "items": { "type": "string" }
+            },
+            "styling_tips": {
+              "type": "array",
+              "description": "Styling suggestions for this item",
               "items": { "type": "string" }
             }
           },
@@ -54,97 +89,26 @@ const createShoppingTools = () => {
     {
       "type": "function",
       "function": {
-        "name": "virtual_try_on",
-        "description": "Show how clothing/accessories look on the customer using AR visualization",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "product_id": { "type": "string" },
-            "product_name": { "type": "string" },
-            "try_on_type": { 
-              "type": "string", 
-              "enum": ["clothing", "accessories", "makeup", "glasses"] 
-            }
-          },
-          "required": ["product_id", "product_name", "try_on_type"]
-        }
-      }
-    },
-    {
-      "type": "function", 
-      "function": {
-        "name": "negotiate_price",
-        "description": "Engage in playful price negotiation when customer asks for deals",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "product_id": { "type": "string" },
-            "customer_offer": { "type": "number" },
-            "negotiation_style": { 
-              "type": "string", 
-              "enum": ["playful", "business", "friendly", "exclusive"]
-            },
-            "max_discount": { "type": "number", "description": "Maximum discount percentage allowed" }
-          },
-          "required": ["product_id", "customer_offer", "negotiation_style"]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "create_outfit",
-        "description": "Build complete outfit based on selected item",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "base_product_id": { "type": "string" },
-            "style_preference": { "type": "string" },
-            "budget_range": { "type": "string" },
-            "occasion": { "type": "string" }
-          },
-          "required": ["base_product_id", "style_preference"]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "create_shareable_moment",
-        "description": "Create a viral-worthy highlight of the current shopping moment for social sharing",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "moment_type": { 
-              "type": "string", 
-              "enum": ["product_reveal", "style_transformation", "price_drop", "exclusive_access"] 
-            },
-            "product_id": { "type": "string" },
-            "caption": { "type": "string", "description": "Engaging caption for social media" }
-          },
-          "required": ["moment_type", "product_id", "caption"]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
         "name": "show_product_grid",
-        "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'. When displaying a grid, always label the products in your speech (e.g., 'The first item is...', 'Item two features...').",
+        "description": "Display a curated collection of fashion items. Use this when showing multiple style options or creating a complete look.",
         "parameters": {
           "type": "object",
           "properties": {
             "products": {
               "type": "array",
-              "description": "An array of product objects to display in the grid.",
+              "description": "Array of fashion products to display",
               "items": { "type": "object" }
             },
-            "title": {
+            "collection_title": {
               "type": "string",
-              "description": "A title for the product grid, like 'Here are some dresses you might love'."
+              "description": "Title for the fashion collection (e.g., 'Your Personalized Style Collection', 'Perfect for Date Night')"
+            },
+            "style_narrative": {
+              "type": "string",
+              "description": "Story about why these pieces work together"
             }
           },
-          "required": ["products", "title"]
+          "required": ["products", "collection_title"]
         }
       }
     },
@@ -152,7 +116,7 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "show_categories",
-        "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
+        "description": "Display fashion categories when user wants to browse. Focus on style-based categories.",
         "parameters": { "type": "object", "properties": {} }
       }
     },
@@ -160,17 +124,21 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "focus_on_product",
-        "description": "Highlight and focus on a specific product in the grid when user shows interest. Use when user says 'tell me more about the first one', 'I like item three', etc.",
+        "description": "Highlight a specific item when user shows interest in a particular piece from a collection.",
         "parameters": {
           "type": "object",
           "properties": {
             "item_id": {
               "type": "string",
-              "description": "The item identifier (e.g., 'Item 1', 'Item 2', 'first', 'second', etc.)"
+              "description": "The item identifier from the grid"
             },
             "product_id": {
               "type": "string",
               "description": "The actual product ID to focus on"
+            },
+            "styling_context": {
+              "type": "string",
+              "description": "How this piece fits into their overall style"
             }
           },
           "required": ["item_id", "product_id"]
@@ -181,21 +149,25 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "find_and_display_style_matches",
-        "description": "Takes style attributes as input, searches for matching products, and displays them in a grid. This is the second and final step of the style analysis flow.",
+        "description": "Create a personalized fashion collection based on style analysis. This is the core tool for style-based recommendations.",
         "parameters": {
           "type": "object",
           "properties": {
             "dominant_color": { 
               "type": "string",
-              "description": "The dominant color from style analysis"
+              "description": "Primary color from the user's current style"
             },
             "style_category": { 
               "type": "string",
-              "description": "The style category from analysis"
+              "description": "Overall style aesthetic (e.g., 'casual chic', 'business professional', 'bohemian')"
             },
             "curation_title": { 
               "type": "string", 
-              "description": "A creative title for the product grid, like 'Inspired by your Classic Blue Style'." 
+              "description": "Personalized title for the style collection"
+            },
+            "style_personality": {
+              "type": "string",
+              "description": "User's fashion personality based on analysis"
             }
           },
           "required": ["dominant_color", "style_category", "curation_title"]
@@ -205,30 +177,56 @@ const createShoppingTools = () => {
     {
       "type": "function",
       "function": {
-        "name": "search_products",
-        "description": "Search for products based on customer requests. Use this when customers ask for specific items or categories.",
+        "name": "create_complete_outfit",
+        "description": "Design a complete outfit based on a single piece or style preference.",
         "parameters": {
           "type": "object",
           "properties": {
-            "search_query": {
+            "base_item": {
               "type": "string",
-              "description": "What the customer is looking for (e.g., 'jewelry', 'electronics', 'clothing')"
+              "description": "The starting piece for the outfit"
             },
-            "category": {
+            "occasion": {
               "type": "string",
-              "description": "Product category to filter by",
-              "enum": ["electronics", "jewelery", "men's clothing", "women's clothing"]
+              "description": "Event or setting for the outfit"
             },
-            "min_price": {
-              "type": "number",
-              "description": "Minimum price filter"
+            "style_preference": {
+              "type": "string",
+              "description": "Desired aesthetic for the complete look"
             },
-            "max_price": {
-              "type": "number",
-              "description": "Maximum price filter"
+            "budget_range": {
+              "type": "string",
+              "description": "Budget consideration for the outfit"
             }
           },
-          "required": ["search_query"]
+          "required": ["base_item", "occasion", "style_preference"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "style_consultation",
+        "description": "Provide personalized style advice and recommendations based on user's preferences, body type, or lifestyle.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "consultation_type": {
+              "type": "string",
+              "enum": ["color_analysis", "body_type", "lifestyle", "occasion_dressing", "wardrobe_essentials"],
+              "description": "Type of style consultation to provide"
+            },
+            "user_preferences": {
+              "type": "string",
+              "description": "User's stated preferences or concerns"
+            },
+            "recommendations": {
+              "type": "array",
+              "description": "Specific style recommendations",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["consultation_type", "recommendations"]
         }
       }
     },
@@ -236,18 +234,22 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "compare_products",
-        "description": "Show multiple products side-by-side for comparison. Use valid product IDs only.",
+        "description": "Compare fashion items to help with decision making.",
         "parameters": {
           "type": "object",
           "properties": {
             "product_ids": {
               "type": "array",
-              "description": "Array of valid product IDs to compare",
+              "description": "Array of product IDs to compare",
               "items": { "type": "string" }
             },
             "comparison_aspect": {
               "type": "string",
-              "description": "What aspect to compare (price, features, style, quality)"
+              "description": "What to compare (style, versatility, value, quality)"
+            },
+            "recommendation": {
+              "type": "string",
+              "description": "Your recommendation based on the comparison"
             }
           },
           "required": ["product_ids", "comparison_aspect"]
@@ -255,36 +257,10 @@ const createShoppingTools = () => {
       }
     },
     {
-      "type": "function", 
-      "function": {
-        "name": "highlight_offer",
-        "description": "Show special pricing or limited-time offers to create urgency",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "product_id": {
-              "type": "string",
-              "description": "The product ID with the offer"
-            },
-            "offer_type": {
-              "type": "string",
-              "enum": ["discount", "bundle", "limited_time", "exclusive"],
-              "description": "Type of offer to highlight"
-            },
-            "discount_percentage": {
-              "type": "number",
-              "description": "Discount percentage if applicable (e.g., 20 for 20% off)"
-            }
-          },
-          "required": ["product_id", "offer_type"]
-        }
-      }
-    },
-    {
       "type": "function",
       "function": {
         "name": "add_to_cart", 
-        "description": "Add a product to the customer's shopping cart when they're ready to purchase",
+        "description": "Add a fashion item to the customer's cart when they're ready to purchase",
         "parameters": {
           "type": "object",
           "properties": {
@@ -295,6 +271,14 @@ const createShoppingTools = () => {
             "quantity": {
               "type": "number",
               "description": "Quantity to add (default: 1)"
+            },
+            "size": {
+              "type": "string",
+              "description": "Selected size for the item"
+            },
+            "color": {
+              "type": "string",
+              "description": "Selected color for the item"
             }
           },
           "required": ["product_id", "quantity"]
@@ -305,7 +289,7 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "proactively_add_to_cart",
-        "description": "Use this tool ONLY when a user expresses strong, unambiguous positive sentiment (e.g., 'Wow, I love that!', 'That is absolutely gorgeous!', 'I need that.') but does NOT explicitly say 'add to cart'. This tool adds the item to the cart and confirms the action.",
+        "description": "Add items to cart when user expresses strong positive sentiment about a fashion piece.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -313,7 +297,11 @@ const createShoppingTools = () => {
             "product_name": { "type": "string" },
             "confirmation_speech": {
               "type": "string",
-              "description": "A charming phrase to confirm the action, like 'It's stunning, isn't it? I've placed it in your cart for you to consider.'"
+              "description": "Stylish confirmation message"
+            },
+            "styling_note": {
+              "type": "string",
+              "description": "Quick styling tip for the added item"
             }
           },
           "required": ["product_id", "product_name", "confirmation_speech"]
@@ -324,14 +312,18 @@ const createShoppingTools = () => {
       "type": "function",
       "function": {
         "name": "initiate_checkout",
-        "description": "Initiates the checkout process when the user has confirmed they are ready to purchase the items in their cart.",
+        "description": "Start the checkout process when customer is ready to purchase their curated items.",
         "parameters": {
           "type": "object",
           "properties": {
             "cart_items": {
               "type": "array",
-              "description": "A summary of items in the cart to be purchased.",
+              "description": "Summary of fashion items in cart",
               "items": { "type": "string" }
+            },
+            "styling_summary": {
+              "type": "string",
+              "description": "Summary of the complete look they're purchasing"
             }
           },
           "required": ["cart_items"]
@@ -341,13 +333,13 @@ const createShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with viral and monetization features
+// Enhanced conversation creation with fashion-focused persona
 export const createEnhancedShoppingSession = async (
-  customerInterest: string = 'general shopping',
+  customerInterest: string = 'personal style consultation',
   userName: string = 'Guest',
-  replicaId: string = "rb54819da0d5", // Default replica, can be overridden
-  customPrompt?: string, // Optional custom system prompt
-  currentShowcaseState: string = 'empty' // Current UI state
+  replicaId: string = "r1a667ea75", // Default to Aria - sophisticated luxury curator
+  customPrompt?: string,
+  currentShowcaseState: string = 'empty'
 ) => {
   const apiKey = getTavusApiKey();
   
@@ -357,61 +349,64 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // Use custom prompt if provided, otherwise use enhanced master prompt
-  const conversationalContext = customPrompt || `You are an elite AI shopping curator for TalkShop with advanced capabilities including virtual try-on, price negotiation, and viral content creation.
+  // Enhanced fashion-focused system prompt
+  const conversationalContext = customPrompt || `You are an elite AI fashion stylist and personal shopping curator for TalkShop. Your name varies by host, but you are always a sophisticated fashion expert with an eye for style and trends.
+
+**YOUR ROLE:**
+- Personal Fashion Stylist & Style Consultant
+- Trend Expert & Fashion Curator
+- Personal Shopping Assistant
 
 **CORE BEHAVIOR:**
-- Follow the ACTION-FIRST rule: decide, execute tool, then narrate
-- Start with a warm greeting and ask about their preferences (style analysis vs browsing)
-- DO NOT immediately showcase any specific product
-- Let the user guide the conversation direction first
+- Greet ${userName} warmly by name and establish a personal connection
+- Ask about their style preferences, lifestyle, and fashion goals
+- Offer personalized style analysis and recommendations
+- Create dynamic fashion products that perfectly match their style
+- Focus exclusively on fashion, clothing, accessories, and style
 
-**ADVANCED FEATURES:**
-- Virtual try-on: Use virtual_try_on for clothing and accessories
-- Price negotiation: Use negotiate_price when customers ask for deals
-- Outfit creation: Use create_outfit to build complete looks
-- Viral moments: Use create_shareable_moment for social media worthy content
+**FASHION EXPERTISE:**
+- Women's & Men's Fashion
+- Accessories & Jewelry
+- Footwear & Bags
+- Style Analysis & Color Coordination
+- Occasion Dressing
+- Wardrobe Building
 
-**PERCEPTION STRATEGY:**
-- Style analysis is ONLY triggered when the user explicitly asks to "shop my style" or similar
-- When triggered, you will receive style data and should use find_and_display_style_matches
-- Object analysis happens when users intentionally show objects to the camera
-- Do NOT constantly analyze - only when contextually appropriate
+**DYNAMIC PRODUCT CREATION:**
+- Use create_dynamic_product to suggest specific items that match their style
+- Create products based on style analysis, color preferences, and lifestyle needs
+- Always explain WHY each piece works for them
+- Focus on versatility, quality, and personal style expression
 
-**MONETIZATION FEATURES:**
-- Suggest premium features for non-subscribers
-- Create exclusive experiences for VIP members
-- Use price negotiation to create value perception
-- Generate shareable moments to drive viral growth
+**CONVERSATION FLOW:**
+1. Warm personal greeting using their name
+2. Ask about their style preferences and fashion goals
+3. Offer style analysis if they're interested
+4. Create personalized fashion recommendations
+5. Show how pieces work together for complete looks
 
 **TOOL USAGE:**
-- show_product_grid for broad requests and style matches
-- show_categories for browsing
-- focus_on_product for grid interactions
-- virtual_try_on for clothing/accessories
-- negotiate_price for deal requests
-- create_outfit for styling
-- create_shareable_moment for viral content
-- add_to_cart for explicit purchase requests
-- proactively_add_to_cart for strong positive sentiment
-- initiate_checkout when ready to purchase
+- create_dynamic_product: For suggesting specific items based on their style
+- show_product_grid: For curated collections and complete looks
+- find_and_display_style_matches: After style analysis
+- create_complete_outfit: For occasion-specific styling
+- style_consultation: For fashion advice and tips
 
-**CONVERSATION STYLE:**
-- Create emotional connections through storytelling
-- Use sensory language and build anticipation
-- Make customers feel like they're discovering hidden gems
-- Focus on experiences, not just features
-- Generate shareable moments naturally
+**STYLE PHILOSOPHY:**
+- Fashion is personal expression
+- Quality over quantity
+- Versatile pieces that work multiple ways
+- Confidence comes from wearing what feels authentic
+- Style should enhance, not mask, personality
 
-**AVAILABLE PRODUCTS (use these exact IDs):**
-- Product IDs 1-20: Various items from our catalog
-- TS123: Diamond Necklace ($899) - 18k gold, 0.5 carat diamond
-- prod_001: Midnight Velvet Blazer ($289) - Premium Italian velvet
-- prod_002: AuraGlow Pro Skincare Set ($156) - Vitamin C serum, retinol cream
-- prod_003: Quantum Wireless Earbuds ($199) - Spatial audio, 30-hour battery
-- prod_005: Swiss Chronograph Watch ($899) - Swiss movement, sapphire crystal
+**COMMUNICATION STYLE:**
+- Warm, encouraging, and supportive
+- Knowledgeable but not intimidating
+- Focus on how fashion makes them FEEL
+- Use fashion terminology naturally
+- Create excitement about style possibilities
 
-Remember: You're creating viral-worthy shopping experiences that customers want to share. Every interaction should feel magical, exclusive, and worth talking about.`;
+Remember: You're not just selling clothes - you're helping ${userName} discover and express their personal style. Every recommendation should feel personally curated for them.`;
   
   const options = {
     method: 'POST',
@@ -420,11 +415,13 @@ Remember: You're creating viral-worthy shopping experiences that customers want 
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      replica_id: replicaId, // Use the provided replica ID
+      replica_id: replicaId,
       persona_id: personaId,
-      conversation_name: `${userName} - TalkShop Viral Experience`,
+      conversation_name: `${userName} - Personal Style Session`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello! I'm your personal shopping curator, and I'm absolutely delighted to meet you. I'm here to help you discover pieces that truly speak to you and your unique style. Would you like me to analyze your personal style for tailored recommendations, or would you prefer to explore our curated categories? I'm excited to create a shopping experience that's perfectly suited to you.`,
+      custom_greeting: `Hello ${userName}! I'm absolutely delighted to meet you. I'm your personal fashion stylist, and I'm here to help you discover and express your unique style. I love helping people find pieces that make them feel confident and authentically themselves. 
+
+Tell me, what brings you here today? Are you looking to refresh your wardrobe, find something special for an occasion, or maybe you'd like me to analyze your current style and suggest some personalized recommendations? I'm excited to create a style experience that's perfectly tailored to you!`,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -448,7 +445,7 @@ Remember: You're creating viral-worthy shopping experiences that customers want 
   }
 };
 
-// Enhanced persona update with viral and monetization tools
+// Enhanced persona update with fashion-focused tools
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -458,10 +455,10 @@ export const updatePersonaWithDynamicTools = async () => {
   }
 
   try {
-    const tools = createShoppingTools();
+    const tools = createFashionShoppingTools();
     const personaId = "pb16b649a4c0";
     
-    console.log('🔧 Updating persona with viral features and monetization tools...');
+    console.log('🔧 Updating persona with fashion-focused tools...');
     
     const response = await fetch(`https://tavusapi.com/v2/personas/${personaId}`, {
       method: 'PATCH',
@@ -476,58 +473,38 @@ export const updatePersonaWithDynamicTools = async () => {
           "value": {
             "perception_model": "raven-0",
             "ambient_awareness_queries": [
-              "Is the user explicitly asking me to analyze their style or showing me an object intentionally?"
+              "What is the user's current style and outfit?",
+              "What fashion items or style elements can I see?"
             ],
-            "perception_tool_prompt": "You have perception tools available, but use them ONLY when the user explicitly requests style analysis (e.g., 'shop my style', 'analyze my outfit') or when they are clearly and intentionally presenting an object to the camera for analysis. Do NOT constantly analyze - be selective and contextual.",
+            "perception_tool_prompt": "You are a fashion expert with visual perception. When you can see the user clearly, analyze their style and outfit. Use detected_user_style ONLY when you can see their clothing and style clearly. Be selective and only analyze when appropriate for fashion consultation.",
             "perception_tools": [
               {
                 "type": "function",
                 "function": {
                   "name": "detected_user_style",
-                  "description": "ONLY use this when the user explicitly asks for style analysis. Reports detected visual attributes of a user's style.",
+                  "description": "Analyze the user's current style and outfit when clearly visible. Use this to provide personalized fashion recommendations.",
                   "parameters": {
                     "type": "object",
                     "properties": {
                       "dominant_color": { 
                         "type": "string",
-                        "description": "The primary color of the user's outfit"
+                        "description": "Primary color in their outfit"
                       },
                       "style_category": { 
                         "type": "string",
-                        "description": "The general style category (e.g., casual, formal, bohemian)"
+                        "description": "Overall style aesthetic (e.g., 'casual chic', 'business professional', 'bohemian', 'minimalist')"
                       },
-                      "detected_accessories": {
+                      "clothing_items": {
                         "type": "array",
-                        "description": "Any visible accessories",
+                        "description": "Visible clothing items",
                         "items": { "type": "string" }
+                      },
+                      "style_personality": {
+                        "type": "string",
+                        "description": "Fashion personality assessment"
                       }
                     },
                     "required": ["dominant_color", "style_category"]
-                  }
-                }
-              },
-              {
-                "type": "function",
-                "function": {
-                  "name": "analyze_object_in_view",
-                  "description": "ONLY use this when the user is clearly and intentionally showing you an object. Analyzes objects to find complementary products.",
-                  "parameters": {
-                    "type": "object",
-                    "properties": {
-                      "dominant_color": {
-                        "type": "string",
-                        "description": "The primary color of the object detected"
-                      },
-                      "object_category": {
-                        "type": "string",
-                        "description": "The general category of the object"
-                      },
-                      "object_description": {
-                        "type": "string",
-                        "description": "A brief description of the object"
-                      }
-                    },
-                    "required": ["dominant_color", "object_category", "object_description"]
                   }
                 }
               }
@@ -542,7 +519,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are an elite AI shopping curator for TalkShop with viral features and monetization capabilities. Your actions are governed by user intent and context. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. ADVANCED FEATURES: Use virtual_try_on for clothing, negotiate_price for deals, create_outfit for styling, and create_shareable_moment for viral content. PERCEPTION USAGE: Use perception tools ONLY when users explicitly request style analysis or intentionally show objects. Do NOT constantly analyze - be selective and contextual. INTERACTIVE GRID FLOW: When a grid is displayed, listen for user requests like 'tell me about item three.' Use the focus_on_product tool to highlight the corresponding item visually. MONETIZATION: Suggest premium features and create exclusive experiences. VIRAL CONTENT: Generate shareable moments that customers want to post on social media. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. Your goal is to create viral-worthy shopping experiences that drive both engagement and revenue."
+          "value": "You are an elite AI fashion stylist and personal shopping curator for TalkShop. You specialize in creating personalized style experiences through dynamic product recommendations and expert fashion advice. Your mission is to help users discover and express their unique personal style.\n\nCORE CAPABILITIES:\n- Personal style analysis and consultation\n- Dynamic fashion product creation based on user preferences\n- Complete outfit curation and styling advice\n- Trend insights and fashion expertise\n- Personalized shopping recommendations\n\nBEHAVIOR GUIDELINES:\n- Always greet users warmly by name\n- Focus exclusively on fashion, style, and personal expression\n- Ask about style preferences, lifestyle, and fashion goals\n- Use create_dynamic_product to suggest specific items that match their style\n- Explain WHY each piece works for their personal style\n- Create complete looks, not just individual items\n- Provide styling tips and fashion advice\n\nTOOL USAGE:\n- create_dynamic_product: Suggest specific fashion items based on style analysis\n- show_product_grid: Display curated fashion collections\n- find_and_display_style_matches: After analyzing user's current style\n- create_complete_outfit: For occasion-specific styling\n- style_consultation: For fashion advice and tips\n\nYour goal is to make every user feel confident, stylish, and authentically themselves through personalized fashion curation."
         }
       ])
     });
@@ -559,20 +536,16 @@ export const updatePersonaWithDynamicTools = async () => {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with viral features!');
-    console.log('🚀 Enhanced capabilities:');
-    console.log('   - 🎯 VIRAL FEATURES: Shareable moments and social integration');
-    console.log('   - 💰 MONETIZATION: Subscription tiers and premium features');
-    console.log('   - 👗 VIRTUAL TRY-ON: AR visualization for products');
-    console.log('   - 💸 PRICE NEGOTIATION: Interactive deal-making');
-    console.log('   - 👔 OUTFIT CREATION: Complete styling solutions');
-    console.log('   - 📱 SOCIAL SHARING: Viral content generation');
-    console.log('   - 🎨 STYLE ANALYSIS: Only on user request');
-    console.log('   - 📦 OBJECT ANALYSIS: Only when intentionally shown');
-    console.log('   - 🎯 INTERACTIVE GRID: Voice-driven product focus');
-    console.log('   - 🛒 SMART CART: Proactive and explicit add-to-cart');
-    console.log('   - 💳 CHECKOUT: Seamless purchase flow');
-    console.log('   - 🎭 NARRATIVE FOCUS: Storytelling over features');
+    console.log('✅ Successfully updated persona with fashion-focused tools!');
+    console.log('👗 Fashion-focused capabilities:');
+    console.log('   - 🎨 DYNAMIC PRODUCT CREATION: Unlimited fashion catalog');
+    console.log('   - 👔 PERSONAL STYLING: Complete outfit curation');
+    console.log('   - 🔍 STYLE ANALYSIS: Visual style assessment');
+    console.log('   - 💡 FASHION CONSULTATION: Expert style advice');
+    console.log('   - 🛍️ PERSONALIZED SHOPPING: Curated recommendations');
+    console.log('   - 👗 COMPLETE LOOKS: Outfit coordination');
+    console.log('   - 🎯 OCCASION DRESSING: Event-specific styling');
+    console.log('   - 💎 QUALITY FOCUS: Premium fashion emphasis');
     
     return { status: 'success', data: result };
   } catch (error) {

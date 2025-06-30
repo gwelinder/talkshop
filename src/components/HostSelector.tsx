@@ -38,55 +38,47 @@ const HostSelector: React.FC<HostSelectorProps> = ({
   const [showAuthCallback, setShowAuthCallback] = useState(false);
   const [pendingHost, setPendingHost] = useState<Host | null>(null);
 
-  const defaultHosts: Host[] = [
+  // Fashion-focused AI hosts
+  const fashionHosts: Host[] = [
     {
-      id: 'aria-classic',
+      id: 'aria-luxury-stylist',
       name: 'Aria',
       replicaId: 'r1a667ea75',
-      description: 'Sophisticated luxury curator',
-      specialty: 'High-end',
-      personality: 'Elegant, refined, impeccable taste',
+      description: 'Luxury fashion curator & style expert',
+      specialty: 'High-End Fashion',
+      personality: 'Sophisticated, elegant, with impeccable taste for luxury fashion and timeless style',
       image: '/r1a667ea75.png'
     },
     {
-      id: 'marcus-tech',
-      name: 'Marcus',
-      replicaId: 'rd9a4f778a54',
-      description: 'Tech innovation specialist',
-      specialty: 'Electronics',
-      personality: 'Sharp, analytical, future-focused',
-      image: '/rd9a4f778a54.png'
-    },
-    {
-      id: 'sophia-lifestyle',
+      id: 'sophia-lifestyle-stylist',
       name: 'Sophia',
       replicaId: 'r1dbdb02417a',
-      description: 'Lifestyle & wellness expert',
-      specialty: 'Home',
-      personality: 'Warm, nurturing, holistic',
+      description: 'Lifestyle fashion consultant',
+      specialty: 'Everyday Style',
+      personality: 'Warm, approachable, specializing in versatile pieces for modern lifestyles',
       image: '/r1dbdb02417a.png'
     },
     {
-      id: 'elena-professional',
+      id: 'elena-professional-stylist',
       name: 'Elena',
       replicaId: 'r46edb1c4300',
-      description: 'Professional style consultant',
-      specialty: 'Business',
-      personality: 'Confident, polished, success-oriented',
+      description: 'Professional wardrobe specialist',
+      specialty: 'Business Fashion',
+      personality: 'Confident, polished, expert in professional and career-focused styling',
       image: '/r46edb1c4300.png'
     },
     {
-      id: 'maya-contemporary',
+      id: 'maya-contemporary-stylist',
       name: 'Maya',
       replicaId: 'r320e29763cf',
-      description: 'Contemporary fashion maven',
-      specialty: 'Trendy',
-      personality: 'Creative, vibrant, trend-setting',
+      description: 'Contemporary fashion trendsetter',
+      specialty: 'Trend-Forward',
+      personality: 'Creative, vibrant, always ahead of the latest fashion trends and street style',
       image: '/r320e29763cf.png'
     }
   ];
 
-  const [hosts, setHosts] = useState<Host[]>(defaultHosts);
+  const [hosts, setHosts] = useState<Host[]>(fashionHosts);
 
   // Check auth state on mount
   useEffect(() => {
@@ -131,8 +123,6 @@ const HostSelector: React.FC<HostSelectorProps> = ({
   }, []);
 
   const handleHostSelection = (host: Host) => {
-    // Allow host selection without auth for demo purposes
-    // The auth will be triggered when they try to start the conversation
     onHostSelect(host);
   };
 
@@ -197,7 +187,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
   return (
     <>
       <div className={`w-full h-full flex flex-col px-3 sm:px-4 lg:px-6 ${selectedHost ? 'pb-32' : ''}`}>
-        {/* Compact Hero Section */}
+        {/* Fashion-focused Hero Section */}
         <div className="text-center mb-4 sm:mb-6 lg:mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -205,10 +195,10 @@ const HostSelector: React.FC<HostSelectorProps> = ({
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-2 sm:mb-3 leading-tight">
-              Choose Your AI Curator
+              Choose Your Personal Stylist
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
-              Select your personal shopping assistant
+              Meet our expert fashion stylists, each with their own specialty and approach to personal style
             </p>
           </motion.div>
         </div>
@@ -219,9 +209,9 @@ const HostSelector: React.FC<HostSelectorProps> = ({
             <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         ) : (
-          /* Host Grid */
+          /* Fashion Stylist Grid */
           <div className="flex-1 flex flex-col">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-6">
               {hosts.map((host, index) => {
                 const isSelected = selectedHost?.id === host.id;
                 const isHovered = hoveredHost === host.id;
@@ -246,7 +236,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                           ? 'border-brand-300 dark:border-brand-600 shadow-md'
                           : 'border-white/20 dark:border-gray-700/20'
                     }`}>
-                      {/* Compact Host Image */}
+                      {/* Stylist Image */}
                       <div className="relative aspect-[3/4] overflow-hidden">
                         <img
                           src={host.image}
@@ -254,7 +244,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         
-                        {/* Compact Badges */}
+                        {/* Fashion Badges */}
                         {isCustomized && (
                           <motion.div 
                             className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-purple-500 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full flex items-center space-x-1 shadow-lg text-xs font-medium z-30"
@@ -278,7 +268,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                           </motion.div>
                         )}
                         
-                        {/* Compact Edit Button */}
+                        {/* Customize Button */}
                         <motion.button
                           onClick={(e) => handleCustomizeHost(host, e)}
                           className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-white/95 dark:bg-gray-800/95 text-gray-700 dark:text-gray-300 px-1.5 py-1 sm:px-2 sm:py-1.5 rounded-full flex items-center space-x-1 shadow-lg hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 text-xs font-medium border border-gray-200 dark:border-gray-600 z-40"
@@ -291,13 +281,13 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         </motion.button>
                       </div>
 
-                      {/* Compact Host Info */}
+                      {/* Stylist Info */}
                       <div className="p-2 sm:p-3">
                         <div className="flex items-center justify-between mb-1 sm:mb-2">
                           <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-gray-100 truncate">{host.name}</h3>
                           <div className="flex items-center space-x-1 text-brand-500 flex-shrink-0">
-                            <User className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="text-xs font-medium hidden sm:inline">AI</span>
+                            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="text-xs font-medium hidden sm:inline">Stylist</span>
                           </div>
                         </div>
                         
@@ -331,7 +321,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
         )}
       </div>
 
-      {/* Sticky Footer for Selected Host */}
+      {/* Sticky Footer for Selected Stylist */}
       <AnimatePresence>
         {selectedHost && (
           <motion.div
@@ -359,7 +349,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 truncate">
-                        {selectedHost.name} is ready
+                        {selectedHost.name} is ready to style you
                       </h4>
                       <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mb-1 sm:mb-2 line-clamp-1">
                         {selectedHost.description} • {selectedHost.specialty}
@@ -378,7 +368,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                     </div>
                   </div>
                   
-                  {/* Compact Action Buttons */}
+                  {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3 w-full sm:w-auto">
                     <motion.button
                       onClick={(e) => handleCustomizeHost(selectedHost, e)}
@@ -412,7 +402,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                         ) : (
                           <>
                             <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span>Start Shopping</span>
+                            <span>Start Styling</span>
                           </>
                         )}
                       </motion.button>

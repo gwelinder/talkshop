@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Plus, Minus, ShoppingBag, CreditCard } from 'lucide-react';
+import { X, Plus, Minus, ShoppingBag, CreditCard, Shirt } from 'lucide-react';
 
 interface CartItem {
   id: string;
@@ -9,6 +9,12 @@ interface CartItem {
   thumbnail?: string;
   image?: string;
   quantity: number;
+  // Fashion-specific properties
+  material?: string;
+  color_options?: string[];
+  size_options?: string[];
+  size?: string;
+  color?: string;
 }
 
 interface CartProps {
@@ -27,7 +33,7 @@ const Cart: React.FC<CartProps> = ({ items, onUpdateQuantity, onClose, onCheckou
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-2">
             <ShoppingBag className="w-6 h-6" />
-            <span>Shopping Cart</span>
+            <span>Your Fashion Cart</span>
           </h2>
           <button
             onClick={onClose}
@@ -40,8 +46,8 @@ const Cart: React.FC<CartProps> = ({ items, onUpdateQuantity, onClose, onCheckou
 
         {items.length === 0 ? (
           <div className="text-center py-12">
-            <ShoppingBag className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400 text-lg">Your cart is empty</p>
+            <Shirt className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400 text-lg">Your fashion cart is empty</p>
             <button
               onClick={onClose}
               className="mt-4 bg-brand-500 hover:bg-brand-600 text-white px-6 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -62,6 +68,15 @@ const Cart: React.FC<CartProps> = ({ items, onUpdateQuantity, onClose, onCheckou
                   <div className="flex-1">
                     <h3 className="text-gray-900 dark:text-gray-100 font-semibold">{item.title || item.name}</h3>
                     <p className="text-brand-600 font-bold">${item.price}</p>
+                    
+                    {/* Fashion-specific details */}
+                    {(item.material || item.color || item.size) && (
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-x-2">
+                        {item.material && <span>{item.material}</span>}
+                        {item.color && <span>• Color: {item.color}</span>}
+                        {item.size && <span>• Size: {item.size}</span>}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <button

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Users, Zap, ShoppingCart } from 'lucide-react';
+import { Star, Users, Zap, ShoppingCart, Shirt, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductSkeleton from './ProductSkeleton';
 
@@ -14,6 +14,13 @@ interface Product {
   image?: string;
   rating?: { rate: number; count: number; };
   features?: string[];
+  // Fashion-specific properties
+  material?: string;
+  color_options?: string[];
+  size_options?: string[];
+  occasion?: string[];
+  style_tags?: string[];
+  fit?: string;
 }
 
 interface ProductGridProps {
@@ -28,7 +35,7 @@ interface ProductGridProps {
 const ProductGrid: React.FC<ProductGridProps> = ({ 
   products, 
   onJoinRoom, 
-  title = "Products", 
+  title = "Fashion Collection", 
   loading = false,
   onProductHover,
   focusedProductId
@@ -52,10 +59,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {products.map((product, index) => {
           // Safely handle product data with fallbacks
-          const productName = product.name || product.title || 'Product';
-          const productImage = product.thumbnail || product.image || 'https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?w=400';
+          const productName = product.name || product.title || 'Fashion Item';
+          const productImage = product.thumbnail || product.image || 'https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400';
           const productRating = product.rating || { rate: 4.5, count: 100 };
-          const productFeatures = product.features || ['High quality', 'Great value'];
+          const productFeatures = product.features || ['High quality', 'Great style'];
           const isFocused = focusedProductId === product.id;
           
           return (
@@ -91,10 +98,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 
-                {/* Live Indicator */}
-                <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  <span>Available</span>
+                {/* Fashion Tag */}
+                <div className="absolute top-3 left-3 bg-brand-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                  <Shirt className="w-3 h-3" />
+                  <span>{product.category.split(' ')[0]}</span>
                 </div>
 
                 {/* Focus Indicator */}
@@ -106,7 +113,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                     exit={{ opacity: 0 }}
                   >
                     <div className="bg-brand-500 text-white px-4 py-2 rounded-full font-semibold text-sm shadow-lg">
-                      ✨ Featured Item
+                      ✨ Featured Piece
                     </div>
                   </motion.div>
                 )}
@@ -151,30 +158,44 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                   {product.description}
                 </p>
 
+                {/* Fashion-specific details */}
+                {product.material && (
+                  <div className="mb-2 text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Material: </span>
+                    <span className="text-gray-900 dark:text-gray-100">{product.material}</span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
                     ${product.price}
                   </span>
-                  <div className="flex items-center space-x-1 text-green-600 dark:text-green-400">
-                    <Zap className="w-4 h-4" />
-                    <span className="text-xs font-semibold">AI Ready</span>
+                  <div className="flex items-center space-x-1 text-brand-600 dark:text-brand-400">
+                    <Heart className="w-4 h-4" />
+                    <span className="text-xs font-semibold">Style Pick</span>
                   </div>
                 </div>
 
-                {/* Quick Features */}
+                {/* Fashion Tags */}
                 <div className="mt-3 flex flex-wrap gap-1">
-                  {productFeatures.slice(0, 2).map((feature, idx) => (
-                    <span 
-                      key={idx}
-                      className="bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 text-xs px-2 py-1 rounded-full border border-brand-200 dark:border-brand-700"
-                    >
-                      {feature}
-                    </span>
-                  ))}
-                  {productFeatures.length > 2 && (
-                    <span className="text-gray-500 dark:text-gray-400 text-xs px-2 py-1">
-                      +{productFeatures.length - 2} more
-                    </span>
+                  {product.style_tags ? (
+                    product.style_tags.slice(0, 2).map((tag, idx) => (
+                      <span 
+                        key={idx}
+                        className="bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 text-xs px-2 py-1 rounded-full border border-brand-200 dark:border-brand-700"
+                      >
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    productFeatures.slice(0, 2).map((feature, idx) => (
+                      <span 
+                        key={idx}
+                        className="bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 text-xs px-2 py-1 rounded-full border border-brand-200 dark:border-brand-700"
+                      >
+                        {feature}
+                      </span>
+                    ))
                   )}
                 </div>
 

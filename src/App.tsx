@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ShoppingBag, Video, Star, Zap, Settings, User, Search } from 'lucide-react';
+import { ShoppingBag, Video, Star, Zap, Settings, User, Search, Shirt } from 'lucide-react';
 import Header from './components/Header';
 import AIShoppingAssistant from './components/AIShoppingAssistant';
 import EnvironmentSetup from './components/EnvironmentSetup';
@@ -125,9 +125,9 @@ function App() {
     setTimeout(() => setCartJiggle(false), 600);
   }, []);
 
-  // Enhanced tool call handler with proactive cart support
+  // Enhanced tool call handler with fashion focus
   const handleToolCall = useCallback(async (toolCall) => {
-    console.log('🔧 App handling tool call:', toolCall);
+    console.log('🔧 App handling fashion tool call:', toolCall);
     
     switch (toolCall.function.name) {
       case 'show_product':
@@ -140,7 +140,8 @@ function App() {
         if (foundProduct) {
           setSpotlightProduct({
             ...foundProduct,
-            highlightFeatures: toolCall.function.arguments.highlight_features
+            highlightFeatures: toolCall.function.arguments.highlight_features,
+            stylingTips: toolCall.function.arguments.styling_tips
           });
           setComparisonProducts([]);
           setShow360(false);
@@ -189,12 +190,22 @@ function App() {
         
       case 'show_product_grid':
         // Handle product grid display - this is now handled in AIShoppingAssistant
-        console.log('📋 Product grid requested:', toolCall.function.arguments);
+        console.log('📋 Fashion collection requested:', toolCall.function.arguments);
         break;
         
       case 'show_categories':
         // Handle category display - this is now handled in AIShoppingAssistant
-        console.log('📂 Categories requested');
+        console.log('📂 Fashion categories requested');
+        break;
+        
+      case 'create_dynamic_product':
+        // This is handled in AIShoppingAssistant
+        console.log('🎨 Dynamic fashion product requested:', toolCall.function.arguments.product_description);
+        break;
+        
+      case 'create_complete_outfit':
+        // This is handled in AIShoppingAssistant
+        console.log('👗 Complete outfit requested for:', toolCall.function.arguments.occasion);
         break;
     }
   }, [products, addToCart]);
@@ -236,7 +247,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading TalkShop...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading Fashion Studio...</p>
         </div>
       </div>
     );
@@ -282,7 +293,7 @@ function App() {
 
       {currentView === 'home' && (
         <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          {/* AI Shopping Assistant - Full Height Container */}
+          {/* AI Fashion Stylist - Full Height Container */}
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <AIShoppingAssistant 
               allProducts={products}
@@ -313,9 +324,6 @@ function App() {
             onShow360Change={setShow360}
             cartItems={cartItems}
             onCartJiggle={handleCartJiggle}
-            sessionType={sessionType}
-            userTier={userProfile?.subscription_tier || 'free'}
-            userId={authUser?.id || ''}
           />
         </main>
       )}

@@ -1,49 +1,63 @@
 import React from 'react';
-import { Shirt, Gem, Smartphone, Home, Sparkles } from 'lucide-react';
+import { Shirt, Gem, ShoppingBag, Crown, Sparkles, Heart } from 'lucide-react';
 
 interface CategoryGridDisplayProps {
   onCategorySelect?: (category: string) => void;
 }
 
 const CategoryGridDisplay: React.FC<CategoryGridDisplayProps> = ({ onCategorySelect }) => {
-  const categories = [
-    {
-      name: "Electronics",
-      key: "electronics",
-      icon: Smartphone,
-      gradient: "from-blue-500 to-purple-600",
-      description: "Latest tech innovations"
-    },
-    {
-      name: "Jewelry",
-      key: "jewelery",
-      icon: Gem,
-      gradient: "from-purple-500 to-pink-600",
-      description: "Exquisite precious pieces"
-    },
-    {
-      name: "Men's Fashion",
-      key: "men's clothing",
-      icon: Shirt,
-      gradient: "from-gray-600 to-blue-600",
-      description: "Sophisticated menswear"
-    },
+  const fashionCategories = [
     {
       name: "Women's Fashion",
       key: "women's clothing",
       icon: Sparkles,
       gradient: "from-pink-500 to-rose-600",
-      description: "Elegant women's styles"
+      description: "Elegant dresses, tops & more"
+    },
+    {
+      name: "Men's Fashion",
+      key: "men's clothing",
+      icon: Shirt,
+      gradient: "from-blue-600 to-indigo-700",
+      description: "Sophisticated menswear"
+    },
+    {
+      name: "Accessories",
+      key: "accessories",
+      icon: Crown,
+      gradient: "from-purple-500 to-violet-600",
+      description: "Scarves, belts & statement pieces"
+    },
+    {
+      name: "Bags & Purses",
+      key: "bags",
+      icon: ShoppingBag,
+      gradient: "from-amber-500 to-orange-600",
+      description: "Handbags, clutches & totes"
+    },
+    {
+      name: "Jewelry",
+      key: "jewelry",
+      icon: Gem,
+      gradient: "from-emerald-500 to-teal-600",
+      description: "Necklaces, earrings & rings"
+    },
+    {
+      name: "Footwear",
+      key: "footwear",
+      icon: Heart,
+      gradient: "from-red-500 to-pink-600",
+      description: "Shoes, boots & sneakers"
     }
   ];
 
   return (
     <div className="animate-fade-in">
       <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
-        Explore Our Curated Collections
+        Explore Your Style Categories
       </h4>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {categories.map((category) => {
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+        {fashionCategories.map((category) => {
           const IconComponent = category.icon;
           return (
             <div
@@ -66,7 +80,7 @@ const CategoryGridDisplay: React.FC<CategoryGridDisplayProps> = ({ onCategorySel
       </div>
       <div className="text-center mt-8">
         <p className="text-gray-600 dark:text-gray-400 text-sm">
-          Each collection is carefully curated with premium quality and timeless style
+          Each category is curated with premium quality and timeless style in mind
         </p>
       </div>
     </div>
