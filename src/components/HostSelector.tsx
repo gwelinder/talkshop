@@ -196,7 +196,7 @@ const HostSelector: React.FC<HostSelectorProps> = ({
 
   return (
     <>
-      <div className="w-full h-full flex flex-col px-3 sm:px-4 lg:px-6">
+      <div className={`w-full h-full flex flex-col px-3 sm:px-4 lg:px-6 ${selectedHost ? 'pb-32' : ''}`}>
         {/* Compact Hero Section */}
         <div className="text-center mb-4 sm:mb-6 lg:mb-8">
           <motion.div
@@ -327,98 +327,103 @@ const HostSelector: React.FC<HostSelectorProps> = ({
                 );
               })}
             </div>
-
-            {/* Compact Selected Host CTA */}
-            {selectedHost && (
-              <motion.div
-                className="w-full"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border border-brand-200 dark:border-brand-700">
-                  <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between sm:space-x-4">
-                    <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-brand-300 dark:border-brand-600 relative flex-shrink-0">
-                        <img
-                          src={selectedHost.image}
-                          alt={selectedHost.name}
-                          className="w-full h-full object-cover"
-                        />
-                        {selectedHost.customPrompt && (
-                          <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-purple-500 rounded-full flex items-center justify-center">
-                            <Wand2 className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-3 lg:h-3 text-white" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 truncate">
-                          {selectedHost.name} is ready
-                        </h4>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mb-1 sm:mb-2 line-clamp-1">
-                          {selectedHost.description} • {selectedHost.specialty}
-                        </p>
-                        <div className="flex items-center space-x-2 flex-wrap">
-                          <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" />
-                          <span className="text-brand-700 dark:text-brand-300 font-medium text-xs sm:text-sm lg:text-base truncate">
-                            {selectedHost.personality}
-                          </span>
-                          {selectedHost.customPrompt && (
-                            <span className="text-purple-600 dark:text-purple-400 text-xs bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full flex-shrink-0">
-                              Custom
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Compact Action Buttons */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3 w-full sm:w-auto">
-                      <motion.button
-                        onClick={(e) => handleCustomizeHost(selectedHost, e)}
-                        className="w-full sm:w-auto bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600 text-sm sm:text-base"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span>Customize</span>
-                      </motion.button>
-                      
-                      {!authUser ? (
-                        <GoogleSignInButton
-                          onSignIn={() => setShowAuthCallback(true)}
-                          size="md"
-                          variant="primary"
-                        />
-                      ) : (
-                        <motion.button
-                          onClick={handleStartConversation}
-                          disabled={isConnecting}
-                          className="w-full sm:w-auto bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-[140px] lg:min-w-[160px] text-sm sm:text-base"
-                          whileHover={!isConnecting ? { scale: 1.02 } : {}}
-                          whileTap={!isConnecting ? { scale: 0.98 } : {}}
-                        >
-                          {isConnecting ? (
-                            <>
-                              <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                              <span>Connecting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-3 h-3 sm:w-4 sm:h-4" />
-                              <span>Start Shopping</span>
-                            </>
-                          )}
-                        </motion.button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
           </div>
         )}
       </div>
+
+      {/* Sticky Footer for Selected Host */}
+      <AnimatePresence>
+        {selectedHost && (
+          <motion.div
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-700/50 shadow-2xl"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
+              <div className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 border border-brand-200 dark:border-brand-700">
+                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between sm:space-x-4">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-full overflow-hidden border-2 border-brand-300 dark:border-brand-600 relative flex-shrink-0">
+                      <img
+                        src={selectedHost.image}
+                        alt={selectedHost.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {selectedHost.customPrompt && (
+                        <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                          <Wand2 className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-3 lg:h-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 truncate">
+                        {selectedHost.name} is ready
+                      </h4>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base mb-1 sm:mb-2 line-clamp-1">
+                        {selectedHost.description} • {selectedHost.specialty}
+                      </p>
+                      <div className="flex items-center space-x-2 flex-wrap">
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-brand-500 flex-shrink-0" />
+                        <span className="text-brand-700 dark:text-brand-300 font-medium text-xs sm:text-sm lg:text-base truncate">
+                          {selectedHost.personality}
+                        </span>
+                        {selectedHost.customPrompt && (
+                          <span className="text-purple-600 dark:text-purple-400 text-xs bg-purple-100 dark:bg-purple-900/30 px-2 py-0.5 rounded-full flex-shrink-0">
+                            Custom
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Compact Action Buttons */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3 w-full sm:w-auto">
+                    <motion.button
+                      onClick={(e) => handleCustomizeHost(selectedHost, e)}
+                      className="w-full sm:w-auto bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-semibold flex items-center justify-center space-x-2 shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600 text-sm sm:text-base"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>Customize</span>
+                    </motion.button>
+                    
+                    {!authUser ? (
+                      <GoogleSignInButton
+                        onSignIn={() => setShowAuthCallback(true)}
+                        size="md"
+                        variant="primary"
+                      />
+                    ) : (
+                      <motion.button
+                        onClick={handleStartConversation}
+                        disabled={isConnecting}
+                        className="w-full sm:w-auto bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg transform transition-all duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-[140px] lg:min-w-[160px] text-sm sm:text-base"
+                        whileHover={!isConnecting ? { scale: 1.02 } : {}}
+                        whileTap={!isConnecting ? { scale: 0.98 } : {}}
+                      >
+                        {isConnecting ? (
+                          <>
+                            <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <span>Connecting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Start Shopping</span>
+                          </>
+                        )}
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Host Customizer Modal */}
       <AnimatePresence>
