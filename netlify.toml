@@ -6,6 +6,7 @@
 [build.environment]
   VITE_SUPABASE_URL = "https://vutsmvnevjhmsxfhmfle.supabase.co"
   VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dHNtdm5ldmpobXN4ZmhtZmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwMDk4ODAsImV4cCI6MjA2MDU4NTg4MH0.UvDSkCkk9LKycGgi5HI55-RZyMScheXC9aVz4X8o9-g"
+  VITE_TAVUS_API_KEY = ".."
 
 [[redirects]]
   from = "/api/*"
