@@ -130,6 +130,44 @@ VITE_ELEVENLABS_API_KEY=your_elevenlabs_key
 VITE_REVENUECAT_API_KEY=your_revenuecat_key
 ```
 
+## 🔐 Google OAuth Setup
+
+To fix the Google OAuth authentication, you need to configure the redirect URIs in your Google Cloud Console:
+
+### Step 1: Google Cloud Console Configuration
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to **APIs & Services** → **Credentials**
+3. Find your OAuth 2.0 Client ID (client_id: `834819770101-c88gkrn9alp102ccsu5hnt58vbbj3n0g.apps.googleusercontent.com`)
+4. Click **Edit** on your OAuth client
+5. In **Authorized redirect URIs**, add these URLs:
+
+```
+https://vutsmvnevjhmsxfhmfle.supabase.co/auth/v1/callback
+https://timely-piroshki-b9d6cc.netlify.app
+https://timely-piroshki-b9d6cc.netlify.app?auth=callback
+```
+
+### Step 2: Supabase Configuration
+
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard)
+2. Navigate to **Authentication** → **URL Configuration**
+3. Set **Site URL** to: `https://timely-piroshki-b9d6cc.netlify.app`
+4. Add to **Redirect URLs**:
+```
+https://timely-piroshki-b9d6cc.netlify.app
+https://timely-piroshki-b9d6cc.netlify.app?auth=callback
+```
+
+### Step 3: OAuth Consent Screen
+
+1. In Google Cloud Console, go to **APIs & Services** → **OAuth consent screen**
+2. Add your domain to **Authorized domains**:
+```
+netlify.app
+supabase.co
+```
+
 ## 🎯 Winning Strategy
 
 ### **Technical Innovation**
@@ -167,7 +205,7 @@ VITE_REVENUECAT_API_KEY=your_revenuecat_key
 
 ## 🎬 Demo & Deployment
 
-- **Live Demo** - [talkshop.netlify.app](https://talkshop.netlify.app)
+- **Live Demo** - [https://timely-piroshki-b9d6cc.netlify.app](https://timely-piroshki-b9d6cc.netlify.app)
 - **Video Demo** - Showcasing all features and integrations
 - **One-Shot Prompt** - Complete implementation documentation
 - **Netlify Deployment** - Production-ready with CI/CD
