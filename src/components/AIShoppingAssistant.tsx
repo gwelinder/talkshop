@@ -14,8 +14,8 @@ import CategoryGridDisplay from './CategoryGridDisplay';
 import UserInput from './UserInput';
 import MagicCartAnimation from './MagicCartAnimation';
 import { useMagicCart } from '../hooks/useMagicCart';
+import PerceptionNotification from './PerceptionNotification';
 import DailyIframe from '@daily-co/daily-js';
-import { UserProfile } from '../services/supabaseService';
 
 interface AIShoppingAssistantProps {
   allProducts: any[];
@@ -31,7 +31,7 @@ interface AIShoppingAssistantProps {
   sessionType?: 'voice' | 'video';
   userTier?: string;
   userId?: string;
-  userProfile?: UserProfile;
+  userProfile?: any;
 }
 
 // Singleton call object as recommended by Tavus
@@ -54,8 +54,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   cartItems,
   onCartJiggle,
   sessionType,
-  userTier,
-  userId,
+  userTier = 'free',
+  userId = '',
   userProfile
 }) => {
   // Connection and conversation state
@@ -85,13 +85,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     data?: any;
   }>({ type: 'empty' });
   
-  // Perception data state - stored but not immediately displayed
+  // Style analysis state
   const [styleAnalysisData, setStyleAnalysisData] = useState<any>(null);
   const [objectAnalysisData, setObjectAnalysisData] = useState<any>(null);
   
-  // New state for perception notification
+  // Perception notification state
   const [showPerceptionNotification, setShowPerceptionNotification] = useState(false);
-  const [perceptionType, setPerceptionType] = useState<'style' | 'object' | null>(null);
+  const [perceptionData, setPerceptionData] = useState<any>(null);
+  const [perceptionType, setPerceptionType] = useState<'style' | 'object'>('style');
   
   // Daily.js state
   const callRef = useRef<any>(null);
@@ -173,14 +174,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           category: toolCall.function.arguments.category,
           minPrice: toolCall.function.arguments.min_price,
           maxPrice: toolCall.function.arguments.max_price,
-          limit: 8,
-          // Add gender preference if available
-          gender: userProfile?.preferences?.gender_preference
+          limit: 8
         };
         
         const results = await searchProducts(searchParams);
         setSearchResults(results);
-        console.log('🔍 Fashion search results:', results);
+        console.log('🔍 Search results:', results);
         
         // Display results in product grid
         if (results.length > 0) {
@@ -188,7 +187,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             type: 'product_grid',
             data: {
               products: results,
-              title: `Found ${results.length} fashion items matching "${searchParams.search}"`
+              title: `Found ${results.length} items matching "${searchParams.search}"`
             }
           });
         }
@@ -207,7 +206,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         type: 'product_grid', 
         data: { 
           products, 
-          title: collection_title || "Fashion Collection" 
+          title: collection_title || 'Curated Collection',
+          narrative: style_narrative
         } 
       });
       return; // Don't forward to parent
@@ -221,33 +221,34 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
 
     // Handle dynamic product creation
     if (toolCall.function.name === 'create_dynamic_product') {
-      console.log('🎨 Creating dynamic fashion product:', toolCall.function.arguments.product_description);
+      console.log('🎨 Creating dynamic fashion product:', toolCall.function.arguments);
+      const { product_description, style_reasoning, occasion, price_range } = toolCall.function.arguments;
       
       try {
-        const dynamicProduct = createDynamicFashionProduct(
-          toolCall.function.arguments.product_description,
-          {
-            description: toolCall.function.arguments.style_reasoning,
-            occasion: toolCall.function.arguments.occasion
-          }
-        );
+        // Create dynamic product
+        const dynamicProduct = createDynamicFashionProduct(product_description, {
+          description: style_reasoning,
+          occasion: occasion,
+          price_range: price_range,
+          gender_preference: userProfile?.gender || userProfile?.preferences?.gender_preference
+        });
         
-        // Show the created product
+        // Show the product
         setSpotlightProduct({
           ...dynamicProduct,
           highlightFeatures: [
-            toolCall.function.arguments.style_reasoning,
-            `Perfect for ${toolCall.function.arguments.occasion || 'any occasion'}`,
-            `${dynamicProduct.material} material for quality and comfort`
+            style_reasoning,
+            `Perfect for ${occasion || 'any occasion'}`,
+            `${price_range || 'Premium'} quality`
           ],
           stylingTips: [
-            `Pairs beautifully with ${dynamicProduct.category === "men's clothing" ? 'dark jeans and boots' : 'slim jeans and heels'}`,
-            `Layer with ${dynamicProduct.category === "men's clothing" ? 'a light jacket' : 'a cardigan'} for cooler weather`,
-            `Add ${dynamicProduct.category === "men's clothing" ? 'a watch' : 'statement jewelry'} to complete the look`
+            `Pairs well with ${dynamicProduct.category === "men's clothing" ? "dark jeans and loafers" : "slim pants and heels"}`,
+            `Layer with ${dynamicProduct.category === "men's clothing" ? "a light jacket" : "a cardigan"} for cooler weather`,
+            `Add ${dynamicProduct.category === "men's clothing" ? "a watch" : "statement earrings"} to complete the look`
           ]
         });
         
-        console.log('✅ Dynamic product created and displayed:', dynamicProduct.title);
+        setShowcaseContent({ type: 'spotlight', data: dynamicProduct });
       } catch (error) {
         console.error('Error creating dynamic product:', error);
       }
@@ -270,104 +271,124 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       // Auto-search based on style analysis
       if (dominant_color && style_category) {
         const searchQuery = `${style_category} ${dominant_color}`;
+        try {
+          const results = await searchProducts({ 
+            search: searchQuery, 
+            limit: 6,
+            gender: userProfile?.gender || userProfile?.preferences?.gender_preference
+          });
+          
+          if (results.length > 0) {
+            setShowcaseContent({
+              type: 'product_grid',
+              data: {
+                products: results,
+                title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
+              }
+            });
+          } else {
+            console.log('🎨 No existing products found, creating dynamic products for:', searchQuery);
+            
+            // Create dynamic products based on style analysis
+            const dynamicProducts = [];
+            const variations = [
+              `${dominant_color} ${style_category}`,
+              `${dominant_color} ${style_category} top`,
+              `${dominant_color} ${style_category} dress`,
+              `${dominant_color} ${style_category} jacket`
+            ];
+            
+            for (let i = 0; i < Math.min(4, variations.length); i++) {
+              try {
+                const dynamicProduct = createDynamicFashionProduct(variations[i], {
+                  gender_preference: userProfile?.gender || userProfile?.preferences?.gender_preference
+                });
+                dynamicProducts.push(dynamicProduct);
+              } catch (error) {
+                console.error('Error creating dynamic product:', error);
+              }
+            }
+            
+            setShowcaseContent({
+              type: 'product_grid',
+              data: {
+                products: dynamicProducts,
+                title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error searching for style matches:', error);
+        }
+      }
+      return; // Don't forward to parent
+    }
+
+    // Handle create_complete_outfit
+    if (toolCall.function.name === 'create_complete_outfit') {
+      console.log('👗 Creating complete outfit:', toolCall.function.arguments);
+      const { base_item, occasion, style_preference, budget_range } = toolCall.function.arguments;
+      
+      try {
+        // Create 3-5 dynamic products for a complete outfit
+        const outfitPieces = [];
         
-        // Include gender preference if available
-        const searchParams = {
-          search: searchQuery,
-          limit: 6,
-          gender: userProfile?.preferences?.gender_preference
-        };
+        // Determine if we're creating men's or women's outfit
+        const genderPreference = userProfile?.gender || userProfile?.preferences?.gender_preference || 'women';
         
-        const results = await searchProducts(searchParams);
+        // Create outfit pieces based on gender preference
+        const outfitItems = genderPreference === 'men' ? 
+          [`${style_preference} ${base_item}`, `${style_preference} shirt`, `${style_preference} pants`, `${style_preference} shoes`, `${style_preference} accessory`] :
+          [`${style_preference} ${base_item}`, `${style_preference} top`, `${style_preference} bottom`, `${style_preference} shoes`, `${style_preference} accessory`];
+        
+        for (let i = 0; i < outfitItems.length; i++) {
+          try {
+            const dynamicProduct = createDynamicFashionProduct(outfitItems[i], {
+              occasion: occasion,
+              gender_preference: genderPreference
+            });
+            outfitPieces.push(dynamicProduct);
+          } catch (error) {
+            console.error('Error creating outfit piece:', error);
+          }
+        }
+        
+        // Display the outfit as a product grid
+        setShowcaseContent({
+          type: 'product_grid',
+          data: {
+            products: outfitPieces,
+            title: `Complete ${style_preference} Outfit for ${occasion}`,
+            narrative: `This curated outfit is perfect for ${occasion}, featuring a ${style_preference} aesthetic that works beautifully together.`
+          }
+        });
+      } catch (error) {
+        console.error('Error creating complete outfit:', error);
+      }
+      
+      return; // Don't forward to parent
+    }
+
+    // Handle object analysis (perception tool)
+    if (toolCall.function.name === 'analyze_object_in_view') {
+      console.log('🔍 Processing object analysis:', toolCall.function.arguments);
+      setObjectAnalysisData(toolCall.function.arguments);
+      
+      // Auto-search for complementary products
+      if (toolCall.function.arguments.dominant_color && toolCall.function.arguments.object_category) {
+        const searchQuery = `${toolCall.function.arguments.object_category} ${toolCall.function.arguments.dominant_color}`;
+        const results = await searchProducts({ search: searchQuery, limit: 6 });
         
         if (results.length > 0) {
           setShowcaseContent({
             type: 'product_grid',
             data: {
               products: results,
-              title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
-            }
-          });
-        } else {
-          // If no results, create dynamic products
-          console.log('🎨 No existing products found, creating dynamic products for:', `${style_category} ${dominant_color}`);
-          
-          // Generate 4 dynamic products based on the style analysis
-          const dynamicProducts = [];
-          const variations = [
-            `${style_category} ${dominant_color}`,
-            `${style_category} ${dominant_color} top`,
-            `${style_category} ${dominant_color} dress`,
-            `${style_category} ${dominant_color} jacket`
-          ];
-          
-          for (let i = 0; i < variations.length; i++) {
-            try {
-              const dynamicProduct = createDynamicFashionProduct(variations[i]);
-              dynamicProducts.push(dynamicProduct);
-            } catch (error) {
-              console.error('Error creating dynamic product:', error);
-            }
-          }
-          
-          setShowcaseContent({
-            type: 'product_grid',
-            data: {
-              products: dynamicProducts,
-              title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
+              title: `Products that complement your ${toolCall.function.arguments.object_description}`
             }
           });
         }
       }
-      
-      // Hide the perception notification after processing
-      setShowPerceptionNotification(false);
-      
-      return; // Don't forward to parent
-    }
-
-    // Handle complete outfit creation
-    if (toolCall.function.name === 'create_complete_outfit') {
-      console.log('👗 Creating complete outfit:', toolCall.function.arguments);
-      
-      const { base_item, occasion, style_preference, budget_range } = toolCall.function.arguments;
-      
-      // Create 4 dynamic products for a complete outfit
-      const outfitPieces = [];
-      
-      // Base item is already specified
-      outfitPieces.push(createDynamicFashionProduct(base_item));
-      
-      // Add complementary pieces based on the base item
-      const isWomens = base_item.toLowerCase().includes('dress') || 
-                      base_item.toLowerCase().includes('skirt') || 
-                      base_item.toLowerCase().includes('blouse');
-      
-      const complementaryPieces = isWomens ? 
-        ['jewelry', 'handbag', 'heels'] : 
-        ['watch', 'belt', 'shoes'];
-      
-      for (const piece of complementaryPieces) {
-        try {
-          const complementaryItem = createDynamicFashionProduct(
-            `${style_preference} ${piece} for ${occasion}`,
-            { occasion }
-          );
-          outfitPieces.push(complementaryItem);
-        } catch (error) {
-          console.error('Error creating outfit piece:', error);
-        }
-      }
-      
-      // Display the complete outfit
-      setShowcaseContent({
-        type: 'product_grid',
-        data: {
-          products: outfitPieces,
-          title: `Complete ${style_preference} Outfit for ${occasion}`
-        }
-      });
-      
       return; // Don't forward to parent
     }
 
@@ -420,7 +441,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
       }
 
-      // Handle perception tool calls with throttling
+      // Handle perception tool calls with throttling and notification
       if (data.event_type === 'conversation.perception_tool_call' && data.properties) {
         const { name, arguments: args } = data.properties;
         
@@ -431,15 +452,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           return null;
         }
         
-        // For style detection, we store the data but don't automatically trigger the resolver
+        // For style detection, show notification instead of immediate processing
         if (name === 'detected_user_style') {
           console.log('🎨 Step 1: Style detection completed:', args);
           lastPerceptionTime.current = now;
           
-          // Store the style data
-          setStyleAnalysisData(args);
-          
-          // Show the perception notification
+          // Show notification instead of immediate processing
+          setPerceptionData(args);
           setPerceptionType('style');
           setShowPerceptionNotification(true);
           
@@ -461,6 +480,40 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       return null;
     }
   }, []);
+
+  // Handle perception notification actions
+  const handlePerceptionAction = useCallback((action: 'analyze' | 'dismiss') => {
+    if (action === 'analyze') {
+      // Process the perception data
+      if (perceptionType === 'style' && perceptionData) {
+        // Trigger the RESOLVER TOOL
+        const resolverToolCall = {
+          function: {
+            name: 'find_and_display_style_matches',
+            arguments: {
+              dominant_color: perceptionData.dominant_color,
+              style_category: perceptionData.style_category,
+              style_personality: 'Stylish individual',
+              curation_title: `Inspired by your ${perceptionData.style_category} ${perceptionData.dominant_color} style`
+            }
+          }
+        };
+        handleToolCall(resolverToolCall);
+      } else if (perceptionType === 'object' && perceptionData) {
+        // Process object analysis
+        handleToolCall({
+          function: {
+            name: 'analyze_object_in_view',
+            arguments: perceptionData
+          }
+        });
+      }
+    }
+    
+    // Close the notification
+    setShowPerceptionNotification(false);
+    setPerceptionData(null);
+  }, [perceptionType, perceptionData, handleToolCall]);
 
   // Update remote participants
   const updateRemoteParticipants = useCallback(() => {
@@ -610,18 +663,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     
     setIsConnecting(true);
     try {
-      // Get user name from profile or default to Guest
-      const userName = userProfile?.username || userProfile?.email?.split('@')[0] || 'Guest';
-      
-      console.log('🎬 Starting personalized fashion styling session for:', userName);
+      console.log('🎬 Starting personalized fashion styling session for:', userProfile?.username || 'Guest');
       console.log('👤 User profile:', userProfile);
       
       const session = await createEnhancedShoppingSession(
         'personal style consultation',
-        userName,
+        userProfile?.username || 'Guest',
         selectedHost.replicaId,
         selectedHost.customPrompt,
-        showcaseContent.type // Pass current UI state
+        showcaseContent.type, // Pass current UI state
+        userProfile?.gender || userProfile?.preferences?.gender_preference // Pass gender preference
       );
       
       console.log('✅ Personalized fashion session created:', session);
@@ -655,6 +706,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setObjectAnalysisData(null);
     setFocusedProductId(null);
     setShowPerceptionNotification(false);
+    setPerceptionData(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -677,12 +729,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   };
 
   const handleCategorySelect = async (category: string) => {
-    const results = await searchProducts({ 
-      category, 
-      limit: 8,
-      gender: userProfile?.preferences?.gender_preference
-    });
-    
+    const results = await searchProducts({ category, limit: 8 });
     setShowcaseContent({
       type: 'product_grid',
       data: {
@@ -711,33 +758,6 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     }
   };
 
-  // Handle perception notification actions
-  const handlePerceptionAction = (action: 'analyze' | 'dismiss') => {
-    if (action === 'analyze' && styleAnalysisData) {
-      // Create a resolver tool call to process the style data
-      const resolverToolCall = {
-        function: {
-          name: 'find_and_display_style_matches',
-          arguments: {
-            dominant_color: styleAnalysisData.dominant_color,
-            style_category: styleAnalysisData.style_category,
-            style_personality: styleAnalysisData.style_personality || "Stylish individual",
-            curation_title: `Inspired by your ${styleAnalysisData.style_category} ${styleAnalysisData.dominant_color} style`
-          }
-        }
-      };
-      
-      // Process the tool call
-      handleToolCall(resolverToolCall);
-      
-      // Also send a message to the AI to acknowledge the user's request
-      handleUserMessage("Please analyze my style based on what you see");
-    }
-    
-    // Dismiss the notification
-    setShowPerceptionNotification(false);
-  };
-
   // Show host selector if not connected
   if (showHostSelector) {
     return (
@@ -760,6 +780,58 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       case 'product_grid':
         return (
           <div className="animate-fade-in flex-1">
+            {/* Style Analysis Display */}
+            {styleAnalysisData && (
+              <motion.div 
+                className="mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <h4 className="text-base font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center space-x-2">
+                  <Wand2 className="w-4 h-4" />
+                  <span>Style Analysis Complete</span>
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-purple-700 dark:text-purple-300 font-medium">Color:</span>
+                    <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.dominant_color || 'Not detected'}</p>
+                  </div>
+                  <div>
+                    <span className="text-purple-700 dark:text-purple-300 font-medium">Style:</span>
+                    <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.style_category || 'Not detected'}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Object Analysis Display */}
+            {objectAnalysisData && (
+              <motion.div 
+                className="mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <h4 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center space-x-2">
+                  <Eye className="w-4 h-4" />
+                  <span>Object Detected</span>
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <span className="text-blue-700 dark:text-blue-300 font-medium">Description:</span>
+                    <p className="text-blue-900 dark:text-blue-100">{objectAnalysisData.object_description}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 dark:text-blue-300 font-medium">Color:</span>
+                    <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.dominant_color}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700 dark:text-blue-300 font-medium">Category:</span>
+                    <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.object_category}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <ProductGrid
               products={showcaseContent.data.products}
               title={showcaseContent.data.title}
@@ -822,57 +894,48 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 )}
                 
                 {/* Fashion-specific details */}
-                <div className="mb-4 grid grid-cols-2 gap-2 text-sm">
-                  {spotlightProduct.material && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-600 dark:text-gray-400">Material:</span>
-                      <span className="text-gray-900 dark:text-gray-100">{spotlightProduct.material}</span>
+                {spotlightProduct.material && (
+                  <div className="mb-3">
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">Material: </span>
+                    <span className="text-gray-900 dark:text-gray-100 text-sm font-medium">{spotlightProduct.material}</span>
+                  </div>
+                )}
+                
+                {spotlightProduct.color_options && spotlightProduct.color_options.length > 0 && (
+                  <div className="mb-3">
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">Available Colors: </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {spotlightProduct.color_options.map((color: string, idx: number) => (
+                        <span 
+                          key={idx}
+                          className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs"
+                        >
+                          {color}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                  
-                  {spotlightProduct.fit && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-600 dark:text-gray-400">Fit:</span>
-                      <span className="text-gray-900 dark:text-gray-100">{spotlightProduct.fit}</span>
+                  </div>
+                )}
+                
+                {spotlightProduct.size_options && spotlightProduct.size_options.length > 0 && (
+                  <div className="mb-3">
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">Available Sizes: </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {spotlightProduct.size_options.map((size: string, idx: number) => (
+                        <span 
+                          key={idx}
+                          className="inline-block px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs"
+                        >
+                          {size}
+                        </span>
+                      ))}
                     </div>
-                  )}
-                  
-                  {spotlightProduct.color_options && spotlightProduct.color_options.length > 0 && (
-                    <div className="col-span-2 mt-2">
-                      <span className="text-gray-600 dark:text-gray-400 block mb-1">Colors:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {spotlightProduct.color_options.map((color: string, idx: number) => (
-                          <span 
-                            key={idx}
-                            className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs"
-                          >
-                            {color}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {spotlightProduct.size_options && spotlightProduct.size_options.length > 0 && (
-                    <div className="col-span-2 mt-2">
-                      <span className="text-gray-600 dark:text-gray-400 block mb-1">Sizes:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {spotlightProduct.size_options.map((size: string, idx: number) => (
-                          <span 
-                            key={idx}
-                            className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs"
-                          >
-                            {size}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
                 
                 {spotlightProduct.highlightFeatures && (
                   <div className="mb-4 flex-1">
-                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Features:</h5>
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Key Features:</h5>
                     <div className="space-y-2">
                       {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
                         <div 
@@ -888,16 +951,16 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 )}
                 
-                {/* Styling Tips - New section */}
-                {spotlightProduct.stylingTips && (
-                  <div className="mb-4 flex-1">
+                {/* Styling Tips */}
+                {spotlightProduct.stylingTips && spotlightProduct.stylingTips.length > 0 && (
+                  <div className="mb-4">
                     <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Styling Tips:</h5>
                     <div className="space-y-2">
                       {spotlightProduct.stylingTips.map((tip: string, idx: number) => (
                         <div 
                           key={idx} 
                           className="flex items-center space-x-2 animate-fade-in" 
-                          style={{animationDelay: `${idx * 0.1}s`}}
+                          style={{animationDelay: `${idx * 0.1 + 0.3}s`}}
                         >
                           <span className="text-purple-500">👗</span>
                           <span className="text-gray-700 dark:text-gray-300">{tip}</span>
@@ -982,7 +1045,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               <div className="text-6xl mb-4">✨</div>
               <h4 className="text-xl font-semibold mb-2">Ready to discover your personal style?</h4>
               <p className="text-base text-gray-400 dark:text-gray-500 mb-6">
-                {selectedHost?.name} will guide you through personalized fashion recommendations
+                {selectedHost?.name} will guide you through a personalized fashion experience
               </p>
             </div>
 
@@ -993,11 +1056,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 <span>Try asking:</span>
               </h5>
               <div className="space-y-2 text-blue-800 dark:text-blue-200 text-base">
-                <p>• "Analyze my style" - for personalized recommendations</p>
-                <p>• "I need an outfit for a wedding" - for occasion styling</p>
-                <p>• "What colors work best with my complexion?" - for color advice</p>
-                <p>• "Show me some business casual options" - for work attire</p>
-                <p>• "Help me build a capsule wardrobe" - for versatile essentials</p>
+                <p>• "Shop my style" - for personalized recommendations</p>
+                <p>• "Create a capsule wardrobe for me" - for versatile essentials</p>
+                <p>• "What should I wear to a wedding?" - for occasion styling</p>
+                <p>• "Help me find a perfect black dress" - for specific items</p>
+                <p>• "What colors complement my style?" - for color advice</p>
               </div>
             </div>
 
@@ -1007,7 +1070,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 onMessageSend={handleUserMessage}
                 onFocus={handleInputFocus}
                 disabled={!isConnected}
-                placeholder={`Ask ${selectedHost?.name} about fashion, styles, or outfit ideas...`}
+                placeholder={`Ask ${selectedHost?.name} about fashion, styles, or personal styling...`}
               />
             </div>
           </div>
@@ -1036,7 +1099,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             transition={{ duration: 0.6 }}
           >
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-3">
-              Fashion Styling with {selectedHost?.name}
+              Styling with {selectedHost?.name}
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
               Your personal {selectedHost?.description}
@@ -1172,58 +1235,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 </p>
               </div>
               
-              <div className="p-6 min-h-[500px] flex flex-col relative">
-                {/* Style Analysis Notification */}
-                <AnimatePresence>
-                  {showPerceptionNotification && styleAnalysisData && (
-                    <motion.div 
-                      className="absolute top-4 right-4 z-10 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg border border-brand-200 dark:border-brand-700 p-4 max-w-xs"
-                      initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.9 }}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                          <Wand2 className="w-4 h-4 mr-1 text-brand-500" />
-                          Style Detected
-                        </h4>
-                        <button 
-                          onClick={() => setShowPerceptionNotification(false)}
-                          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      
-                      <div className="mb-3 text-xs text-gray-600 dark:text-gray-300">
-                        <p>I noticed your style has these elements:</p>
-                        <ul className="mt-1 space-y-1">
-                          <li>• Color: <span className="font-medium">{styleAnalysisData.dominant_color}</span></li>
-                          <li>• Style: <span className="font-medium">{styleAnalysisData.style_category}</span></li>
-                          {styleAnalysisData.clothing_items && (
-                            <li>• Items: <span className="font-medium">{styleAnalysisData.clothing_items.join(', ')}</span></li>
-                          )}
-                        </ul>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handlePerceptionAction('analyze')}
-                          className="flex-1 bg-brand-500 hover:bg-brand-600 text-white text-xs py-1.5 px-2 rounded"
-                        >
-                          Show Recommendations
-                        </button>
-                        <button
-                          onClick={() => handlePerceptionAction('dismiss')}
-                          className="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs py-1.5 px-2 rounded"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                
+              <div className="p-6 min-h-[500px] flex flex-col">
                 {renderShowcaseContent()}
 
                 {/* Live Transcript */}
@@ -1242,6 +1254,26 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Perception Notification - Floating and Less Intrusive */}
+      <AnimatePresence>
+        {showPerceptionNotification && perceptionData && (
+          <motion.div 
+            className="fixed bottom-4 right-4 z-50"
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+          >
+            <PerceptionNotification
+              type={perceptionType}
+              data={perceptionData}
+              onAction={handlePerceptionAction}
+              onClose={() => setShowPerceptionNotification(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

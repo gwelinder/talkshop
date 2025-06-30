@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Sparkles, User, Wand2, Play, Edit3, LogIn } from 'lucide-react';
+import { Check, Sparkles, User, Wand2, Play, Edit3, LogIn, Shirt } from 'lucide-react';
 import HostCustomizer from './HostCustomizer';
 import GoogleSignInButton from './GoogleSignInButton';
 import AuthCallback from './AuthCallback';
