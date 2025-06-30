@@ -37,6 +37,7 @@ export interface ProductSearchParams {
   style?: string;
   occasion?: string;
   color?: string;
+  gender?: string; // Added gender preference for filtering
 }
 
 // Fashion-only categories
@@ -273,7 +274,7 @@ export const createDynamicFashionProduct = (description: string, additionalParam
   // Parse the description to extract key information
   const lowerDesc = description.toLowerCase();
   
-  // Determine category based on description
+  // Determine category based on description and gender preference
   let category = "women's clothing"; // default
   if (lowerDesc.includes('men') || lowerDesc.includes('guy') || lowerDesc.includes('masculine')) {
     category = "men's clothing";
@@ -285,6 +286,13 @@ export const createDynamicFashionProduct = (description: string, additionalParam
     category = "jewelry";
   } else if (lowerDesc.includes('scarf') || lowerDesc.includes('belt') || lowerDesc.includes('hat') || lowerDesc.includes('accessory')) {
     category = "accessories";
+  }
+  
+  // Override category based on gender preference if provided in additionalParams
+  if (additionalParams.gender_preference === 'men' && category === "women's clothing") {
+    category = "men's clothing";
+  } else if (additionalParams.gender_preference === 'women' && category === "men's clothing") {
+    category = "women's clothing";
   }
   
   // Extract color from description
@@ -300,7 +308,7 @@ export const createDynamicFashionProduct = (description: string, additionalParam
   // Extract occasion from description
   const detectedOccasion = occasionTags.find(occasion => 
     lowerDesc.includes(occasion.toLowerCase())
-  ) || occasionTags[Math.floor(Math.random() * occasionTags.length)];
+  ) || additionalParams.occasion || occasionTags[Math.floor(Math.random() * occasionTags.length)];
   
   // Generate appropriate image based on item type
   const getImageForItem = (desc: string): string => {
@@ -309,7 +317,12 @@ export const createDynamicFashionProduct = (description: string, additionalParam
         return imageUrl;
       }
     }
-    // Default fashion image
+    // Default fashion image based on category
+    if (category === "men's clothing") {
+      return "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?w=400";
+    } else if (category === "women's clothing") {
+      return "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400";
+    }
     return "https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?w=400";
   };
   
@@ -377,7 +390,7 @@ export const createDynamicFashionProduct = (description: string, additionalParam
   };
 };
 
-// Enhanced search with dynamic product generation
+// Enhanced search with dynamic product generation and gender preference filtering
 export const searchProducts = async (params: ProductSearchParams): Promise<Product[]> => {
   const allProducts = await fetchAllProducts();
   
@@ -388,6 +401,28 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
     filtered = filtered.filter(p => 
       p.category.toLowerCase() === params.category!.toLowerCase()
     );
+  }
+  
+  // Filter by gender preference
+  if (params.gender) {
+    if (params.gender === 'men') {
+      filtered = filtered.filter(p => 
+        p.category === "men's clothing" || 
+        p.category === "accessories" || 
+        p.category === "footwear" ||
+        p.category === "bags" ||
+        p.category === "jewelry"
+      );
+    } else if (params.gender === 'women') {
+      filtered = filtered.filter(p => 
+        p.category === "women's clothing" || 
+        p.category === "accessories" || 
+        p.category === "footwear" ||
+        p.category === "bags" ||
+        p.category === "jewelry"
+      );
+    }
+    // For 'unisex', we keep all categories
   }
   
   // Filter by price range
@@ -428,7 +463,9 @@ export const searchProducts = async (params: ProductSearchParams): Promise<Produ
       
       for (let i = 0; i < Math.min(4, variations.length); i++) {
         try {
-          const dynamicProduct = createDynamicFashionProduct(variations[i]);
+          const dynamicProduct = createDynamicFashionProduct(variations[i], {
+            gender_preference: params.gender
+          });
           dynamicProducts.push(dynamicProduct);
         } catch (error) {
           console.error('Error creating dynamic product:', error);
@@ -591,6 +628,28 @@ const getFashionFallbackProducts = (): Product[] => {
       occasion: ["Casual", "Work", "Travel"],
       style_tags: ["Classic", "Modern"],
       care_instructions: "Spot clean only"
+    },
+    {
+      id: "fashion_004",
+      title: "Slim Fit Denim Jeans",
+      price: 95,
+      description: "Premium denim jeans with perfect slim fit",
+      category: "men's clothing",
+      image: "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?w=400",
+      thumbnail: "https://images.pexels.com/photos/1598507/pexels-photo-1598507.jpeg?w=400",
+      rating: { rate: 4.6, count: 178 },
+      features: ["Premium denim", "Slim fit", "Versatile styling"],
+      brand: "ModernMan",
+      inStock: true,
+      tags: ["casual", "denim"],
+      viewers: 51,
+      material: "Denim",
+      color_options: ["Dark Blue", "Light Blue", "Black"],
+      size_options: ["28", "30", "32", "34", "36"],
+      occasion: ["Casual", "Weekend"],
+      style_tags: ["Modern", "Classic"],
+      fit: "Slim",
+      care_instructions: "Machine wash cold, tumble dry low"
     }
   ];
 };

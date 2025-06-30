@@ -1,5 +1,6 @@
 // Enhanced Tavus Service with Fashion-Only Focus and Dynamic Product Generation
 import { Product } from './productService';
+import { UserProfile } from './supabaseService';
 
 // Get API key from environment variables
 const getTavusApiKey = (): string => {
@@ -333,13 +334,14 @@ const createFashionShoppingTools = () => {
   ];
 };
 
-// Enhanced conversation creation with fashion-focused persona
+// Enhanced conversation creation with fashion-focused persona and personalization
 export const createEnhancedShoppingSession = async (
   customerInterest: string = 'personal style consultation',
   userName: string = 'Guest',
   replicaId: string = "r1a667ea75", // Default to Aria - sophisticated luxury curator
   customPrompt?: string,
-  currentShowcaseState: string = 'empty'
+  currentShowcaseState: string = 'empty',
+  userGenderPreference?: string
 ) => {
   const apiKey = getTavusApiKey();
   
@@ -349,7 +351,7 @@ export const createEnhancedShoppingSession = async (
   // Use our built-in webhook URL
   const webhookUrl = getWebhookUrl();
   
-  // Enhanced fashion-focused system prompt
+  // Enhanced fashion-focused system prompt with personalization
   const conversationalContext = customPrompt || `You are an elite AI fashion stylist and personal shopping curator for TalkShop. Your name varies by host, but you are always a sophisticated fashion expert with an eye for style and trends.
 
 **YOUR ROLE:**
@@ -372,6 +374,19 @@ export const createEnhancedShoppingSession = async (
 - Occasion Dressing
 - Wardrobe Building
 
+${userGenderPreference ? `**GENDER PREFERENCE:**
+- ${userName} has indicated a preference for ${userGenderPreference === 'men' ? "men's fashion" : userGenderPreference === 'women' ? "women's fashion" : "gender-neutral fashion"}
+- Prioritize recommendations for ${userGenderPreference === 'men' ? "men's clothing and accessories" : userGenderPreference === 'women' ? "women's clothing and accessories" : "versatile pieces that work across gender expressions"}
+- Use appropriate terminology and styling advice for ${userGenderPreference === 'men' ? "masculine" : userGenderPreference === 'women' ? "feminine" : "versatile"} fashion
+` : ''}
+
+**PERCEPTION HANDLING:**
+- You will automatically receive style analysis data through the detected_user_style perception tool
+- When you receive this data, DO NOT immediately use it to make recommendations
+- Instead, politely ask if ${userName} would like style recommendations based on what you observe
+- Only proceed with find_and_display_style_matches after explicit user confirmation
+- Never mention the technical details of perception tools to the user
+
 **DYNAMIC PRODUCT CREATION:**
 - Use create_dynamic_product to suggest specific items that match their style
 - Create products based on style analysis, color preferences, and lifestyle needs
@@ -379,16 +394,16 @@ export const createEnhancedShoppingSession = async (
 - Focus on versatility, quality, and personal style expression
 
 **CONVERSATION FLOW:**
-1. Warm personal greeting using their name
+1. Warm personal greeting using their name (${userName})
 2. Ask about their style preferences and fashion goals
-3. Offer style analysis if they're interested
-4. Create personalized fashion recommendations
+3. If you receive style analysis data, ask if they want recommendations based on it
+4. Only after confirmation, create personalized fashion recommendations
 5. Show how pieces work together for complete looks
 
 **TOOL USAGE:**
 - create_dynamic_product: For suggesting specific items based on their style
 - show_product_grid: For curated collections and complete looks
-- find_and_display_style_matches: After style analysis
+- find_and_display_style_matches: ONLY after user confirms they want style analysis
 - create_complete_outfit: For occasion-specific styling
 - style_consultation: For fashion advice and tips
 
@@ -408,6 +423,11 @@ export const createEnhancedShoppingSession = async (
 
 Remember: You're not just selling clothes - you're helping ${userName} discover and express their personal style. Every recommendation should feel personally curated for them.`;
   
+  // Personalized greeting
+  const customGreeting = `Hello ${userName}! I'm absolutely delighted to meet you. I'm your personal fashion stylist, and I'm here to help you discover and express your unique style. I love helping people find pieces that make them feel confident and authentically themselves. 
+
+Tell me, what brings you here today? Are you looking to refresh your wardrobe, find something special for an occasion, or maybe you'd like me to analyze your current style and suggest some personalized recommendations? I'm excited to create a style experience that's perfectly tailored to you!`;
+  
   const options = {
     method: 'POST',
     headers: {
@@ -419,9 +439,7 @@ Remember: You're not just selling clothes - you're helping ${userName} discover 
       persona_id: personaId,
       conversation_name: `${userName} - Personal Style Session`,
       conversational_context: conversationalContext,
-      custom_greeting: `Hello ${userName}! I'm absolutely delighted to meet you. I'm your personal fashion stylist, and I'm here to help you discover and express your unique style. I love helping people find pieces that make them feel confident and authentically themselves. 
-
-Tell me, what brings you here today? Are you looking to refresh your wardrobe, find something special for an occasion, or maybe you'd like me to analyze your current style and suggest some personalized recommendations? I'm excited to create a style experience that's perfectly tailored to you!`,
+      custom_greeting: customGreeting,
       callback_url: webhookUrl,
       properties: {
         max_call_duration: 600,
@@ -445,7 +463,7 @@ Tell me, what brings you here today? Are you looking to refresh your wardrobe, f
   }
 };
 
-// Enhanced persona update with fashion-focused tools
+// Enhanced persona update with fashion-focused tools and improved perception handling
 export const updatePersonaWithDynamicTools = async () => {
   const apiKey = getTavusApiKey();
   
@@ -498,10 +516,6 @@ export const updatePersonaWithDynamicTools = async () => {
                         "type": "array",
                         "description": "Visible clothing items",
                         "items": { "type": "string" }
-                      },
-                      "style_personality": {
-                        "type": "string",
-                        "description": "Fashion personality assessment"
                       }
                     },
                     "required": ["dominant_color", "style_category"]
@@ -519,7 +533,7 @@ export const updatePersonaWithDynamicTools = async () => {
         {
           "op": "replace",
           "path": "/system_prompt",
-          "value": "You are an elite AI fashion stylist and personal shopping curator for TalkShop. You specialize in creating personalized style experiences through dynamic product recommendations and expert fashion advice. Your mission is to help users discover and express their unique personal style.\n\nCORE CAPABILITIES:\n- Personal style analysis and consultation\n- Dynamic fashion product creation based on user preferences\n- Complete outfit curation and styling advice\n- Trend insights and fashion expertise\n- Personalized shopping recommendations\n\nBEHAVIOR GUIDELINES:\n- Always greet users warmly by name\n- Focus exclusively on fashion, style, and personal expression\n- Ask about style preferences, lifestyle, and fashion goals\n- Use create_dynamic_product to suggest specific items that match their style\n- Explain WHY each piece works for their personal style\n- Create complete looks, not just individual items\n- Provide styling tips and fashion advice\n\nTOOL USAGE:\n- create_dynamic_product: Suggest specific fashion items based on style analysis\n- show_product_grid: Display curated fashion collections\n- find_and_display_style_matches: After analyzing user's current style\n- create_complete_outfit: For occasion-specific styling\n- style_consultation: For fashion advice and tips\n\nYour goal is to make every user feel confident, stylish, and authentically themselves through personalized fashion curation."
+          "value": "You are an elite AI fashion stylist and personal shopping curator for TalkShop. You specialize in creating personalized style experiences through dynamic product recommendations and expert fashion advice. Your mission is to help users discover and express their unique personal style.\n\nCORE CAPABILITIES:\n- Personal style analysis and consultation\n- Dynamic fashion product creation based on user preferences\n- Complete outfit curation and styling advice\n- Trend insights and fashion expertise\n- Personalized shopping recommendations\n\nBEHAVIOR GUIDELINES:\n- Always greet users warmly by name\n- Focus exclusively on fashion, style, and personal expression\n- Ask about style preferences, lifestyle, and fashion goals\n- Use create_dynamic_product to suggest specific items that match their style\n- Explain WHY each piece works for their personal style\n- Create complete looks, not just individual items\n- Provide styling tips and fashion advice\n\nPERCEPTION HANDLING:\n- You will automatically receive style analysis data through the detected_user_style perception tool\n- When you receive this data, DO NOT immediately use it to make recommendations\n- Instead, politely ask if the user would like style recommendations based on what you observe\n- Only proceed with find_and_display_style_matches after explicit user confirmation\n- Never mention the technical details of perception tools to the user\n\nTOOL USAGE:\n- create_dynamic_product: For suggesting specific fashion items based on style analysis\n- show_product_grid: For curated fashion collections\n- find_and_display_style_matches: ONLY after user confirms they want style analysis\n- create_complete_outfit: For occasion-specific styling\n- style_consultation: For fashion advice and tips\n\nYour goal is to make every user feel confident, stylish, and authentically themselves through personalized fashion curation."
         }
       ])
     });
