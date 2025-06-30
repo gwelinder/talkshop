@@ -1,10 +1,3 @@
-/*
-  # Setup Persona Tools Script
-  
-  This script adds the shopping tools to our Tavus persona using the Update Persona API.
-  Run this once to configure the persona with all the shopping tools.
-*/
-
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -46,18 +39,49 @@ console.log(`   .env file loaded: ${Object.keys(envVars).length > 0 ? 'Yes' : 'N
 console.log(`   API key found: ${TAVUS_API_KEY ? 'Yes (' + TAVUS_API_KEY.slice(0, 8) + '...)' : 'No'}`);
 console.log(`   Is demo mode: ${!TAVUS_API_KEY || TAVUS_API_KEY === 'demo-tavus-key' ? 'Yes' : 'No'}`);
 
+// Define fashion-focused tools
 const shoppingTools = [
   {
     "type": "function",
     "function": {
+      "name": "create_dynamic_product",
+      "description": "Create and display a dynamic fashion product based on style analysis or user preferences. Use this when you want to suggest a specific item that complements the user's style.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "product_description": {
+            "type": "string",
+            "description": "Detailed description of the fashion item (e.g., 'denim cowboy jacket', 'floral summer dress', 'leather ankle boots')"
+          },
+          "style_reasoning": {
+            "type": "string",
+            "description": "Explanation of why this item complements the user's style"
+          },
+          "occasion": {
+            "type": "string",
+            "description": "Suggested occasion for wearing this item"
+          },
+          "price_range": {
+            "type": "string",
+            "enum": ["budget", "mid-range", "premium", "luxury"],
+            "description": "Price category for the item"
+          }
+        },
+        "required": ["product_description", "style_reasoning"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "show_product",
-      "description": "Display a specific product in the UI when discussing it. Use this EVERY time you mention a specific product to showcase it visually.",
+      "description": "Display a specific product when discussing it. Use this for existing products or after creating dynamic products.",
       "parameters": {
         "type": "object",
         "properties": {
           "product_id": {
             "type": "string",
-            "description": "The unique product ID to display (e.g., prod_001, prod_002)"
+            "description": "The product ID to display"
           },
           "product_name": {
             "type": "string", 
@@ -65,7 +89,12 @@ const shoppingTools = [
           },
           "highlight_features": {
             "type": "array",
-            "description": "Key features to highlight visually in the UI",
+            "description": "Key fashion features to highlight (e.g., 'Premium fabric', 'Flattering fit', 'Versatile styling')",
+            "items": { "type": "string" }
+          },
+          "styling_tips": {
+            "type": "array",
+            "description": "Styling suggestions for this item",
             "items": { "type": "string" }
           }
         },
@@ -77,21 +106,25 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "show_product_grid",
-      "description": "Displays a grid of multiple products in the UI. Use this when the user makes a broad request, like 'show me some nice dresses' or 'what electronics do you have?'. When displaying a grid, always label the products in your speech (e.g., 'The first item is...', 'Item two features...').",
+      "description": "Display a curated collection of fashion items. Use this when showing multiple style options or creating a complete look.",
       "parameters": {
         "type": "object",
         "properties": {
           "products": {
             "type": "array",
-            "description": "An array of product objects to display in the grid.",
+            "description": "Array of fashion products to display",
             "items": { "type": "object" }
           },
-          "title": {
+          "collection_title": {
             "type": "string",
-            "description": "A title for the product grid, like 'Here are some dresses you might love'."
+            "description": "Title for the fashion collection (e.g., 'Your Personalized Style Collection', 'Perfect for Date Night')"
+          },
+          "style_narrative": {
+            "type": "string",
+            "description": "Story about why these pieces work together"
           }
         },
-        "required": ["products", "title"]
+        "required": ["products", "collection_title"]
       }
     }
   },
@@ -99,7 +132,7 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "show_categories",
-      "description": "Displays a grid of all available product categories. Use this when the user asks 'what can I shop for?' or 'what categories do you have?'.",
+      "description": "Display fashion categories when user wants to browse. Focus on style-based categories.",
       "parameters": { "type": "object", "properties": {} }
     }
   },
@@ -107,17 +140,21 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "focus_on_product",
-      "description": "Highlight and focus on a specific product in the grid when user shows interest. Use when user says 'tell me more about the first one', 'I like item three', etc.",
+      "description": "Highlight a specific item when user shows interest in a particular piece from a collection.",
       "parameters": {
         "type": "object",
         "properties": {
           "item_id": {
             "type": "string",
-            "description": "The item identifier (e.g., 'Item 1', 'Item 2', 'first', 'second', etc.)"
+            "description": "The item identifier from the grid"
           },
           "product_id": {
             "type": "string",
             "description": "The actual product ID to focus on"
+          },
+          "styling_context": {
+            "type": "string",
+            "description": "How this piece fits into their overall style"
           }
         },
         "required": ["item_id", "product_id"]
@@ -128,21 +165,25 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "find_and_display_style_matches",
-      "description": "Takes style attributes as input, searches for matching products, and displays them in a grid. This is the second and final step of the style analysis flow.",
+      "description": "Create a personalized fashion collection based on style analysis. This is the core tool for style-based recommendations.",
       "parameters": {
         "type": "object",
         "properties": {
           "dominant_color": { 
             "type": "string",
-            "description": "The dominant color from style analysis"
+            "description": "Primary color from the user's current style"
           },
           "style_category": { 
             "type": "string",
-            "description": "The style category from analysis"
+            "description": "Overall style aesthetic (e.g., 'casual chic', 'business professional', 'bohemian', 'minimalist')"
           },
           "curation_title": { 
             "type": "string", 
-            "description": "A creative title for the product grid, like 'Inspired by your Classic Blue Style'." 
+            "description": "Personalized title for the style collection"
+          },
+          "style_personality": {
+            "type": "string",
+            "description": "User's fashion personality based on analysis"
           }
         },
         "required": ["dominant_color", "style_category", "curation_title"]
@@ -152,30 +193,56 @@ const shoppingTools = [
   {
     "type": "function",
     "function": {
-      "name": "search_products",
-      "description": "Search for products based on customer requests. Use this when customers ask for specific items or categories.",
+      "name": "create_complete_outfit",
+      "description": "Design a complete outfit based on a single piece or style preference.",
       "parameters": {
         "type": "object",
         "properties": {
-          "search_query": {
+          "base_item": {
             "type": "string",
-            "description": "What the customer is looking for (e.g., 'jewelry', 'electronics', 'clothing')"
+            "description": "The starting piece for the outfit"
           },
-          "category": {
+          "occasion": {
             "type": "string",
-            "description": "Product category to filter by",
-            "enum": ["electronics", "jewelery", "men's clothing", "women's clothing"]
+            "description": "Event or setting for the outfit"
           },
-          "min_price": {
-            "type": "number",
-            "description": "Minimum price filter"
+          "style_preference": {
+            "type": "string",
+            "description": "Desired aesthetic for the complete look"
           },
-          "max_price": {
-            "type": "number",
-            "description": "Maximum price filter"
+          "budget_range": {
+            "type": "string",
+            "description": "Budget consideration for the outfit"
           }
         },
-        "required": ["search_query"]
+        "required": ["base_item", "occasion", "style_preference"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "style_consultation",
+      "description": "Provide personalized style advice and recommendations based on user's preferences, body type, or lifestyle.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "consultation_type": {
+            "type": "string",
+            "enum": ["color_analysis", "body_type", "lifestyle", "occasion_dressing", "wardrobe_essentials"],
+            "description": "Type of style consultation to provide"
+          },
+          "user_preferences": {
+            "type": "string",
+            "description": "User's stated preferences or concerns"
+          },
+          "recommendations": {
+            "type": "array",
+            "description": "Specific style recommendations",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["consultation_type", "recommendations"]
       }
     }
   },
@@ -183,18 +250,22 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "compare_products",
-      "description": "Show multiple products side-by-side for comparison when customer asks to compare items",
+      "description": "Compare fashion items to help with decision making.",
       "parameters": {
         "type": "object",
         "properties": {
           "product_ids": {
             "type": "array",
-            "description": "Array of product IDs to compare (2-4 products recommended)",
+            "description": "Array of product IDs to compare",
             "items": { "type": "string" }
           },
           "comparison_aspect": {
             "type": "string",
-            "description": "What aspect to compare (price, features, style, quality, etc.)"
+            "description": "What to compare (style, versatility, value, quality)"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Your recommendation based on the comparison"
           }
         },
         "required": ["product_ids", "comparison_aspect"]
@@ -202,36 +273,10 @@ const shoppingTools = [
     }
   },
   {
-    "type": "function", 
-    "function": {
-      "name": "highlight_offer",
-      "description": "Show special pricing, discounts, or limited-time offers to create urgency and drive sales",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "product_id": {
-            "type": "string",
-            "description": "The product ID with the special offer"
-          },
-          "offer_type": {
-            "type": "string",
-            "enum": ["discount", "bundle", "limited_time", "exclusive"],
-            "description": "Type of offer to highlight"
-          },
-          "discount_percentage": {
-            "type": "number",
-            "description": "Discount percentage if applicable (e.g., 20 for 20% off)"
-          }
-        },
-        "required": ["product_id", "offer_type"]
-      }
-    }
-  },
-  {
     "type": "function",
     "function": {
       "name": "add_to_cart", 
-      "description": "Add a product to the customer's shopping cart when they're ready to purchase",
+      "description": "Add a fashion item to the customer's cart when they're ready to purchase",
       "parameters": {
         "type": "object",
         "properties": {
@@ -242,6 +287,14 @@ const shoppingTools = [
           "quantity": {
             "type": "number",
             "description": "Quantity to add (default: 1)"
+          },
+          "size": {
+            "type": "string",
+            "description": "Selected size for the item"
+          },
+          "color": {
+            "type": "string",
+            "description": "Selected color for the item"
           }
         },
         "required": ["product_id", "quantity"]
@@ -252,7 +305,7 @@ const shoppingTools = [
     "type": "function",
     "function": {
       "name": "proactively_add_to_cart",
-      "description": "Use this tool ONLY when a user expresses strong, unambiguous positive sentiment (e.g., 'Wow, I love that!', 'That is absolutely gorgeous!', 'I need that.') but does NOT explicitly say 'add to cart'. This tool adds the item to the cart and confirms the action.",
+      "description": "Add items to cart when user expresses strong positive sentiment about a fashion piece.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -260,7 +313,11 @@ const shoppingTools = [
           "product_name": { "type": "string" },
           "confirmation_speech": {
             "type": "string",
-            "description": "A charming phrase to confirm the action, like 'It's stunning, isn't it? I've placed it in your cart for you to consider.'"
+            "description": "Stylish confirmation message"
+          },
+          "styling_note": {
+            "type": "string",
+            "description": "Quick styling tip for the added item"
           }
         },
         "required": ["product_id", "product_name", "confirmation_speech"]
@@ -270,32 +327,19 @@ const shoppingTools = [
   {
     "type": "function",
     "function": {
-      "name": "show_360_view",
-      "description": "Display a 360-degree interactive view of the product for detailed examination",
-      "parameters": {
-        "type": "object", 
-        "properties": {
-          "product_id": {
-            "type": "string",
-            "description": "The product ID to show in 360 view"
-          }
-        },
-        "required": ["product_id"]
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
       "name": "initiate_checkout",
-      "description": "Initiates the checkout process when the user has confirmed they are ready to purchase the items in their cart.",
+      "description": "Start the checkout process when customer is ready to purchase their curated items.",
       "parameters": {
         "type": "object",
         "properties": {
           "cart_items": {
             "type": "array",
-            "description": "A summary of items in the cart to be purchased.",
+            "description": "Summary of fashion items in cart",
             "items": { "type": "string" }
+          },
+          "styling_summary": {
+            "type": "string",
+            "description": "Summary of the complete look they're purchasing"
           }
         },
         "required": ["cart_items"]
@@ -313,7 +357,7 @@ async function updatePersonaTools() {
   }
 
   try {
-    console.log('🔧 Updating persona with FINAL perception architecture...');
+    console.log('🔧 Updating persona with fashion-focused tools...');
     console.log(`   Persona ID: ${PERSONA_ID}`);
     console.log(`   API Key: ${TAVUS_API_KEY.slice(0, 8)}...`);
     
@@ -324,80 +368,12 @@ async function updatePersonaTools() {
         'x-api-key': TAVUS_API_KEY
       },
       body: JSON.stringify([
-        {
-          "op": "add",
-          "path": "/layers/perception",
-          "value": {
-            "perception_model": "raven-0",
-            "ambient_awareness_queries": [
-              "Is the user clearly presenting an object to the camera?",
-              "What is the dominant color and general style of the user's outfit?"
-            ],
-            "perception_tool_prompt": "You have a tool named 'detected_user_style'. If you see the user's outfit clearly, you MUST use this tool to report the style attributes. Do not do anything else.",
-            "perception_tools": [
-              {
-                "type": "function",
-                "function": {
-                  "name": "detected_user_style",
-                  "description": "Reports the detected visual attributes of a user's style. This is the first step in a two-part process. The next step will be handled by a different tool.",
-                  "parameters": {
-                    "type": "object",
-                    "properties": {
-                      "dominant_color": { 
-                        "type": "string",
-                        "description": "The primary color of the user's outfit"
-                      },
-                      "style_category": { 
-                        "type": "string",
-                        "description": "The general style category (e.g., casual, formal, bohemian)"
-                      },
-                      "detected_accessories": {
-                        "type": "array",
-                        "description": "Any visible accessories",
-                        "items": { "type": "string" }
-                      }
-                    },
-                    "required": ["dominant_color", "style_category"]
-                  }
-                }
-              },
-              {
-                "type": "function",
-                "function": {
-                  "name": "analyze_object_in_view",
-                  "description": "Analyzes a physical object the user is showing to the camera to identify its color and category, then curates a collection of complementary products.",
-                  "parameters": {
-                    "type": "object",
-                    "properties": {
-                      "dominant_color": {
-                        "type": "string",
-                        "description": "The primary color of the object detected (e.g., 'terracotta', 'forest green', 'navy blue')."
-                      },
-                      "object_category": {
-                        "type": "string",
-                        "description": "The general category of the object (e.g., 'drinkware', 'clothing', 'accessory', 'book')."
-                      },
-                      "object_description": {
-                        "type": "string",
-                        "description": "A brief, one-sentence description of the object."
-                      }
-                    },
-                    "required": ["dominant_color", "object_category", "object_description"]
-                  }
-                }
-              }
-            ]
-          }
-        },
+        // Remove perception layer from here as it's handled by enhancedTavusService.ts
+        // Remove system_prompt from here as it's handled by enhancedTavusService.ts
         {
           "op": "replace",
           "path": "/layers/llm/tools",
           "value": shoppingTools
-        },
-        {
-          "op": "replace",
-          "path": "/system_prompt",
-          "value": "You are a state-aware AI curator for TalkShop with master perception capabilities. Your actions are governed by user intent and the CURRENT_UI_STATE. Follow the ACTION-FIRST golden rule: decide, execute tool, then narrate. CRITICAL GREETING STRATEGY: Start with a warm greeting and ask if they'd like style analysis or prefer to browse categories. DO NOT immediately showcase any specific product. Let the user guide the conversation direction first. STATE AWARENESS: If CURRENT_UI_STATE is 'analyzing_style', you MUST wait. Do not act. INTERRUPTIBILITY: If the user interrupts you during 'analyzing_style', your immediate priority is to abandon the analysis and fulfill their new request (e.g., call show_categories). PERCEPTION FLOW: This is a strict two-step process. 1) USER ASKS: 'Shop my style.' 2) YOU RESPOND & WAIT: Simply say, 'Of course. Let me take a look at your style...' The system will automatically trigger the detected_user_style perception tool. 3) YOU RECEIVE & ACT: You will receive a new conversational turn with a find_and_display_style_matches tool call containing the results. Your ONLY job here is to execute that tool call to search for products and then call show_product_grid to display them. INTERACTIVE GRID FLOW: When a grid is displayed, listen for user requests like 'tell me about item three.' Use the focus_on_product tool to highlight the corresponding item visually. Use dynamic presentation tools: show_product_grid for broad requests, show_categories for browsing, compare_products for comparisons. Use proactively_add_to_cart when users express strong positive sentiment without explicitly asking to buy. Use initiate_checkout when customers are ready to purchase. When users present objects to the camera, use analyze_object_in_view to identify and curate complementary products. Your ambient intelligence and perception capabilities make every interaction feel magical and personalized."
         }
       ])
     });
@@ -414,30 +390,16 @@ async function updatePersonaTools() {
     }
 
     const result = await response.json();
-    console.log('✅ Successfully updated persona with FINAL perception architecture!');
-    console.log('🧠 FINAL Enhanced capabilities:');
-    console.log('   - 🔍 MASTER PERCEPTION LAYER: raven-0 vision model activated');
-    console.log('   - 👁️ AMBIENT AWARENESS: Continuous visual analysis');
-    console.log('   - 🎨 TWO-STEP STYLE ANALYSIS: detected_user_style → find_and_display_style_matches');
-    console.log('   - 🛍️ OBJECT RECOGNITION: analyze_object_in_view perception tool');
-    console.log('   - 🔄 STATE AWARENESS: UI state injection for contextual responses');
-    console.log('   - 🚫 INTERRUPTION HANDLING: Graceful conversation pivots');
-    console.log('   - 📦 REAL-WORLD INTERACTION: Object-based product recommendations');
-    console.log('   - 💬 PROPER GREETING: Ask about preferences instead of immediate product showcase');
-    console.log('   - 🎯 INTERACTIVE GRID: focus_on_product for voice-driven product selection');
-    console.log('   - 🔧 RESOLVER TOOL: find_and_display_style_matches for seamless style flow');
-    console.log('   - ACTION-FIRST conversational flow');
-    console.log('   - Dynamic product grid presentations');
-    console.log('   - Category browsing capabilities');
-    console.log('   - Proactive cart assistance based on emotional cues');
-    console.log('   - Narrative-driven product presentations');
-    console.log('   - Emotional connection building');
-    console.log('   - Luxury curation expertise');
-    console.log('   - Judge easter egg detection');
-    console.log('   - Sophisticated conversation recovery');
-    console.log('   - Checkout initiation capability');
-    console.log('   - Multi-host support with different replica IDs');
-    console.log('   - Custom prompt support for personalized hosts');
+    console.log('✅ Successfully updated persona with fashion-focused tools!');
+    console.log('👗 Fashion-focused capabilities:');
+    console.log('   - 🎨 DYNAMIC PRODUCT CREATION: Unlimited fashion catalog');
+    console.log('   - 👔 PERSONAL STYLING: Complete outfit curation');
+    console.log('   - 🔍 STYLE ANALYSIS: Visual style assessment');
+    console.log('   - 💡 FASHION CONSULTATION: Expert style advice');
+    console.log('   - 🛍️ PERSONALIZED SHOPPING: Curated recommendations');
+    console.log('   - 👗 COMPLETE LOOKS: Outfit coordination');
+    console.log('   - 🎯 OCCASION DRESSING: Event-specific styling');
+    console.log('   - 💎 QUALITY FOCUS: Premium fashion emphasis');
     
     return { status: 'success', data: result };
   } catch (error) {
@@ -449,7 +411,7 @@ async function updatePersonaTools() {
 // Run the setup
 updatePersonaTools()
   .then(() => {
-    console.log('🎉 FINAL Persona setup complete! Your AI agent now has state-aware perception capabilities with resolver tool.');
+    console.log('🎉 Fashion Persona setup complete! Your AI agent now has fashion-focused capabilities.');
   })
   .catch((error) => {
     console.error('💥 Setup failed:', error);

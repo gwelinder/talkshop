@@ -174,7 +174,7 @@ Deno.serve(async (req: Request) => {
 
     // Server-Sent Events endpoint for real-time updates
     if (req.method === "GET" && path.includes("/events/")) {
-      const conversationId = path.split("/events/")[1];
+      const conversationId = path.split("/events/");
       
       if (!conversationId) {
         return new Response("Missing conversation ID", { status: 400 });
@@ -296,45 +296,82 @@ async function executeToolCall(toolCall: any) {
   console.log(`🛠️  Executing tool: ${name} with args:`, args);
   
   switch (name) {
+    case 'create_dynamic_product':
+      return {
+        success: true,
+        message: `Dynamically created fashion product: ${args.product_description}`,
+        product_created: true
+      };
     case 'show_product':
       return {
         success: true,
-        message: `Displaying product ${args.product_name} (${args.product_id})`,
+        message: `Displaying fashion product ${args.product_name} (${args.product_id})`,
         product_displayed: true
       };
-      
+    case 'show_product_grid':
+      return {
+        success: true,
+        message: `Displaying fashion collection: ${args.collection_title}`,
+        collection_displayed: true
+      };
+    case 'show_categories':
+      return {
+        success: true,
+        message: `Displaying fashion categories`,
+        categories_displayed: true
+      };
+    case 'focus_on_product':
+      return {
+        success: true,
+        message: `Focusing on fashion item ${args.item_id} (${args.product_id})`,
+        item_focused: true
+      };
+    case 'find_and_display_style_matches':
+      return {
+        success: true,
+        message: `Found and displaying style matches for ${args.style_category} in ${args.dominant_color}`,
+        style_matches_displayed: true
+      };
+    case 'create_complete_outfit':
+      return {
+        success: true,
+        message: `Created complete outfit based on ${args.base_item} for ${args.occasion}`,
+        outfit_created: true
+      };
+    case 'style_consultation':
+      return {
+        success: true,
+        message: `Providing style consultation of type: ${args.consultation_type}`,
+        consultation_provided: true
+      };
     case 'compare_products':
       return {
         success: true,
-        message: `Comparing ${args.product_ids.length} products by ${args.comparison_aspect}`,
+        message: `Comparing ${args.product_ids.length} fashion items by ${args.comparison_aspect}`,
         products_compared: args.product_ids
       };
-      
-    case 'highlight_offer':
-      return {
-        success: true,
-        message: `Highlighted ${args.offer_type} offer for product ${args.product_id}`,
-        offer_highlighted: true
-      };
-      
     case 'add_to_cart':
       return {
         success: true,
-        message: `Added ${args.quantity} of product ${args.product_id} to cart`,
+        message: `Added ${args.quantity} of fashion item ${args.product_id} to cart`,
         cart_updated: true
       };
-      
-    case 'show_360_view':
+    case 'proactively_add_to_cart':
       return {
         success: true,
-        message: `Showing 360° view for product ${args.product_id}`,
-        view_360_enabled: true
+        message: `Proactively added ${args.product_name} to cart. Confirmation: "${args.confirmation_speech}"`,
+        proactive_cart_add: true
       };
-      
+    case 'initiate_checkout':
+      return {
+        success: true,
+        message: `Initiating checkout for ${args.cart_items.length} fashion items`,
+        checkout_initiated: true
+      };
     default:
       return {
         success: false,
-        message: `Unknown tool: ${name}`,
+        message: `Unknown fashion tool: ${name}`,
         error: 'Tool not implemented'
       };
   }
