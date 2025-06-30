@@ -600,6 +600,3 @@ export const clearProductCache = () => {
   productCache.clear();
   console.log('🗑️ Fashion product cache cleared');
 };
-
-// Export the dynamic product creation function for AI use
-export { createDynamicFashionProduct };
