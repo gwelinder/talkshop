@@ -73,10 +73,12 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Fashion-specific state
   const [dynamicProducts, setDynamicProducts] = useState<any[]>([]);
   const [styleAnalysisData, setStyleAnalysisData] = useState<any>(null);
+  const [outfitData, setOutfitData] = useState<any>(null); // New state for complete outfit
+  const [styleConsultationData, setStyleConsultationData] = useState<any>(null); // New state for style consultation
   
   // Product display state with proper typing
   const [showcaseContent, setShowcaseContent] = useState<{
-    type: 'empty' | 'product_grid' | 'categories' | 'spotlight' | 'comparison';
+    type: 'empty' | 'product_grid' | 'categories' | 'spotlight' | 'comparison' | 'complete_outfit' | 'style_consultation_display'; // Updated type
     data?: any;
   }>({ type: 'empty' });
   
@@ -170,6 +172,22 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       }
     }
     
+    // Handle complete outfit creation
+    if (toolCall.function.name === 'create_complete_outfit') {
+      console.log('👗 Creating complete outfit:', toolCall.function.arguments);
+      setOutfitData(toolCall.function.arguments);
+      setShowcaseContent({ type: 'complete_outfit', data: toolCall.function.arguments });
+      return;
+    }
+
+    // Handle style consultation
+    if (toolCall.function.name === 'style_consultation') {
+      console.log('💡 Providing style consultation:', toolCall.function.arguments);
+      setStyleConsultationData(toolCall.function.arguments);
+      setShowcaseContent({ type: 'style_consultation_display', data: toolCall.function.arguments });
+      return;
+    }
+
     // Handle cart animation with enhanced experience
     if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
       setCartAnimation(true);
@@ -605,6 +623,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setStyleAnalysisData(null);
     setFocusedProductId(null);
     setDynamicProducts([]);
+    setOutfitData(null); // Reset outfit data
+    setStyleConsultationData(null); // Reset style consultation data
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -711,7 +731,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <ProductGrid
               products={showcaseContent.data.products}
               title={showcaseContent.data.title}
-              onJoinRoom={(product) => addToCart(product.id, 1)}
+              onProductSelect={(product) => addToCart(product.id, 1)} // Updated prop name
               focusedProductId={focusedProductId}
             />
             
@@ -811,6 +831,25 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 )}
 
+                {/* Styling Tips */}
+                {spotlightProduct.stylingTips && (
+                    <div className="mb-6 flex-1">
+                        <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Styling Tips:</h5>
+                        <div className="space-y-2">
+                            {spotlightProduct.stylingTips.map((tip: string, idx: number) => (
+                                <div 
+                                    key={idx} 
+                                    className="flex items-center space-x-2 animate-fade-in" 
+                                    style={{animationDelay: `${idx * 0.1}s`}}
+                                >
+                                    <span className="text-purple-500">✨</span>
+                                    <span className="text-gray-700 dark:text-gray-300">{tip}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <button 
                   onClick={() => addToCart(spotlightProduct.id, 1)}
                   className={`w-full py-4 rounded-lg text-white font-bold text-lg transform transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
@@ -877,6 +916,57 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               ))}
             </div>
           </div>
+        );
+
+      case 'complete_outfit': // New case for complete outfit
+        return (
+            <div className="animate-fade-in flex-1">
+                <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
+                    Your Curated Outfit for {outfitData.occasion}
+                </h4>
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Base Item:</h5>
+                    <p className="text-gray-700 dark:text-gray-300 mb-4">{outfitData.base_item}</p>
+                    
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Suggested Pieces:</h5>
+                    <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
+                        <li>A complementary top or bottom to pair with the base item.</li>
+                        <li>Accessories like a statement necklace or a chic handbag.</li>
+                        <li>Footwear that matches the occasion and style preference.</li>
+                        <li>Outerwear for layering, if appropriate for the climate.</li>
+                    </ul>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
+                        This outfit is designed to match your '{outfitData.style_preference}' preference.
+                    </p>
+                </div>
+            </div>
+        );
+
+      case 'style_consultation_display': // New case for style consultation
+        return (
+            <div className="animate-fade-in flex-1">
+                <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 text-center">
+                    Personal Style Consultation: {styleConsultationData.consultation_type.replace(/_/g, ' ')}
+                </h4>
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
+                    {styleConsultationData.user_preferences && (
+                        <>
+                            <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Your Preferences:</h5>
+                            <p className="text-gray-700 dark:text-gray-300 mb-4">{styleConsultationData.user_preferences}</p>
+                        </>
+                    )}
+                    
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Our Recommendations:</h5>
+                    <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2">
+                        {styleConsultationData.recommendations.map((rec: string, idx: number) => (
+                            <li key={idx}>{rec}</li>
+                        ))}
+                    </ul>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
+                        These recommendations are tailored to help you achieve your style goals.
+                    </p>
+                </div>
+            </div>
         );
 
       default:
