@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 shadow-sm">
+    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 shadow-sm relative"> {/* Added relative positioning */}
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-12 sm:h-14 lg:h-16">
           {/* Logo - Compact */}
@@ -221,7 +221,21 @@ const Header: React.FC<HeaderProps> = ({
             </motion.button>
           </div>
         </div>
-      </div>
+
+        {/* Bolt Badge - positioned absolutely */}
+        <a 
+            href="https://bolt.new/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-50" 
+            aria-label="Built with Bolt.new"
+        >
+            <img 
+                src="/white_circle_360x360.png" // Path to the image in public folder
+                alt="Built with Bolt.new" 
+                className="w-8 h-8 sm:w-10 sm:h-10" // Adjust size as needed
+            />
+        </a>
 
       {/* Click outside to close user menu */}
       {showUserMenu && (
@@ -230,6 +244,7 @@ const Header: React.FC<HeaderProps> = ({
           onClick={() => setShowUserMenu(false)}
         />
       )}
+      </div>
     </header>
   );
 };
