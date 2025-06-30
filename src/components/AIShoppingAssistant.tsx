@@ -105,9 +105,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Magic cart animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
 
-  // Perception throttling with longer timeout
+  // Perception throttling with increased timeout
   const lastPerceptionTime = useRef<number>(0);
-  const PERCEPTION_THROTTLE_MS = 10000; // 10 seconds between perception calls
+  const PERCEPTION_THROTTLE_MS = 15000; // 15 seconds between perception calls
 
   // Update persona tools on component mount
   useEffect(() => {

@@ -101,7 +101,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                 {/* Fashion Tag */}
                 <div className="absolute top-3 left-3 bg-brand-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
                   <Shirt className="w-3 h-3" />
-                  <span>{product.category.split(' ')[0]}</span>
+                  <span>{(product.category || '').split(' ')[0]}</span>
                 </div>
 
                 {/* Focus Indicator */}
