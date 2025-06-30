@@ -324,6 +324,9 @@ function App() {
             onShow360Change={setShow360}
             cartItems={cartItems}
             onCartJiggle={handleCartJiggle}
+            sessionType={sessionType}
+            userTier={userProfile?.subscription_tier || 'free'}
+            userId={authUser?.id || ''}
           />
         </main>
       )}
