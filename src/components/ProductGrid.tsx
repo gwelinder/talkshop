@@ -25,7 +25,7 @@ interface Product {
 
 interface ProductGridProps {
   products: Product[];
-  onJoinRoom: (product: Product) => void;
+  onProductSelect: (product: Product) => void; // Renamed from onJoinRoom
   title?: string;
   loading?: boolean;
   onProductHover?: (productId: string) => void;
@@ -34,7 +34,7 @@ interface ProductGridProps {
 
 const ProductGrid: React.FC<ProductGridProps> = ({ 
   products, 
-  onJoinRoom, 
+  onProductSelect, // Renamed from onJoinRoom
   title = "Fashion Collection", 
   loading = false,
   onProductHover,
@@ -121,7 +121,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
                 {/* Hover Overlay with Magic Button */}
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <motion.button 
-                    onClick={() => onJoinRoom(product)}
+                    onClick={() => onProductSelect(product)} // Updated prop name
                     className="bg-brand-500 hover:bg-brand-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center space-x-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-brand-400"
                     aria-label={`Quick add ${productName} to cart`}
                     initial={{ y: 20, opacity: 0 }}
