@@ -54,11 +54,13 @@ const Header: React.FC<HeaderProps> = ({
     <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 shadow-sm relative"> {/* Added relative positioning */}
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between h-12 sm:h-14 lg:h-16">
-          {/* Logo - Compact */}
+          {/* Logo - Updated with TalkShop logo */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-sm sm:text-base lg:text-xl">T</span>
-            </div>
+            <img 
+              src="/talkshop-logo.png" 
+              alt="TalkShop" 
+              className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 object-contain"
+            />
             <span className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent">
               TalkShop
             </span>
@@ -231,11 +233,12 @@ const Header: React.FC<HeaderProps> = ({
             aria-label="Built with Bolt.new"
         >
             <img 
-                src="/white_circle_360x360.png" // Path to the image in public folder
+                src="/white_circle_360x360.png" 
                 alt="Built with Bolt.new" 
-                className="w-8 h-8 sm:w-10 sm:h-10" // Adjust size as needed
+                className="w-8 h-8 sm:w-10 sm:h-10" 
             />
         </a>
+      </div>
 
       {/* Click outside to close user menu */}
       {showUserMenu && (
@@ -244,7 +247,6 @@ const Header: React.FC<HeaderProps> = ({
           onClick={() => setShowUserMenu(false)}
         />
       )}
-      </div>
     </header>
   );
 };
