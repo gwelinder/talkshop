@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Mic, MicOff, Volume2, VolumeX, ShoppingCart, Eye, Heart, 
   RotateCcw, Maximize, Zap, Sparkles, MessageCircle, Play, Pause, Search, Star,
-  User, Wand2, ArrowRight, ShoppingBag, Lightbulb, Brain, Shirt, X
+  User, Wand2, ArrowRight, ShoppingBag, Lightbulb, Brain, Shirt
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createEnhancedShoppingSession, updatePersonaWithDynamicTools } from '../services/enhancedTavusService';
@@ -15,6 +15,8 @@ import UserInput from './UserInput';
 import MagicCartAnimation from './MagicCartAnimation';
 import { useMagicCart } from '../hooks/useMagicCart';
 import DailyIframe from '@daily-co/daily-js';
+import StyleAnalysisDisplay from './StyleAnalysisDisplay';
+import ObjectAnalysisDisplay from './ObjectAnalysisDisplay';
 import PerceptionNotification from './PerceptionNotification';
 import { UserProfile } from '../services/supabaseService';
 
@@ -55,8 +57,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   cartItems,
   onCartJiggle,
   sessionType,
-  userTier = 'free',
-  userId = '',
+  userTier,
+  userId,
   userProfile
 }) => {
   // Connection and conversation state
@@ -86,7 +88,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     data?: any;
   }>({ type: 'empty' });
   
-  // Perception state with improved handling
+  // Perception state
   const [styleAnalysisData, setStyleAnalysisData] = useState<any>(null);
   const [objectAnalysisData, setObjectAnalysisData] = useState<any>(null);
   const [showPerceptionNotification, setShowPerceptionNotification] = useState(false);
@@ -103,10 +105,9 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   // Magic cart animation
   const { animationState, triggerMagicCart, completeMagicCart } = useMagicCart();
 
-  // Perception throttling
+  // Perception throttling with longer timeout
   const lastPerceptionTime = useRef<number>(0);
   const PERCEPTION_THROTTLE_MS = 10000; // 10 seconds between perception calls
-  const hasShownPerceptionNotification = useRef<boolean>(false);
 
   // Update persona tools on component mount
   useEffect(() => {
@@ -134,7 +135,10 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
   const handlePerceptionAction = (action: 'analyze' | 'dismiss') => {
     if (action === 'analyze') {
       if (perceptionType === 'style' && perceptionData) {
-        // Create resolver tool call for style analysis
+        // Store the style analysis data
+        setStyleAnalysisData(perceptionData);
+        
+        // Trigger the resolver tool
         const resolverToolCall = {
           function: {
             name: 'find_and_display_style_matches',
@@ -147,274 +151,269 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         };
         handleToolCall(resolverToolCall);
       } else if (perceptionType === 'object' && perceptionData) {
-        // Handle object analysis
-        handleObjectAnalysis(perceptionData);
-      }
-    }
-    
-    // Hide notification in both cases
-    setShowPerceptionNotification(false);
-  };
-
-  // Handle object analysis
-  const handleObjectAnalysis = async (data: any) => {
-    try {
-      // Search for complementary products
-      const searchQuery = `${data.object_category} ${data.dominant_color}`;
-      const results = await searchProducts({ search: searchQuery, limit: 6 });
-      
-      if (results.length > 0) {
-        setShowcaseContent({
-          type: 'product_grid',
-          data: {
-            products: results,
-            title: `Products that complement your ${data.object_description}`
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error handling object analysis:', error);
-    }
-  };
-
-  // Enhanced tool call handler with improved error handling
-  const handleToolCall = useCallback(async (toolCall: any) => {
-    console.log('🔧 AI Assistant received tool call:', toolCall);
-    
-    try {
-      // Handle cart animation with enhanced experience
-      if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
-        setCartAnimation(true);
-        onCartJiggle();
+        // Store the object analysis data
+        setObjectAnalysisData(perceptionData);
         
-        // Clear existing timer
-        if (cartSuccessTimer) {
-          clearTimeout(cartSuccessTimer);
-        }
-        
-        // Enhanced cart success animation
-        const timer = setTimeout(() => {
-          setCartAnimation(false);
-          setCartSuccessTimer(null);
-        }, 2000); // Longer for better UX
-        
-        setCartSuccessTimer(timer);
-
-        // Trigger magic cart animation if we have a product
-        if (spotlightProduct) {
-          const productElement = document.querySelector('[data-product-showcase]') as HTMLElement;
-          if (productElement) {
-            triggerMagicCart(
-              spotlightProduct.image || spotlightProduct.thumbnail,
-              spotlightProduct.title || spotlightProduct.name,
-              productElement
-            );
-          }
-        }
-      }
-      
-      // Handle search products tool
-      if (toolCall.function.name === 'search_products') {
-        setIsSearching(true);
-        try {
-          const searchParams = {
-            search: toolCall.function.arguments.search_query,
-            category: toolCall.function.arguments.category,
-            minPrice: toolCall.function.arguments.min_price,
-            maxPrice: toolCall.function.arguments.max_price,
-            limit: 8,
-            gender: userProfile?.gender || userProfile?.preferences?.gender_preference
-          };
-          
-          const results = await searchProducts(searchParams);
-          setSearchResults(results);
-          console.log('🔍 Search results:', results);
-          
-          // Display results in product grid
+        // Auto-search for complementary products
+        searchProducts({ 
+          search: `${perceptionData.object_category} ${perceptionData.dominant_color}`,
+          limit: 6 
+        }).then(results => {
           if (results.length > 0) {
             setShowcaseContent({
               type: 'product_grid',
               data: {
                 products: results,
-                title: `Found ${results.length} items matching "${searchParams.search}"`
+                title: `Products that complement your ${perceptionData.object_description}`
               }
             });
           }
-        } catch (error) {
-          console.error('Search error:', error);
-        } finally {
-          setIsSearching(false);
-        }
-        return; // Don't forward search tool calls to parent
+        }).catch(console.error);
       }
+    }
+    
+    // Close the notification
+    setShowPerceptionNotification(false);
+    setPerceptionData(null);
+  };
 
-      // Handle product grid display
-      if (toolCall.function.name === 'show_product_grid') {
-        const { products, title, collection_title } = toolCall.function.arguments;
+  // Enhanced tool call handler with optimized cart experience
+  const handleToolCall = useCallback(async (toolCall: any) => {
+    console.log('🔧 AI Assistant received tool call:', toolCall);
+    
+    // Handle cart animation with enhanced experience
+    if (toolCall.function.name === 'add_to_cart' || toolCall.function.name === 'proactively_add_to_cart') {
+      setCartAnimation(true);
+      onCartJiggle();
+      
+      // Clear existing timer
+      if (cartSuccessTimer) {
+        clearTimeout(cartSuccessTimer);
+      }
+      
+      // Enhanced cart success animation
+      const timer = setTimeout(() => {
+        setCartAnimation(false);
+        setCartSuccessTimer(null);
+      }, 2000); // Longer for better UX
+      
+      setCartSuccessTimer(timer);
+
+      // Trigger magic cart animation if we have a product
+      if (spotlightProduct) {
+        const productElement = document.querySelector('[data-product-showcase]') as HTMLElement;
+        if (productElement) {
+          triggerMagicCart(
+            spotlightProduct.image || spotlightProduct.thumbnail,
+            spotlightProduct.title || spotlightProduct.name,
+            productElement
+          );
+        }
+      }
+    }
+    
+    // Handle search products tool
+    if (toolCall.function.name === 'search_products') {
+      setIsSearching(true);
+      try {
+        const searchParams = {
+          search: toolCall.function.arguments.search_query,
+          category: toolCall.function.arguments.category,
+          minPrice: toolCall.function.arguments.min_price,
+          maxPrice: toolCall.function.arguments.max_price,
+          limit: 8,
+          gender: userProfile?.gender || undefined
+        };
+        
+        const results = await searchProducts(searchParams);
+        setSearchResults(results);
+        console.log('🔍 Search results:', results);
+        
+        // Display results in product grid
+        if (results.length > 0) {
+          setShowcaseContent({
+            type: 'product_grid',
+            data: {
+              products: results,
+              title: `Found ${results.length} products matching "${searchParams.search}"`
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+      return; // Don't forward search tool calls to parent
+    }
+
+    // Handle product grid display
+    if (toolCall.function.name === 'show_product_grid') {
+      try {
+        const args = toolCall.function.arguments;
+        
+        // Safely handle products array
+        let products = [];
+        if (args.products && Array.isArray(args.products)) {
+          products = args.products;
+        }
+        
+        // Safely handle title
+        const title = args.collection_title || args.title || "Fashion Collection";
+        
         setShowcaseContent({ 
           type: 'product_grid', 
           data: { 
             products, 
-            title: title || collection_title || "Fashion Collection" 
+            title 
           } 
         });
-        return; // Don't forward to parent
+      } catch (error) {
+        console.error('Error handling show_product_grid:', error);
       }
+      return; // Don't forward to parent
+    }
 
-      // Handle category display
-      if (toolCall.function.name === 'show_categories') {
-        setShowcaseContent({ type: 'categories' });
-        return; // Don't forward to parent
-      }
+    // Handle category display
+    if (toolCall.function.name === 'show_categories') {
+      setShowcaseContent({ type: 'categories' });
+      return; // Don't forward to parent
+    }
 
-      // Handle dynamic product creation
-      if (toolCall.function.name === 'create_dynamic_product') {
+    // Handle dynamic product creation
+    if (toolCall.function.name === 'create_dynamic_product') {
+      try {
         console.log('🎨 Creating dynamic fashion product:', toolCall.function.arguments);
+        const { product_description, style_reasoning, occasion, price_range } = toolCall.function.arguments;
         
-        try {
-          const { product_description, style_reasoning, occasion, price_range } = toolCall.function.arguments;
-          
-          // Create dynamic product
-          const dynamicProduct = createDynamicFashionProduct(product_description, {
-            description: style_reasoning,
-            occasion: occasion,
-            gender_preference: userProfile?.gender || userProfile?.preferences?.gender_preference
-          });
-          
-          // Show the product
-          setSpotlightProduct({
-            ...dynamicProduct,
-            highlightFeatures: [
-              style_reasoning,
-              `Perfect for ${occasion || 'any occasion'}`,
-              `${dynamicProduct.material} construction for quality and comfort`
-            ],
-            stylingTips: [
-              `Pair with ${dynamicProduct.category.includes('top') ? 'slim pants or jeans' : 'a simple top or blouse'}`,
-              `Add ${dynamicProduct.category.includes('clothing') ? 'minimal accessories' : 'complementary clothing pieces'}`,
-              `Great for ${occasion || 'everyday wear'}`
-            ]
-          });
-          
-          setShowcaseContent({ type: 'spotlight', data: dynamicProduct });
-        } catch (error) {
-          console.error('Error creating dynamic product:', error);
+        // Create dynamic product
+        const dynamicProduct = createDynamicFashionProduct(product_description, {
+          description: style_reasoning,
+          occasion: occasion,
+          gender_preference: userProfile?.gender || undefined
+        });
+        
+        // Show the product
+        setSpotlightProduct({
+          ...dynamicProduct,
+          highlightFeatures: [
+            style_reasoning,
+            `Perfect for ${occasion || 'any occasion'}`,
+            `${dynamicProduct.material} material`
+          ],
+          stylingTips: [
+            `Pairs well with ${dynamicProduct.category === "men's clothing" ? "dark jeans and boots" : "slim jeans and heels"}`,
+            `Layer with ${dynamicProduct.category === "men's clothing" ? "a light jacket" : "a cardigan"} for cooler weather`,
+            `Add ${dynamicProduct.category === "men's clothing" ? "a watch" : "statement earrings"} to complete the look`
+          ]
+        });
+        
+        setShowcaseContent({ type: 'spotlight', data: dynamicProduct });
+      } catch (error) {
+        console.error('Error creating dynamic product:', error);
+      }
+      return; // Don't forward to parent
+    }
+
+    // Handle complete outfit creation
+    if (toolCall.function.name === 'create_complete_outfit') {
+      try {
+        console.log('👗 Creating complete outfit:', toolCall.function.arguments);
+        const { base_item, occasion, style_preference, budget_range } = toolCall.function.arguments;
+        
+        // Create 3-5 coordinated items for the outfit
+        const outfitItems = [];
+        
+        // Base item
+        const baseProduct = createDynamicFashionProduct(base_item, {
+          occasion: occasion,
+          gender_preference: userProfile?.gender || undefined
+        });
+        outfitItems.push(baseProduct);
+        
+        // Add complementary pieces based on the base item and style
+        const complementaryItems = [
+          `${style_preference} ${userProfile?.gender === 'men' ? 'shirt' : 'top'}`,
+          `${style_preference} ${userProfile?.gender === 'men' ? 'pants' : 'skirt'}`,
+          `${style_preference} shoes`,
+          `${style_preference} accessory`
+        ];
+        
+        // Create 2-3 additional items
+        for (let i = 0; i < 3; i++) {
+          if (i < complementaryItems.length) {
+            const item = createDynamicFashionProduct(complementaryItems[i], {
+              occasion: occasion,
+              gender_preference: userProfile?.gender || undefined
+            });
+            outfitItems.push(item);
+          }
         }
         
-        return; // Don't forward to parent
-      }
-
-      // Handle complete outfit creation
-      if (toolCall.function.name === 'create_complete_outfit') {
-        console.log('👗 Creating complete outfit:', toolCall.function.arguments);
-        
-        try {
-          const { base_item, occasion, style_preference, budget_range } = toolCall.function.arguments;
-          
-          // Create 3-5 coordinated items for the outfit
-          const outfitPieces = [];
-          
-          // Base item
-          const baseProduct = createDynamicFashionProduct(base_item, {
-            occasion: occasion,
-            gender_preference: userProfile?.gender || userProfile?.preferences?.gender_preference
-          });
-          outfitPieces.push(baseProduct);
-          
-          // Add complementary pieces based on the base item
-          const complementaryItems = [
-            `${baseProduct.category.includes('top') ? 'matching pants' : 'coordinating top'}`,
-            'accessory',
-            'footwear'
-          ];
-          
-          for (const item of complementaryItems) {
-            const complementaryProduct = createDynamicFashionProduct(
-              `${style_preference} ${item} for ${occasion}`, 
-              {
-                occasion: occasion,
-                gender_preference: userProfile?.gender || userProfile?.preferences?.gender_preference
-              }
-            );
-            outfitPieces.push(complementaryProduct);
+        // Display as product grid
+        setShowcaseContent({
+          type: 'product_grid',
+          data: {
+            products: outfitItems,
+            title: `Complete ${style_preference} Outfit for ${occasion}`
           }
-          
-          // Display as product grid
+        });
+      } catch (error) {
+        console.error('Error creating complete outfit:', error);
+      }
+      return; // Don't forward to parent
+    }
+
+    // Handle the RESOLVER TOOL - find_and_display_style_matches
+    if (toolCall.function.name === 'find_and_display_style_matches') {
+      console.log('🎨 RESOLVER: Processing style matches:', toolCall.function.arguments);
+      const { dominant_color, style_category, curation_title } = toolCall.function.arguments;
+      
+      // Store the complete style analysis data
+      setStyleAnalysisData({
+        dominant_color,
+        style_category
+      });
+      
+      // Auto-search based on style analysis
+      if (dominant_color && style_category) {
+        const searchQuery = `${style_category} ${dominant_color}`;
+        const results = await searchProducts({ 
+          search: searchQuery, 
+          limit: 6,
+          gender: userProfile?.gender || undefined
+        });
+        
+        if (results.length > 0) {
           setShowcaseContent({
             type: 'product_grid',
             data: {
-              products: outfitPieces,
-              title: `Complete ${style_preference} Outfit for ${occasion}`
+              products: results,
+              title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
             }
           });
-        } catch (error) {
-          console.error('Error creating complete outfit:', error);
         }
-        
-        return; // Don't forward to parent
       }
-
-      // Handle style consultation
-      if (toolCall.function.name === 'style_consultation') {
-        console.log('👔 Providing style consultation:', toolCall.function.arguments);
-        
-        // Don't need to do anything special here, just let the AI continue
-        return; // Don't forward to parent
-      }
-
-      // Handle the RESOLVER TOOL - find_and_display_style_matches
-      if (toolCall.function.name === 'find_and_display_style_matches') {
-        console.log('🎨 RESOLVER: Processing style matches:', toolCall.function.arguments);
-        const { dominant_color, style_category, curation_title } = toolCall.function.arguments;
-        
-        // Store the complete style analysis data
-        setStyleAnalysisData({
-          dominant_color,
-          style_category
-        });
-        
-        // Auto-search based on style analysis
-        if (dominant_color && style_category) {
-          const searchQuery = `${style_category} ${dominant_color}`;
-          const results = await searchProducts({ 
-            search: searchQuery, 
-            limit: 6,
-            gender: userProfile?.gender || userProfile?.preferences?.gender_preference
-          });
-          
-          if (results.length > 0) {
-            setShowcaseContent({
-              type: 'product_grid',
-              data: {
-                products: results,
-                title: curation_title || `Based on your ${style_category} ${dominant_color} style, here are pieces I think you'll adore`
-              }
-            });
-          }
-        }
-        return; // Don't forward to parent
-      }
-
-      // Handle focus on product
-      if (toolCall.function.name === 'focus_on_product') {
-        console.log('🎯 Focusing on product:', toolCall.function.arguments);
-        setFocusedProductId(toolCall.function.arguments.product_id);
-        
-        // Clear focus after 5 seconds
-        setTimeout(() => {
-          setFocusedProductId(null);
-        }, 5000);
-        return; // Don't forward to parent
-      }
-      
-      // Forward other tool calls to parent component
-      onToolCall(toolCall);
-    } catch (error) {
-      console.error('Error handling tool call:', error);
+      return; // Don't forward to parent
     }
+
+    // Handle focus on product
+    if (toolCall.function.name === 'focus_on_product') {
+      console.log('🎯 Focusing on product:', toolCall.function.arguments);
+      setFocusedProductId(toolCall.function.arguments.product_id);
+      
+      // Clear focus after 5 seconds
+      setTimeout(() => {
+        setFocusedProductId(null);
+      }, 5000);
+      return; // Don't forward to parent
+    }
+    
+    // Forward other tool calls to parent component
+    onToolCall(toolCall);
   }, [onToolCall, cartSuccessTimer, onCartJiggle, spotlightProduct, triggerMagicCart, userProfile]);
 
-  // Enhanced tool call parsing with perception throttling and improved notification
+  // Enhanced tool call parsing with perception throttling and notification
   const parseToolCall = useCallback((data: any) => {
     try {
       console.log('🔧 Parsing tool call data:', data);
@@ -458,20 +457,28 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
           return null;
         }
         
-        // For style detection, we need to trigger the resolver tool
+        // For style detection, show notification instead of immediate processing
         if (name === 'detected_user_style') {
-          console.log('🎨 Step 1: Style detection completed:', args);
+          console.log('🎨 Style detection received:', args);
           lastPerceptionTime.current = now;
           
-          // Store the perception data for notification
-          setPerceptionData(args);
+          // Show notification to user
           setPerceptionType('style');
+          setPerceptionData(args);
+          setShowPerceptionNotification(true);
           
-          // Only show notification once per session
-          if (!hasShownPerceptionNotification.current) {
-            setShowPerceptionNotification(true);
-            hasShownPerceptionNotification.current = true;
-          }
+          return null; // Don't process as regular tool call
+        }
+        
+        // For object detection
+        if (name === 'analyze_object_in_view') {
+          console.log('👁️ Object detection received:', args);
+          lastPerceptionTime.current = now;
+          
+          // Show notification to user
+          setPerceptionType('object');
+          setPerceptionData(args);
+          setShowPerceptionNotification(true);
           
           return null; // Don't process as regular tool call
         }
@@ -648,7 +655,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
         selectedHost.replicaId,
         selectedHost.customPrompt,
         showcaseContent.type, // Pass current UI state
-        userProfile?.gender || userProfile?.preferences?.gender_preference // Pass gender preference
+        userProfile?.gender // Pass user's gender preference
       );
       
       console.log('✅ Optimized AI session created:', session);
@@ -681,12 +688,8 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     setStyleAnalysisData(null);
     setObjectAnalysisData(null);
     setFocusedProductId(null);
-    setIsConnecting(false); // Reset connecting state
-    
-    // Reset perception state
-    setPerceptionData(null);
     setShowPerceptionNotification(false);
-    hasShownPerceptionNotification.current = false;
+    setPerceptionData(null);
     
     if (cartSuccessTimer) {
       clearTimeout(cartSuccessTimer);
@@ -712,7 +715,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
     const results = await searchProducts({ 
       category, 
       limit: 8,
-      gender: userProfile?.gender || userProfile?.preferences?.gender_preference
+      gender: userProfile?.gender || undefined
     });
     setShowcaseContent({
       type: 'product_grid',
@@ -764,56 +767,14 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
       case 'product_grid':
         return (
           <div className="animate-fade-in flex-1">
-            {/* Style Analysis Display - Only show when explicitly relevant */}
-            {styleAnalysisData && (
-              <motion.div 
-                className="mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h4 className="text-base font-semibold text-purple-900 dark:text-purple-100 mb-2 flex items-center space-x-2">
-                  <Wand2 className="w-4 h-4" />
-                  <span>Style Analysis</span>
-                </h4>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-purple-700 dark:text-purple-300 font-medium">Color:</span>
-                    <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.dominant_color || 'Not detected'}</p>
-                  </div>
-                  <div>
-                    <span className="text-purple-700 dark:text-purple-300 font-medium">Style:</span>
-                    <p className="text-purple-900 dark:text-purple-100 capitalize">{styleAnalysisData.style_category || 'Not detected'}</p>
-                  </div>
-                </div>
-              </motion.div>
+            {/* Style Analysis Display - Only show if we have data and not showing notification */}
+            {styleAnalysisData && !showPerceptionNotification && (
+              <StyleAnalysisDisplay styleData={styleAnalysisData} />
             )}
 
-            {/* Object Analysis Display */}
-            {objectAnalysisData && (
-              <motion.div 
-                className="mb-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <h4 className="text-base font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center space-x-2">
-                  <Eye className="w-4 h-4" />
-                  <span>Object Detected</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Description:</span>
-                    <p className="text-blue-900 dark:text-blue-100">{objectAnalysisData.object_description}</p>
-                  </div>
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Color:</span>
-                    <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.dominant_color}</p>
-                  </div>
-                  <div>
-                    <span className="text-blue-700 dark:text-blue-300 font-medium">Category:</span>
-                    <p className="text-blue-900 dark:text-blue-100 capitalize">{objectAnalysisData.object_category}</p>
-                  </div>
-                </div>
-              </motion.div>
+            {/* Object Analysis Display - Only show if we have data and not showing notification */}
+            {objectAnalysisData && !showPerceptionNotification && (
+              <ObjectAnalysisDisplay objectData={objectAnalysisData} />
             )}
 
             <ProductGrid
@@ -821,6 +782,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               title={showcaseContent.data.title}
               onProductSelect={(product) => addToCart(product.id, 1)}
               focusedProductId={focusedProductId}
+              onProductHover={(id) => setFocusedProductId(id)}
             />
           </div>
         );
@@ -860,6 +822,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   ${spotlightProduct.price}
                 </p>
                 
+                {/* Fashion-specific details */}
+                {spotlightProduct.material && (
+                  <div className="mb-2 text-gray-700 dark:text-gray-300">
+                    <span className="font-medium">Material:</span> {spotlightProduct.material}
+                  </div>
+                )}
+                
                 {/* Rating */}
                 {spotlightProduct.rating && (
                   <div className="flex items-center space-x-2 mb-4">
@@ -877,18 +846,13 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 )}
                 
-                {/* Fashion-specific details */}
-                {spotlightProduct.material && (
-                  <div className="mb-3">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Material: </span>
-                    <span className="text-gray-900 dark:text-gray-100">{spotlightProduct.material}</span>
-                  </div>
-                )}
-                
-                {/* Highlight Features */}
+                {/* Fashion Features */}
                 {spotlightProduct.highlightFeatures && (
                   <div className="mb-4 flex-1">
-                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Features:</h5>
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center space-x-2">
+                      <Shirt className="w-4 h-4 text-brand-500" />
+                      <span>Fashion Features:</span>
+                    </h5>
                     <div className="space-y-2">
                       {spotlightProduct.highlightFeatures.map((feature: string, idx: number) => (
                         <div 
@@ -904,19 +868,56 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </div>
                 )}
                 
-                {/* Styling Tips - New Section */}
-                {spotlightProduct.stylingTips && spotlightProduct.stylingTips.length > 0 && (
-                  <div className="mb-4">
-                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Styling Tips:</h5>
+                {/* Styling Tips */}
+                {spotlightProduct.stylingTips && (
+                  <div className="mb-4 flex-1">
+                    <h5 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-purple-500" />
+                      <span>Styling Tips:</span>
+                    </h5>
                     <div className="space-y-2">
                       {spotlightProduct.stylingTips.map((tip: string, idx: number) => (
                         <div 
                           key={idx} 
                           className="flex items-center space-x-2 animate-fade-in" 
-                          style={{animationDelay: `${idx * 0.1 + 0.3}s`}}
+                          style={{animationDelay: `${idx * 0.1}s`}}
                         >
                           <span className="text-purple-500">👗</span>
                           <span className="text-gray-700 dark:text-gray-300">{tip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Size Options */}
+                {spotlightProduct.size_options && spotlightProduct.size_options.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Available Sizes:</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {spotlightProduct.size_options.map((size: string, idx: number) => (
+                        <div 
+                          key={idx}
+                          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:text-brand-500 cursor-pointer transition-colors"
+                        >
+                          {size}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Color Options */}
+                {spotlightProduct.color_options && spotlightProduct.color_options.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Available Colors:</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {spotlightProduct.color_options.map((color: string, idx: number) => (
+                        <div 
+                          key={idx}
+                          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-full text-sm text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:text-brand-500 cursor-pointer transition-colors"
+                        >
+                          {color}
                         </div>
                       ))}
                     </div>
@@ -974,7 +975,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
             <h4 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">Style Comparison</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {comparisonProducts.map((item) => (
-                <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow">
+                <div key={item.id} className="bg-gray-50/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-md transition-shadow">
                   <img src={item.image || item.thumbnail} alt={item.title || item.name} className="w-full h-32 object-cover rounded mb-3" />
                   <h5 className="text-gray-900 dark:text-gray-100 font-semibold text-sm mb-1">{item.title || item.name}</h5>
                   <p className="text-brand-600 font-bold mb-3">${item.price}</p>
@@ -998,7 +999,7 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
               <div className="text-6xl mb-4">✨</div>
               <h4 className="text-xl font-semibold mb-2">Ready to discover your personal style?</h4>
               <p className="text-base text-gray-400 dark:text-gray-500 mb-6">
-                {selectedHost?.name} will guide you through personalized fashion recommendations
+                {selectedHost?.name} will guide you through a personalized fashion experience
               </p>
             </div>
 
@@ -1009,11 +1010,11 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                 <span>Try asking:</span>
               </h5>
               <div className="space-y-2 text-blue-800 dark:text-blue-200 text-base">
-                <p>• "Shop my style" - for personalized recommendations</p>
+                <p>• "What's my style?" - for personalized analysis</p>
                 <p>• "I need an outfit for a wedding" - for occasion styling</p>
-                <p>• "Help me create a capsule wardrobe" - for versatile essentials</p>
-                <p>• "What colors would look good on me?" - for color advice</p>
-                <p>• "Show me some accessories" - to browse categories</p>
+                <p>• "Help me build a capsule wardrobe" - for essentials</p>
+                <p>• "Show me some summer dresses" - to browse categories</p>
+                <p>• "What colors work best for me?" - for color advice</p>
               </div>
             </div>
 
@@ -1122,24 +1123,17 @@ const AIShoppingAssistant: React.FC<AIShoppingAssistantProps> = ({
                   </>
                 )}
                 
-                {/* Perception Notification - Positioned in the video area */}
-                <AnimatePresence>
-                  {showPerceptionNotification && perceptionData && (
-                    <motion.div 
-                      className="absolute bottom-4 right-4 z-30"
-                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                    >
-                      <PerceptionNotification
-                        type={perceptionType}
-                        data={perceptionData}
-                        onAction={handlePerceptionAction}
-                        onClose={() => setShowPerceptionNotification(false)}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Perception Notification */}
+                {showPerceptionNotification && (
+                  <div className="absolute top-12 left-3 z-30">
+                    <PerceptionNotification
+                      type={perceptionType}
+                      data={perceptionData}
+                      onAction={handlePerceptionAction}
+                      onClose={() => setShowPerceptionNotification(false)}
+                    />
+                  </div>
+                )}
               </div>
               
               {/* Controls with Aria Status */}
