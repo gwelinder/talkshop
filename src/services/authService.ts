@@ -14,7 +14,7 @@ export const signInWithGoogle = async (): Promise<AuthUser | null> => {
   try {
     console.log('🔐 Initiating Google sign-in...');
     
-    // Get the current domain for redirect
+    // Get the current domain for redirect - use production URL if deployed
     const currentDomain = window.location.origin;
     const redirectUrl = `${currentDomain}?auth=callback`;
     
