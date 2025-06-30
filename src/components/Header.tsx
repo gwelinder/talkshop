@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Logo - Updated with TalkShop logo */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <img 
-              src="/talkshop-logo.png" 
+              src="/logotalskhop.png" 
               alt="TalkShop" 
               className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 object-contain"
             />
