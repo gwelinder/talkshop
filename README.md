@@ -130,6 +130,31 @@ VITE_ELEVENLABS_API_KEY=your_elevenlabs_key
 VITE_REVENUECAT_API_KEY=your_revenuecat_key
 ```
 
+## 🚀 Deployment to Netlify
+
+### Step 1: Environment Variables in Netlify
+
+**IMPORTANT**: Never put secrets in `netlify.toml` as it's committed to your repository!
+
+1. Go to your [Netlify Dashboard](https://app.netlify.com/)
+2. Select your site: `timely-piroshki-b9d6cc`
+3. Go to **Site settings** → **Environment variables**
+4. Add these environment variables:
+
+```
+VITE_SUPABASE_URL = https://vutsmvnevjhmsxfhmfle.supabase.co
+VITE_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ1dHNtdm5ldmpobXN4ZmhtZmxlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwMDk4ODAsImV4cCI6MjA2MDU4NTg4MH0.UvDSkCkk9LKycGgi5HI55-RZyMScheXC9aVz4X8o9-g
+VITE_TAVUS_API_KEY = your_actual_tavus_api_key_here
+VITE_ELEVENLABS_API_KEY = your_elevenlabs_key_here
+VITE_REVENUECAT_API_KEY = your_revenuecat_key_here
+```
+
+### Step 2: Redeploy
+
+After adding the environment variables, trigger a new deployment:
+- Go to **Deploys** tab
+- Click **Trigger deploy** → **Deploy site**
+
 ## 🔐 Google OAuth Setup
 
 To fix the Google OAuth authentication, you need to configure the redirect URIs in your Google Cloud Console:
